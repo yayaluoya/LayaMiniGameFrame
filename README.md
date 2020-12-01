@@ -8,7 +8,7 @@
 #### 参与贡献
 
 - 辥觻瓭: https://gitee.com/lxqAxld_admin
-- YaYaLuoYa: https://gitee.com/yayaluoya
+- YaYaLuoYa: https://github.com/yayaluoya
 
 #### 主要功能
     - 简化LayaBox开发流程
