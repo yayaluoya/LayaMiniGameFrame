@@ -1,0 +1,35 @@
+{
+  "name": "LayaMiniGameFrame",
+  "version": "1.0.0",
+  "description": "Laya小游戏框架\r     简化了LayaBox的工作流程，让各个工具使用更加方便。",
+  "main": "gulpfile.js",
+  "bin": {
+    "layaminigameframe": "game.js"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "install-layaair2-cmd": "npm i layaair2-cmd -g --ignore-scripts",
+    "install-gulp": "npm i gulp -g --ignore-scripts",
+    "layaair2-cmd-auto-compile": "gulp compile",
+    "layaair2-cmd-compile": "layaair2-cmd compile",
+    "layaair2-cmd-publish-web": "layaair2-cmd publish -c web",
+    "layaair2-cmd-publish-wxgame": "layaair2-cmd publish -c wxgame",
+    "layaair2-cmd-publish-bdgame": "layaair2-cmd publish -c bdgame",
+    "layaair2-cmd-publish-xmgame": "layaair2-cmd publish -c xmgame",
+    "layaair2-cmd-publish-oppogame": "layaair2-cmd publish -c oppogame",
+    "layaair2-cmd-publish-vivogame": "layaair2-cmd publish -c vivogame",
+    "layaair2-cmd-publish-qqgame": "layaair2-cmd publish -c qqgame"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://gitee.com/Sheng_Dou_Shi/laya-mini-game-frame.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "browser-sync": "^2.26.13",
+    "gulp": "^4.0.2",
+    "gulp-connect": "^5.7.0",
+    "gulp-rev-append": "^0.1.8"
+  }
+}

@@ -1,0 +1,1 @@
+{"root":[{"name":"camera","position":"0,40,0","euler":"-90,180,0"},{"name":"light","position":"0,100,0","euler":"-90,180,0"},{"name":"scene_debug","child":[{"name":"Cube","prefabName":"Cube","position":"0,0,-8"}]},{"name":"scene_0"},{"name":"scene_1"},{"name":"scene_2"},{"name":"scene_3"},{"name":"scene_debug_"}]}
