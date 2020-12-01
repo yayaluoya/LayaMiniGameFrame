@@ -1,6 +1,19 @@
 {
 	"backgroundColor": 6710886,
-	"libview.twoColumn": false,
+	"libview.expandedNodes": [
+		"lnsfr1yw",
+		"/",
+		"kk7g5mmm",
+		"/",
+		"kk7g5mmm",
+		"/Panel/",
+		"kk7g5mmm",
+		"/Panel/Test/",
+		"n3oedpp6",
+		"/",
+		"n3oedpp6",
+		"/ui/"
+	],
 	"doc.openedDocs": [
 		"ui://kk7g5mmmg7a1o",
 		"ui://n3oedpp6nihr0",
@@ -22,21 +35,12 @@
 		"ui://kk7g5mmmq3ng9w",
 		"ui://kk7g5mmmg7a1y"
 	],
-	"libview.iconScale": 0,
-	"auxline1": true,
-	"auxline2": true,
-	"doc.activeDoc": "ui://kk7g5mmmo9js9x",
 	"libview.currentGroup": "",
-	"libview.expandedNodes": [
-		"lnsfr1yw",
-		"/",
-		"kk7g5mmm",
-		"/",
-		"kk7g5mmm",
-		"/Panel/",
-		"kk7g5mmm",
-		"/Panel/Test/"
-	],
+	"libview.iconScale": 0,
 	"canvasColor": 10066329,
-	"libview.firstColumnWidth": 283
+	"doc.activeDoc": "ui://n3oedpp6nihr0",
+	"libview.firstColumnWidth": 283,
+	"auxline1": true,
+	"libview.twoColumn": false,
+	"auxline2": true
 }

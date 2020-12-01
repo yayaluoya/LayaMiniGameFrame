@@ -2,7 +2,8 @@
     'use strict';
 
     class GameConfig {
-        constructor() { }
+        constructor() {
+        }
         static init() {
             var reg = Laya.ClassUtils.regClass;
         }
@@ -1218,7 +1219,7 @@
     MainGameConfig.support2D = false;
     MainGameConfig.support3D = true;
     MainGameConfig.ifAddOimoSystem = false;
-    MainGameConfig.ifTest = false;
+    MainGameConfig.ifTest = true;
 
     class Global3D {
         static InitAll() {
@@ -4339,10 +4340,8 @@
         for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0)
             t[p] = s[p];
         if (s != null && typeof Object.getOwnPropertySymbols === "function")
-            for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) {
-                if (e.indexOf(p[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p[i]))
-                    t[p[i]] = s[p[i]];
-            }
+            for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) if (e.indexOf(p[i]) < 0)
+                t[p[i]] = s[p[i]];
         return t;
     }
 
@@ -4435,14 +4434,6 @@
             ar = ar.concat(__read(arguments[i]));
         return ar;
     }
-
-    function __spreadArrays() {
-        for (var s = 0, i = 0, il = arguments.length; i < il; i++) s += arguments[i].length;
-        for (var r = Array(s), k = 0, i = 0; i < il; i++)
-            for (var a = arguments[i], j = 0, jl = a.length; j < jl; j++, k++)
-                r[k] = a[j];
-        return r;
-    };
 
     function __await(v) {
         return this instanceof __await ? (this.v = v, this) : new __await(v);
@@ -6782,12 +6773,68 @@
         }
     }
 
-    class MainTest {
+    class RootTest {
         constructor() {
+            this.startTest();
+        }
+        startTest() { }
+    }
+
+    class ConsoleTest extends RootTest {
+        startTest() {
             console.log('->开启测试<-');
             console.log(...ConsoleEx.packLog('输出测试'));
             console.log(...ConsoleEx.packWarn('输出测试'));
             console.log(...ConsoleEx.packError('输出测试'));
+        }
+    }
+
+    class MainTest extends RootTest {
+        startTest() {
+            new ConsoleTest();
+        }
+    }
+
+    class AsyncTest extends RootTest {
+        startTest() {
+            this.asyncTest();
+        }
+        asyncTest() {
+            return __awaiter(this, void 0, void 0, function* () {
+                console.log('异步开始');
+                yield this._asyncTest();
+                console.log('异步结束');
+            });
+        }
+        _asyncTest() {
+            return new Promise((_r) => {
+                Laya.timer.once(1000, this, () => {
+                    console.log('异步函数执行中');
+                    _r();
+                });
+            });
+        }
+    }
+
+    class OIMODebug extends RootTest {
+        static get instance() {
+            if (this._instance) {
+                return this._instance;
+            }
+            else {
+                this._instance = new OIMODebug();
+                return this._instance;
+            }
+        }
+        start(_prefabs) {
+            let _spr = [];
+        }
+    }
+
+    class MyMainTest extends RootTest {
+        startTest() {
+            new AsyncTest();
+            new OIMODebug();
         }
     }
 
@@ -6799,6 +6846,7 @@
         upGameLoad() {
             if (MainGameConfig.ifTest) {
                 new MainTest();
+                new MyMainTest();
             }
         }
         gameLoad() {

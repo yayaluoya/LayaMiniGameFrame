@@ -4,6 +4,7 @@ import Game2D from './Main/Game/Game2D';
 import MainTest from '../aTGame/Test/MainTest';
 import MainGameConfig from '../bTGameConfig/MainGameConfig';
 import ConsoleEx from '../aTGame/Console/ConsoleEx';
+import MyMainTest from '../eTest/MyMainTest';
 /**
  * 游戏开始类
  */
@@ -22,6 +23,7 @@ export default class MainStart {
         if (MainGameConfig.ifTest) {
             //激活测试类
             new MainTest();
+            new MyMainTest();
         }
     }
 

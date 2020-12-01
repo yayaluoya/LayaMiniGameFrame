@@ -1,15 +1,13 @@
-import ConsoleEx from "../Console/ConsoleEx";
+import ConsoleTest from "./ConsoleTest";
+import RootTest from "./RootTest";
 
 /**
  * 测试类入口
  */
-export default class MainTest {
-    //
-    constructor() {
-        console.log('->开启测试<-');
-        //
-        console.log(...ConsoleEx.packLog('输出测试'));
-        console.log(...ConsoleEx.packWarn('输出测试'));
-        console.log(...ConsoleEx.packError('输出测试'));
+export default class MainTest extends RootTest {
+    //开始测试
+    protected startTest() {
+        //打印测试
+        new ConsoleTest();
     }
 }
