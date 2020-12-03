@@ -66,3 +66,6 @@
 
 # koroFileHeader
     在vscode中用于生成文件头部注释和函数注释的插件，经过多版迭代后，插件：支持所有主流语言,功能强大，灵活方便，文档齐全，食用简单！
+
+# Search/Translate Hero
+    一款让您在代码中进行搜索或者翻译的 VS Code 插件。
