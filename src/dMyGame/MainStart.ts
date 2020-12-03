@@ -22,8 +22,8 @@ export default class MainStart {
         //判断是否开启测试
         if (MainGameConfig.ifTest) {
             //激活测试类
-            new MainTest();
-            new MyMainTest();
+            new MainTest();//主测试
+            new MyMainTest();//项目测试
         }
     }
 

@@ -12,5 +12,5 @@ export default class MainGameConfig {
     public static ifAddOimoSystem: boolean = false;
 
     /** 是否开启测试类 */
-    public static ifTest: boolean = true;
+    public static ifTest: boolean = false;
 }
