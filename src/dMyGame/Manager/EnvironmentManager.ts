@@ -83,13 +83,13 @@ export default class EnvironmentManager implements IRootManager {
     }
 
     //设置摄像机
-    private setCamera(_camera: Laya.Camera) {
+    public setCamera(_camera: Laya.Camera) {
         //设置清除颜色
         _camera.clearColor = ColorEx.HexToV4(this.m_enviromentConfig.clear_color);
     }
 
     //设置灯光
-    private setLight(_light: Laya.DirectionLight) {
+    public setLight(_light: Laya.DirectionLight) {
         //
         _light.color = ColorEx.HexToV3(this.m_enviromentConfig.light_color);
         _light.intensity = this.m_enviromentConfig.light_intensity;
@@ -100,14 +100,14 @@ export default class EnvironmentManager implements IRootManager {
     }
 
     //加环境光
-    private addAmbient(_s3d: Laya.Scene3D) {
+    public addAmbient(_s3d: Laya.Scene3D) {
         //设置环境光
         _s3d.ambientMode = Laya.AmbientMode.SolidColor;
         _s3d.ambientColor = ColorEx.HexToV3(this.m_enviromentConfig.ambient_color);
     }
 
     //加雾化
-    private addFog(_color: string) {
+    public addFog(_color: string) {
         //
     }
 

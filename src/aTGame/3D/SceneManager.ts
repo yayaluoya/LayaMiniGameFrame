@@ -22,8 +22,11 @@ export default class SceneManager implements IRootManager {
         return this._instance;
     }
 
+    // 关卡配置数据
     private _levelConfig: { [index: string]: ISceneNode } = {};
-    private _scenes: { [index: number]: Scene } = {};
+
+    // 场景实例缓存
+    private _scenes: { [index: string]: Scene } = {};
 
     //初始化
     private constructor() {
@@ -83,26 +86,52 @@ export default class SceneManager implements IRootManager {
         if (!lvConfig) {
             console.log(...ConsoleEx.packError("不存在此关卡->", id));
         }
-        //获取该关卡名字
-        let sceneName: string[] = lvConfig.sceneName;
-        //获取该关卡其他资源加载名字
-        let _sceneName_: string[] = lvConfig.sceneOtherRes;
+        let _key: string = id + '$ID';//加一个后缀避免重名
         //查看缓存
-        if (!this._scenes[id]) {
-            let sceneNodes: { [index: string]: ISceneNode } = {};
-            let sceneNodes_: ISceneNode[] = [];
-            //获取需要加载和预加载的节点
-            for (let _i in this._levelConfig) {
-                if (sceneName.findIndex((item) => { return item == _i }) != -1) {
-                    sceneNodes[_i] = this._levelConfig[_i];
-                }
-                if (_sceneName_.findIndex((item) => { return item == _i }) != -1) {
-                    sceneNodes_.push(this._levelConfig[_i]);
-                }
-            }
-            this._scenes[id] = new Scene(sceneNodes, sceneNodes_, id);
+        if (!this._scenes[_key]) {
+            //创建场景实例
+            this._scenes[_key] = this.getSceneByData(lvConfig);
         }
-        return this._scenes[id];
+        return this._scenes[_key];
+    }
+
+    /**
+     * 通过关卡名字获取其他关卡
+     * @param _name 关卡名字
+     */
+    public getOtherSceneByName(_name: string): Scene {
+        let lvConfig: IFrameLevelData = FrameLevelConfig.byLevelNameGetOtherLevelData(_name);
+        if (!lvConfig) {
+            console.log(...ConsoleEx.packError("不存在此关卡->", _name));
+        }
+        let _key: string = _name + '$NAME';//加一个后缀避免重名
+        //查看缓存
+        if (!this._scenes[_key]) {
+            //创建场景实例
+            this._scenes[_key] = this.getSceneByData(lvConfig);
+        }
+        return this._scenes[_key];
+    }
+
+    //通过关卡数据构建关卡
+    private getSceneByData(_lvConfig: IFrameLevelData): Scene {
+        //获取该关卡名字
+        let sceneName: string[] = _lvConfig.sceneName;
+        //获取该关卡其他资源加载名字
+        let _sceneName_: string[] = _lvConfig.sceneOtherRes;
+        //
+        let sceneNodes: { [index: string]: ISceneNode } = {};
+        let sceneNodes_: ISceneNode[] = [];
+        //获取需要加载和预加载的节点
+        for (let _i in this._levelConfig) {
+            if (sceneName.findIndex((item) => { return item == _i }) != -1) {
+                sceneNodes[_i] = this._levelConfig[_i];
+            }
+            if (_sceneName_.findIndex((item) => { return item == _i }) != -1) {
+                sceneNodes_.push(this._levelConfig[_i]);
+            }
+        }
+        return new Scene(sceneNodes, sceneNodes_, _lvConfig.sceneKey);
     }
 
     /**

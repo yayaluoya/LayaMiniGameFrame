@@ -31,6 +31,7 @@ import { LevelPropConfig } from '../_config/LevelPropConfig';
 import { OtherConst } from '../_config/OtherConst';
 import { EBGMs } from '../ResList/EBGMs';
 import GameNewHandDataSave from '../GameData/GameNewHandDataSave';
+import { OtherLevelConfig } from '../_config/OtherLevelConfig';
 /**
  * 游戏进入之前的加载操作类
  */
@@ -104,6 +105,7 @@ export default class GameLoad extends RootGameLoad {
         ConfigManager.AddConfig(GameConst);
         ConfigManager.AddConfig(GameStateConst);
         ConfigManager.AddConfig(LevelConfig);
+        ConfigManager.AddConfig(OtherLevelConfig);
         ConfigManager.AddConfig(LevelPropConfig);
         ConfigManager.AddConfig(LightingConst);
         ConfigManager.AddConfig(OtherConst);

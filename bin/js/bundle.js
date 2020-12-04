@@ -28,12 +28,6 @@
         }
     }
 
-    var EProcessor;
-    (function (EProcessor) {
-        EProcessor["CameraPro"] = "EProcessor_CameraPro";
-        EProcessor["HeightFogCubePro"] = "EProcessor_HeightFogCubePro";
-    })(EProcessor || (EProcessor = {}));
-
     class ConsoleConst {
     }
     ConsoleConst.logStyle = `
@@ -332,13 +326,13 @@
     }
 
     class Scene {
-        constructor(sceneNode, sceneNode_, _sceneId) {
+        constructor(sceneNode, sceneNode_, _sceneKey) {
             this._prefabRes = [];
             this.prefabs = {};
             this.sprite3Ds = [];
             this.sceneNode = sceneNode;
             this.sceneNode_ = sceneNode_;
-            this._sceneId = _sceneId;
+            this._sceneKey = _sceneKey;
         }
         get ifDestroy() {
             return !Boolean(this._scene);
@@ -352,10 +346,11 @@
         buildScene(onProgress = null) {
             return new Promise((r) => {
                 if (this._scene) {
+                    console.log(...ConsoleEx.packWarn('重复构建关卡'));
                     r(this._scene);
                     return;
                 }
-                console.log(...ConsoleEx.packLog('开始构建关卡->' + this._sceneId));
+                console.log(...ConsoleEx.packLog('开始构建关卡->' + this._sceneKey));
                 this.loadRes(onProgress).then(() => {
                     this._scene = new Laya.Sprite3D();
                     GlobalUnitClassProxy.s3d.addChild(this._scene);
@@ -365,15 +360,15 @@
                         this._scene.addChild(_spr);
                         this._buildScene(this.sceneNode[_i], _spr);
                     }
-                    console.log(...ConsoleEx.packLog('关卡->' + this._sceneId + '构建完成'));
-                    console.log('关卡->' + this._sceneId, '\n场景->', this._scene, '\n预制体->', this.prefabs, '\n物体->', this.sprite3Ds);
+                    console.log(...ConsoleEx.packLog('关卡->' + this._sceneKey + '构建完成'));
+                    console.log('关卡->' + this._sceneKey, '\n场景->', this._scene, '\n预制体->', this.prefabs, '\n物体->', this.sprite3Ds);
                     r(this._scene);
                 });
             });
         }
         clearScene() {
             if (this._scene) {
-                console.log(...ConsoleEx.packLog('清除关卡->' + this._sceneId));
+                console.log(...ConsoleEx.packLog('清除关卡->' + this._sceneKey));
                 this._scene.destroy();
                 this._prefabRes = [];
                 this.prefabs = {};
@@ -411,7 +406,7 @@
                 _length++;
             }
             if (_length == 0) {
-                console.log(...ConsoleEx.packError('关卡->' + this._sceneId + '<-不存在,或者是没有内容'));
+                console.log(...ConsoleEx.packError('关卡->' + this._sceneKey + '<-不存在,或者是没有内容'));
                 return;
             }
             if (!this._prefabRes || this._prefabRes.length <= 0) {
@@ -567,14 +562,51 @@
         }
     }
 
+    var OtherLevelConfig;
+    (function (OtherLevelConfig) {
+        class config {
+        }
+        OtherLevelConfig.config = config;
+        OtherLevelConfig.path = "res/config/OtherLevelConfig.json";
+    })(OtherLevelConfig || (OtherLevelConfig = {}));
+
+    class OtherLevelConfigProxy extends BaseConfigDataProxy {
+        constructor() { super(); }
+        static get instance() {
+            if (this._instance == null) {
+                this._instance = new OtherLevelConfigProxy();
+            }
+            return this._instance;
+        }
+        initData() {
+            this.m_dataList = OtherLevelConfig.dataList;
+        }
+        byIdGetData(_id) {
+            return this.m_dataList.find((item) => {
+                return item.id == _id;
+            });
+        }
+        byNameGetData(_name) {
+            return this.m_dataList.find((item) => {
+                return item.name == _name;
+            });
+        }
+    }
+
     class FrameLevelConfig {
         static byLevelIdGetLevelData(_id) {
             let _levelConfigData = LevelConfigProxy.instance.byIdGetData(_id);
-            let _sceneName = _levelConfigData.sceneName;
-            let _sceneOtherRes = _levelConfigData.sceneOtherRes;
+            return this.getLevelData(_id.toString(), _levelConfigData.sceneName, _levelConfigData.sceneOtherRes);
+        }
+        static byLevelNameGetOtherLevelData(_name) {
+            let _levelConfigData = OtherLevelConfigProxy.instance.byNameGetData(_name);
+            return this.getLevelData(_name, _levelConfigData.sceneName, _levelConfigData.sceneOtherRes);
+        }
+        static getLevelData(_sceneKey, _sceneName, _sceneOtherRes) {
             _sceneName.replace(/\s+/g, '').replace(/^,+/, '').replace(/,+$/, '').replace(/,+/g, ',');
             _sceneOtherRes.replace(/\s+/g, '').replace(/^,+/, '').replace(/,+$/, '').replace(/,+/g, ',');
             return {
+                sceneKey: _sceneKey,
                 sceneName: _sceneName.split(','),
                 sceneOtherRes: _sceneOtherRes.split(','),
             };
@@ -618,22 +650,37 @@
             if (!lvConfig) {
                 console.log(...ConsoleEx.packError("不存在此关卡->", id));
             }
-            let sceneName = lvConfig.sceneName;
-            let _sceneName_ = lvConfig.sceneOtherRes;
-            if (!this._scenes[id]) {
-                let sceneNodes = {};
-                let sceneNodes_ = [];
-                for (let _i in this._levelConfig) {
-                    if (sceneName.findIndex((item) => { return item == _i; }) != -1) {
-                        sceneNodes[_i] = this._levelConfig[_i];
-                    }
-                    if (_sceneName_.findIndex((item) => { return item == _i; }) != -1) {
-                        sceneNodes_.push(this._levelConfig[_i]);
-                    }
-                }
-                this._scenes[id] = new Scene(sceneNodes, sceneNodes_, id);
+            let _key = id + '$ID';
+            if (!this._scenes[_key]) {
+                this._scenes[_key] = this.getSceneByData(lvConfig);
             }
-            return this._scenes[id];
+            return this._scenes[_key];
+        }
+        getOtherSceneByName(_name) {
+            let lvConfig = FrameLevelConfig.byLevelNameGetOtherLevelData(_name);
+            if (!lvConfig) {
+                console.log(...ConsoleEx.packError("不存在此关卡->", _name));
+            }
+            let _key = _name + '$NAME';
+            if (!this._scenes[_key]) {
+                this._scenes[_key] = this.getSceneByData(lvConfig);
+            }
+            return this._scenes[_key];
+        }
+        getSceneByData(_lvConfig) {
+            let sceneName = _lvConfig.sceneName;
+            let _sceneName_ = _lvConfig.sceneOtherRes;
+            let sceneNodes = {};
+            let sceneNodes_ = [];
+            for (let _i in this._levelConfig) {
+                if (sceneName.findIndex((item) => { return item == _i; }) != -1) {
+                    sceneNodes[_i] = this._levelConfig[_i];
+                }
+                if (_sceneName_.findIndex((item) => { return item == _i; }) != -1) {
+                    sceneNodes_.push(this._levelConfig[_i]);
+                }
+            }
+            return new Scene(sceneNodes, sceneNodes_, _lvConfig.sceneKey);
         }
         getLvResName(id) {
             return this.getSceneByLv(id).scenePrefabResName();
@@ -669,7 +716,21 @@
         }
         allotMediator() {
         }
+        AllotOtherScenePre(_sceneName, _prefabs) {
+            this.allotOtherScenePrefab(_sceneName, _prefabs);
+            this.allotOtherSceneMediator(_sceneName);
+        }
+        allotOtherScenePrefab(_sceneName, _prefabs) {
+        }
+        allotOtherSceneMediator(_sceneName) {
+        }
     }
+
+    var EProcessor;
+    (function (EProcessor) {
+        EProcessor["CameraPro"] = "EProcessor_CameraPro";
+        EProcessor["HeightFogCubePro"] = "EProcessor_HeightFogCubePro";
+    })(EProcessor || (EProcessor = {}));
 
     class ProScriptLink {
         constructor(_plantTypeof) {
@@ -1253,9 +1314,11 @@
         EEventScene["LookAd"] = "_EEventScene_LookAd";
         EEventScene["UnLookAd"] = "_EEventScene_UnLookAd";
         EEventScene["GameLevelsBuild"] = "_EEventScene_GameLevelsBuild";
+        EEventScene["GameOtherLevelsBuild"] = "_EEventScene_GameOtherLevelsBuild";
         EEventScene["GameLevelsBuildBefore"] = "_EEventScene_GameLevelsBuildBefore";
         EEventScene["GameLevelsOnBuild"] = "_EEventScene_GameLevelsOnBuild";
         EEventScene["GameLevelsDelete"] = "_EEventScene_GameLevelsDelete";
+        EEventScene["GameOtherLevelsDelete"] = "_EEventScene_GameOtherLevelsDelete";
         EEventScene["GameStart"] = "_EEventScene_Start";
         EEventScene["GameSuspend"] = "_EEventScene_GameSuspend";
         EEventScene["GameGoOn"] = "_EEventScene_GameGoOn";
@@ -2049,12 +2112,6 @@
             super(...arguments);
             this.ifAddProStampScript = false;
         }
-        retainVidicon() {
-            if (!this.m_retainNode) {
-                this.m_retainNode = new Laya.Sprite3D();
-            }
-            this.m_retainNode.addChild(this.m_cameraNode);
-        }
         sprInit() {
             if (!this.m_camera) {
                 if (!this.m_sprList[0]) {
@@ -2071,8 +2128,8 @@
                 this.m_camera.transform.localRotationEuler = new Laya.Vector3(0, -180, 0);
                 this.m_Scr = this.addScript(this.m_camera, CameraScr);
                 this.m_Scr.cameraNode = this.m_cameraNode;
+                EnvironmentManager.instance.s3d.addChild(this.m_cameraNode);
             }
-            EnvironmentManager.instance.s3d.addChild(this.m_cameraNode);
             this.m_cameraNode.transform.position = this.m_rootPos;
             this.m_cameraNode.transform.rotationEuler = new Laya.Vector3(this.m_rootAng.x, this.m_rootAng.y, 0);
             this.m_Scr.init();
@@ -2155,6 +2212,10 @@
         }
         allotMediator() {
         }
+        allotOtherScenePrefab(_sceneName, _prefabs) {
+        }
+        allotOtherSceneMediator(_sceneName) {
+        }
     }
 
     var EEventUI;
@@ -2182,6 +2243,7 @@
     class CustomsManager {
         constructor() {
             this.m_ifInit = false;
+            this.m_otherScene = {};
         }
         static get instance() {
             if (!this.m_instance) {
@@ -2189,16 +2251,25 @@
             }
             return this.m_instance;
         }
+        get ifSceneBuild() {
+            return this.m_ifSceneBuild;
+        }
         init() {
-            this.m_ifSceneLoading = false;
+            this.m_ifSceneBuild = false;
             GameDataSave.initCustoms(LevelConfigProxy.instance.getLevelNumber());
             MesManager.instance.on3D(EEventScene.GameLevelsBuild, this, this.gameLevelsBuild);
             MesManager.instance.on3D(EEventScene.GameLevelsDelete, this, this.gameLevelsDelete);
+            MesManager.instance.on3D(EEventScene.GameOtherLevelsBuild, this, this.gameOtherLevelsBuild);
+            MesManager.instance.on3D(EEventScene.GameOtherLevelsDelete, this, this.gameOtherLevelsDelete);
         }
         initLevelBuild() {
             this.gameLevelsBuild();
         }
-        gameLevelsBuild() {
+        gameLevelsBuild(_handler) {
+            if (this.m_ifSceneBuild) {
+                console.warn('有场景正在构建！');
+                return;
+            }
             let lvId;
             if (this.m_ifInit) {
                 lvId = GameDataSave.gameData.onCustoms;
@@ -2209,11 +2280,11 @@
             }
             let scene = SceneManager.instance.getSceneByLv(lvId);
             this.m_scene = scene;
-            this.m_ifSceneLoading = true;
+            this.m_ifSceneBuild = true;
             MesManager.instance.event3D(EEventScene.GameLevelsBuildBefore);
             MesManager.instance.eventUI(EEventUI.SceneGameCustomsLoading, [-1]);
-            scene.buildScene(Laya.Handler.create(this, this.customsProgress, null, false)).then(() => {
-                this.m_ifSceneLoading = false;
+            scene.buildScene(Laya.Handler.create(this, this.customsProgress, null, false)).then((_sceneSpr) => {
+                this.m_ifSceneBuild = false;
                 EnvironmentManager.instance.setEnvironment(this.m_scene.scene);
                 ProManager.instance.AllotPre(scene.prefabs);
                 ConManager.addScrCon(scene.scene);
@@ -2225,12 +2296,15 @@
                 }
                 this.onCustomsInit(lvId);
                 MesManager.instance.eventUI(EEventUI.SceneGameCustomsInit);
+                if (_handler) {
+                    _handler.run();
+                }
             });
         }
         onCustomsInit(_lvId) {
         }
         customsProgress(_number) {
-            if (!this.m_ifSceneLoading)
+            if (!this.m_ifSceneBuild)
                 return;
             if (typeof _number == 'undefined') {
                 _number = 1;
@@ -2238,12 +2312,39 @@
             MesManager.instance.eventUI(EEventUI.SceneGameCustomsLoading, [_number * 100]);
         }
         gameLevelsDelete() {
-            ProManager.instance.getPro(EProcessor.CameraPro).retainVidicon();
             if (this.m_scene && this.m_scene.scene) {
                 this.m_scene.clearScene();
             }
             this.m_scene = null;
             MesManager.instance.eventUI(EEventUI.SceneGameCustomDelete);
+        }
+        gameOtherLevelsBuild(_name, _handler) {
+            if (this.m_ifSceneBuild) {
+                console.warn('有场景正在构建！');
+                return;
+            }
+            let _scene = SceneManager.instance.getOtherSceneByName(_name);
+            this.m_otherScene[_name] = _scene;
+            this.m_ifSceneBuild = true;
+            MesManager.instance.event3D(EEventScene.GameLevelsBuildBefore);
+            MesManager.instance.eventUI(EEventUI.SceneGameCustomsLoading, [-1]);
+            _scene.buildScene(Laya.Handler.create(this, this.customsProgress, null, false)).then((_sceneSpr) => {
+                this.m_ifSceneBuild = false;
+                ProManager.instance.AllotOtherScenePre(_name, _scene.prefabs);
+                if (_handler) {
+                    _handler.run();
+                }
+            });
+        }
+        gameOtherLevelsDelete(_name) {
+            let _scene = this.m_otherScene[_name];
+            if (_scene) {
+                _scene.clearScene();
+                this.m_otherScene[_name] = undefined;
+            }
+            else {
+                console.warn('试图清除不存在的场景！');
+            }
         }
     }
 
@@ -6731,6 +6832,7 @@
             ConfigManager.AddConfig(GameConst);
             ConfigManager.AddConfig(GameStateConst);
             ConfigManager.AddConfig(LevelConfig);
+            ConfigManager.AddConfig(OtherLevelConfig);
             ConfigManager.AddConfig(LevelPropConfig);
             ConfigManager.AddConfig(LightingConst);
             ConfigManager.AddConfig(OtherConst);

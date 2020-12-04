@@ -1,5 +1,6 @@
 import BasePrefabPro from './pro/BasePrefabPro';
 import { EProcessor } from '../c_Enum/EProcessor';
+import { EOtherLevelName } from '../../Enum/EOtherLevelName';
 /**
  * 加工者管理类基类
  */
@@ -56,6 +57,27 @@ export default class RootProManager {
 
     //分配调度者
     protected allotMediator() {
+        //
+    }
+
+    /**
+     * 分配其他场景中的所有精灵
+     * @param _prefabs 精灵列表
+     */
+    public AllotOtherScenePre(_sceneName: EOtherLevelName, _prefabs: ProManagerSprList) {
+        //分配预制体
+        this.allotOtherScenePrefab(_sceneName, _prefabs);
+        //分配调度者
+        this.allotOtherSceneMediator(_sceneName);
+    }
+
+    //分配其他关卡预制体
+    protected allotOtherScenePrefab(_sceneName: EOtherLevelName, _prefabs: ProManagerSprList) {
+        //
+    }
+
+    //分配其他关卡调度者
+    protected allotOtherSceneMediator(_sceneName: EOtherLevelName) {
         //
     }
 }

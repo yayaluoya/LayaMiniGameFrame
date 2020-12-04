@@ -12,6 +12,7 @@ import { EEventScene } from '../EventEnum/EEventScene';
 import { EEventUI } from '../EventEnum/EEventUI';
 import GameDataSave from '../GameData/GameDataSave';
 import LevelConfigProxy from '../ConfigProxy/LevelConfigProxy';
+import { EOtherLevelName } from '../Enum/EOtherLevelName';
 /**
  * 关卡管理器
  * 3D游戏实际从这里开始，沟通外界创建和销毁场景
@@ -34,19 +35,28 @@ export default class CustomsManager implements IRootManager {
     //记录场景
     private m_scene: Scene;
     //场景是否在加载
-    private m_ifSceneLoading: boolean;
+    private m_ifSceneBuild: boolean;
+    //其他场景缓存
+    private m_otherScene: { [index: string]: Scene } = {};
+
+    /** 场景是否在加载 */
+    public get ifSceneBuild(): boolean {
+        return this.m_ifSceneBuild;
+    }
 
     /**
      * 初始化,场景的一切都从这里开始
      */
     public init() {
         //
-        this.m_ifSceneLoading = false;
+        this.m_ifSceneBuild = false;
         //初始化关卡数据
         GameDataSave.initCustoms(LevelConfigProxy.instance.getLevelNumber());
         //监听事件
         MesManager.instance.on3D(EEventScene.GameLevelsBuild, this, this.gameLevelsBuild);
         MesManager.instance.on3D(EEventScene.GameLevelsDelete, this, this.gameLevelsDelete);
+        MesManager.instance.on3D(EEventScene.GameOtherLevelsBuild, this, this.gameOtherLevelsBuild);
+        MesManager.instance.on3D(EEventScene.GameOtherLevelsDelete, this, this.gameOtherLevelsDelete);
     }
 
     /**
@@ -58,9 +68,14 @@ export default class CustomsManager implements IRootManager {
     }
 
     /**
-     * 游戏场景初始化
+     * 游戏主场景构建
      */
-    private gameLevelsBuild() {
+    private gameLevelsBuild(_handler?: Laya.Handler) {
+        //判断是否有场景在构建
+        if (this.m_ifSceneBuild) {
+            console.warn('有场景正在构建！');
+            return;
+        }
         //
         let lvId: number;
         //判断游戏是否已经初始化
@@ -75,13 +90,13 @@ export default class CustomsManager implements IRootManager {
         let scene = SceneManager.instance.getSceneByLv(lvId);
         this.m_scene = scene;
         //构建场景
-        this.m_ifSceneLoading = true;//开始加载
+        this.m_ifSceneBuild = true;//开始加载
         //显示loading页面
         MesManager.instance.event3D(EEventScene.GameLevelsBuildBefore);
         MesManager.instance.eventUI(EEventUI.SceneGameCustomsLoading, [-1]);
-        scene.buildScene(Laya.Handler.create(this, this.customsProgress, null, false)).then(() => {
+        scene.buildScene(Laya.Handler.create(this, this.customsProgress, null, false)).then((_sceneSpr: Laya.Sprite3D) => {
             //
-            this.m_ifSceneLoading = false;//加载结束
+            this.m_ifSceneBuild = false;//加载结束
             //设置环境管理器
             EnvironmentManager.instance.setEnvironment(this.m_scene.scene);
             //分配预制体到预制体工厂
@@ -99,6 +114,10 @@ export default class CustomsManager implements IRootManager {
             this.onCustomsInit(lvId);
             //显示隐藏页面
             MesManager.instance.eventUI(EEventUI.SceneGameCustomsInit);
+            //判断是否有构建完成回调
+            if (_handler) {
+                _handler.run();
+            }
         });
     }
 
@@ -113,7 +132,7 @@ export default class CustomsManager implements IRootManager {
      */
     private customsProgress(_number: number) {
         //判断是否在加载
-        if (!this.m_ifSceneLoading) return;
+        if (!this.m_ifSceneBuild) return;
         if (typeof _number == 'undefined') {
             _number = 1;
         }
@@ -123,8 +142,6 @@ export default class CustomsManager implements IRootManager {
 
     //游戏结束销毁关卡
     private gameLevelsDelete() {
-        //保留摄像机
-        ProManager.instance.getPro<CameraPro>(EProcessor.CameraPro).retainVidicon();
         //销毁上一个场景
         if (this.m_scene && this.m_scene.scene) {
             this.m_scene.clearScene();
@@ -133,5 +150,47 @@ export default class CustomsManager implements IRootManager {
         this.m_scene = null;
         //抛出事件
         MesManager.instance.eventUI(EEventUI.SceneGameCustomDelete);
+    }
+
+    /**
+     * 游戏其他场景构建
+     */
+    private gameOtherLevelsBuild(_name: EOtherLevelName, _handler?: Laya.Handler) {
+        //判断是否有场景在构建
+        if (this.m_ifSceneBuild) {
+            console.warn('有场景正在构建！');
+            return;
+        }
+        let _scene: Scene = SceneManager.instance.getOtherSceneByName(_name);
+        this.m_otherScene[_name] = _scene;
+        //构建场景
+        this.m_ifSceneBuild = true;//开始加载
+        //显示loading页面
+        MesManager.instance.event3D(EEventScene.GameLevelsBuildBefore);
+        MesManager.instance.eventUI(EEventUI.SceneGameCustomsLoading, [-1]);
+        _scene.buildScene(Laya.Handler.create(this, this.customsProgress, null, false)).then((_sceneSpr: Laya.Sprite3D) => {
+            //
+            this.m_ifSceneBuild = false;//加载结束
+            //分配预制体
+            ProManager.instance.AllotOtherScenePre(_name, _scene.prefabs);
+            //判断是否有构建完成回调
+            if (_handler) {
+                _handler.run();
+            }
+        });
+    }
+
+    /**
+     * 游戏其他场景销毁
+     */
+    private gameOtherLevelsDelete(_name: EOtherLevelName) {
+        let _scene = this.m_otherScene[_name];
+        if (_scene) {
+            _scene.clearScene();
+            this.m_otherScene[_name] = undefined;
+            //其他操作
+        } else {
+            console.warn('试图清除不存在的场景！');
+        }
     }
 }
