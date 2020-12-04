@@ -1,8 +1,8 @@
-import FGuiData from "./FGuiData";
 import { ESpecialUIIndex } from "./ESpecialUIIndex";
 import { EUILayer } from "./EUILayer";
 import FGuiRootManager from "./FGuiRootManager";
 import IUIClass from './UITool';
+import RootUIConst from "./RootUIConst";
 
 /**
  * UI调度者基类(用来控制UI界面)
@@ -16,8 +16,13 @@ import IUIClass from './UITool';
  * 附属UI会在自身UI显示时一起显示，隐藏时一起隐藏， 
  */
 export default class BaseUIMediator<T extends fgui.GComponent> {
-    protected _scaleSmall: number = 0.8;
-    protected _tweenTime: number = 180;
+    /** 距离顶部的距离, 会加上一个默认的值 */
+    protected top: number = 0;
+    /** 距离底部的距离, 会加上一个默认的值 */
+    protected bottom: number = 0;
+
+    /** 是否时刻更新UI大小 */
+    protected _ifUpdateUISize: boolean = true;
 
     /** 当前ui实例 */
     public get ui(): T {
@@ -74,11 +79,6 @@ export default class BaseUIMediator<T extends fgui.GComponent> {
 
     //
 
-    /**
-     * 是否适配顶部刘海屏
-     */
-    protected _needFilScreen: boolean = false;
-
     public owner: any;
 
     /** 默认底部高度 */
@@ -104,15 +104,12 @@ export default class BaseUIMediator<T extends fgui.GComponent> {
     public get keyId(): string {
         return this.m_keyId;
     }
-
-    protected _openParam: any;
-
-    protected _sortOrder: number = 10;
-
     //
     constructor() {
         //设置一个唯一的序号
         this.m_serialNumber = BaseUIMediatorGlobalSerialNumber.GlobalSerialNumber;
+        //更新UI
+        Laya.stage.on(Laya.Event.RESIZE, this, this.UpdateUI);
     }
 
     /**
@@ -148,9 +145,8 @@ export default class BaseUIMediator<T extends fgui.GComponent> {
 
     /**
      * 显示UI
-     * @param obj 显示时带上的参数
      */
-    public Show(obj: any = null) {
+    public Show() {
         //判断是否已经显示过了
         if (this._isShow) {
             //直接设置层级
@@ -161,13 +157,10 @@ export default class BaseUIMediator<T extends fgui.GComponent> {
         this.OnshowBefore();
         //
         this._isShow = true;
-        this._openParam = obj;
         //判断是不是真的删除了这个UI(为null或者被删除)
         if (!this._ui || (this._ui && this._ui.isDisposed)) {
-            let uiData = new FGuiData();
-            uiData.needFitScreen = this._needFilScreen;
             //添加ui
-            this._ui = FGuiRootManager.AddUI(this._classDefine, uiData, this._layer) as T;
+            this._ui = FGuiRootManager.AddUI(this._classDefine, this._layer) as T;
             //判断是否是单页面
             if (this._layer == EUILayer.OneUI) {
                 FGuiRootManager.oneUIs.push(this);
@@ -179,7 +172,8 @@ export default class BaseUIMediator<T extends fgui.GComponent> {
         this.setUIToTopShow();
         //显示结束回调
         this._OnShow();
-        this._ui.sortingOrder = this._sortOrder;
+        //设置尺寸和位置
+        this.UpdateUI();
         //播放动画
         if (this._ui[ESpecialUIIndex.anim_enter]) {
             let anim = this._ui[ESpecialUIIndex.anim_enter] as fgui.Transition;
@@ -193,6 +187,20 @@ export default class BaseUIMediator<T extends fgui.GComponent> {
     //播放动画完成
     private _CallEnterAnimEnd() {
         this.OnEnterAnimEnd();
+    }
+
+    //更新UI
+    private UpdateUI() {
+        if (!this._ifUpdateUISize) { return; }
+        if (!this._isShow) { return; }
+        if (!this._ui) { return; }
+        if (this._ui.isDisposed) { return; }
+        //
+        let _width: number = fgui.GRoot.inst.width;
+        let _height: number = fgui.GRoot.inst.height - this.top - this.bottom - RootUIConst.top - RootUIConst.bottom;
+        //
+        this._ui.setSize(_width, _height);
+        this._ui.y = this.top;
     }
 
     /**

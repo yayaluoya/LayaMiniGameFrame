@@ -1,20 +1,12 @@
-import FGuiData from "./FGuiData";
 import BaseUIMediator from "./BaseUIMediator";
-import Dictionary from '../../Utils/Dictionary';
 import { EUILayer } from "./EUILayer";
 import IUIClass from './UITool';
 import ConsoleEx from "../../Console/ConsoleEx";
+import RootUIConst from "./RootUIConst";
 /**
  * FGUI根管理器
  */
 export default class FGuiRootManager {
-    /** 顶部距离 */
-    public static top: number = 0;
-    /** 底部距离 */
-    public static bottom: number = 0;
-
-    //缓存
-    private static _cacheMap: Dictionary<string, FGuiData> = new Dictionary<string, FGuiData>();
     //UI根节点列表
     public static LayerList: { [index: string]: fgui.GComponent };
     //单UI列表
@@ -48,12 +40,10 @@ export default class FGuiRootManager {
     /**
      * 创建一个UI并添加到对应层级
      * @param uiType UI类型，必须包含一个初始化实例的方法
-     * @param param FGUI数据
      * @param layer 层级类型
      */
     public static AddUI(
         uiType: IUIClass,
-        param: FGuiData = null,
         layer: EUILayer,
     ): fgui.GObject {
         let ui = uiType.createInstance() as fgui.GObject;
@@ -70,19 +60,10 @@ export default class FGuiRootManager {
         }
         //添加到目标层级
         this.getLayer(layer).addChild(ui);
-        if (param == null) {
-            param = new FGuiData();
-        }
-        if (param == null || !param.needFitScreen) {
-            ui.setSize(fgui.GRoot.inst.width, fgui.GRoot.inst.height);
-        } else {
-            ui.setSize(fgui.GRoot.inst.width, fgui.GRoot.inst.height - this.top - this.bottom);
-            ui.y = this.top;
-        }
-        //设置缓存
-        this._cacheMap.set(ui.constructor.name, param);
         //
         window[ui.constructor.name] = ui;
+        //设置尺寸
+        ui.setSize(fgui.GRoot.inst.width, fgui.GRoot.inst.height - RootUIConst.top - RootUIConst.bottom);
         //
         return ui;
     }
@@ -114,15 +95,14 @@ export default class FGuiRootManager {
         let setHeight = Laya.stage.height;
         fgui.GRoot.inst.setSize(setWidth, setHeight);
         let childCount = fgui.GRoot.inst.numChildren;
+        let _width: number = 0;
+        let _height: number = 0;
         for (let i = 0; i < childCount; ++i) {
             let ui = fgui.GRoot.inst.getChildAt(i);
-            let getData = this._cacheMap.get(ui.constructor.name);
-            if (getData == null || !getData.needFitScreen) {
-                ui.setSize(fgui.GRoot.inst.width, fgui.GRoot.inst.height);
-            } else {
-                ui.setSize(fgui.GRoot.inst.width, fgui.GRoot.inst.height - this.top - this.bottom);
-                ui.y = this.top;
-            }
+            _width = fgui.GRoot.inst.width;
+            _height = fgui.GRoot.inst.height - RootUIConst.top - RootUIConst.bottom;
+            ui.setSize(_width, _height);
+            ui.y = RootUIConst.top;
         }
     }
 

@@ -63,6 +63,17 @@ export default class AddOimoPhysics {
      * @param _physicsSpr 获取物理的节点，默认是添加物理的节点
      */
     public static addBoxOimo(_spr: Laya.Sprite3D, _physicsSpr: Laya.Sprite3D = _spr, _isMove: boolean = true, _update: boolean = true, _reverseUpdate: boolean = false, _isKinematic: boolean = false, _density: number = 10, _ifKeepMesh: boolean = false, _diaphaneity: number = 1): OimoItemScr {
+        //
+        return this.addBoxOimoByParam(_spr, _physicsSpr.transform.rotationEuler, _physicsSpr.transform.getWorldLossyScale(), _isMove, _update, _reverseUpdate, _isKinematic, _density, _ifKeepMesh, _diaphaneity);
+    }
+
+    /**
+     * 根据自定义参数添加BOX物理
+     * @param _spr 当前精灵
+     * @param _rotationEuler 旋转值
+     * @param _worldLossyScale 世界缩放值
+     */
+    public static addBoxOimoByParam(_spr: Laya.Sprite3D, _rotationEuler: Laya.Vector3, _worldLossyScale: Laya.Vector3, _isMove: boolean = true, _update: boolean = true, _reverseUpdate: boolean = false, _isKinematic: boolean = false, _density: number = 10, _ifKeepMesh: boolean = false, _diaphaneity: number = 1): OimoItemScr {
         //添加oimo
         let ot: OimoItemScr;
         //检测物体是否有该组件
@@ -70,10 +81,10 @@ export default class AddOimoPhysics {
         if (!ot) {
             ot = _spr.addComponent(OimoItemScr) as OimoItemScr;
         }
-        let shape: OimoBaseShape = new OimoBoxShape(ValueConst.zeroV3, _physicsSpr.transform.rotationEuler, _physicsSpr.transform.getWorldLossyScale());
-        ot.rig = OimoManager.instance.CreateCompoundRig(_physicsSpr.transform, [shape], _isMove, _update, _reverseUpdate, _isKinematic, _density);
+        let shape: OimoBaseShape = new OimoBoxShape(ValueConst.zeroV3, _rotationEuler, _worldLossyScale);
+        ot.rig = OimoManager.instance.CreateCompoundRig(_spr.transform, [shape], _isMove, _update, _reverseUpdate, _isKinematic, _density);
         //设置物理网格
-        CommonPhysicsUtils.setPhysicsMesh(_physicsSpr, _ifKeepMesh, _diaphaneity);
+        CommonPhysicsUtils.setPhysicsMesh(_spr, _ifKeepMesh, _diaphaneity);
         //返回数据
         return ot;
     }

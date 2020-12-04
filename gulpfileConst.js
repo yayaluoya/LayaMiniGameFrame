@@ -19,13 +19,13 @@ let gulpfileConst = {
     indexPage: './bin/index.html',
 
     /** 是否自动刷新 */
-    ifAutoUpdate: true,
+    ifAutoUpdate: false,
 
     /** 监听文件列表 */
     watchFileList: ['src/**'],
 
     /** 监听文件延迟时间 */
-    watchFileDelay: 1000,
+    watchFileDelay: 3000,
 
     //主页
     homepage: '/bin/index.html',

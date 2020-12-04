@@ -2247,12 +2247,6 @@
         }
     }
 
-    class FGuiData {
-        constructor() {
-            this.needFitScreen = false;
-        }
-    }
-
     var ESpecialUIIndex;
     (function (ESpecialUIIndex) {
         ESpecialUIIndex["bottom_group"] = "m_bottom_group";
@@ -2275,6 +2269,15 @@
         EUILayer["Loading"] = "EUILayer_Loading";
     })(EUILayer || (EUILayer = {}));
 
+    class RootUIConst {
+        static get top() {
+            return 0;
+        }
+        static get bottom() {
+            return 0;
+        }
+    }
+
     class FGuiRootManager {
         static getLayer(layerType) {
             return this.LayerList[layerType];
@@ -2289,7 +2292,7 @@
             this.UpdateAllUI();
             Laya.stage.on(Laya.Event.RESIZE, this, this.UpdateAllUI);
         }
-        static AddUI(uiType, param = null, layer) {
+        static AddUI(uiType, layer) {
             let ui = uiType.createInstance();
             if (layer == EUILayer.OneUI) {
                 let oneUIs = FGuiRootManager.oneUIs;
@@ -2301,18 +2304,8 @@
                 FGuiRootManager.oneUIs = [];
             }
             this.getLayer(layer).addChild(ui);
-            if (param == null) {
-                param = new FGuiData();
-            }
-            if (param == null || !param.needFitScreen) {
-                ui.setSize(fgui.GRoot.inst.width, fgui.GRoot.inst.height);
-            }
-            else {
-                ui.setSize(fgui.GRoot.inst.width, fgui.GRoot.inst.height - this.top - this.bottom);
-                ui.y = this.top;
-            }
-            this._cacheMap.set(ui.constructor.name, param);
             window[ui.constructor.name] = ui;
+            ui.setSize(fgui.GRoot.inst.width, fgui.GRoot.inst.height - RootUIConst.top - RootUIConst.bottom);
             return ui;
         }
         static setUIToTopShow(_ui, _layer) {
@@ -2330,16 +2323,14 @@
             let setHeight = Laya.stage.height;
             fgui.GRoot.inst.setSize(setWidth, setHeight);
             let childCount = fgui.GRoot.inst.numChildren;
+            let _width = 0;
+            let _height = 0;
             for (let i = 0; i < childCount; ++i) {
                 let ui = fgui.GRoot.inst.getChildAt(i);
-                let getData = this._cacheMap.get(ui.constructor.name);
-                if (getData == null || !getData.needFitScreen) {
-                    ui.setSize(fgui.GRoot.inst.width, fgui.GRoot.inst.height);
-                }
-                else {
-                    ui.setSize(fgui.GRoot.inst.width, fgui.GRoot.inst.height - this.top - this.bottom);
-                    ui.y = this.top;
-                }
+                _width = fgui.GRoot.inst.width;
+                _height = fgui.GRoot.inst.height - RootUIConst.top - RootUIConst.bottom;
+                ui.setSize(_width, _height);
+                ui.y = RootUIConst.top;
             }
         }
         static CheckIn(ui, x, y) {
@@ -2349,23 +2340,20 @@
             return false;
         }
     }
-    FGuiRootManager.top = 0;
-    FGuiRootManager.bottom = 0;
-    FGuiRootManager._cacheMap = new Dictionary();
     FGuiRootManager.oneUIs = [];
 
     class BaseUIMediator {
         constructor() {
-            this._scaleSmall = 0.8;
-            this._tweenTime = 180;
+            this.top = 0;
+            this.bottom = 0;
+            this._ifUpdateUISize = true;
             this._layer = EUILayer.Panel;
             this._ifBelongUIMediator = false;
             this._belongDownUIMediator = [];
             this._belongUpUIMediator = [];
-            this._needFilScreen = false;
             this._isShow = false;
-            this._sortOrder = 10;
             this.m_serialNumber = BaseUIMediatorGlobalSerialNumber.GlobalSerialNumber;
+            Laya.stage.on(Laya.Event.RESIZE, this, this.UpdateUI);
         }
         get ui() {
             return this._ui;
@@ -2417,18 +2405,15 @@
                 FGuiRootManager.setUIToTopShow(this._ui, this._layer);
             }
         }
-        Show(obj = null) {
+        Show() {
             if (this._isShow) {
                 this.setUIToTopShow();
                 return;
             }
             this.OnshowBefore();
             this._isShow = true;
-            this._openParam = obj;
             if (!this._ui || (this._ui && this._ui.isDisposed)) {
-                let uiData = new FGuiData();
-                uiData.needFitScreen = this._needFilScreen;
-                this._ui = FGuiRootManager.AddUI(this._classDefine, uiData, this._layer);
+                this._ui = FGuiRootManager.AddUI(this._classDefine, this._layer);
                 if (this._layer == EUILayer.OneUI) {
                     FGuiRootManager.oneUIs.push(this);
                 }
@@ -2438,7 +2423,7 @@
             }
             this.setUIToTopShow();
             this._OnShow();
-            this._ui.sortingOrder = this._sortOrder;
+            this.UpdateUI();
             if (this._ui[ESpecialUIIndex.anim_enter]) {
                 let anim = this._ui[ESpecialUIIndex.anim_enter];
                 anim.play(Laya.Handler.create(this, this._CallEnterAnimEnd));
@@ -2449,6 +2434,24 @@
         }
         _CallEnterAnimEnd() {
             this.OnEnterAnimEnd();
+        }
+        UpdateUI() {
+            if (!this._ifUpdateUISize) {
+                return;
+            }
+            if (!this._isShow) {
+                return;
+            }
+            if (!this._ui) {
+                return;
+            }
+            if (this._ui.isDisposed) {
+                return;
+            }
+            let _width = fgui.GRoot.inst.width;
+            let _height = fgui.GRoot.inst.height - this.top - this.bottom - RootUIConst.top - RootUIConst.bottom;
+            this._ui.setSize(_width, _height);
+            this._ui.y = this.top;
         }
         OnEnterAnimEnd() { }
         OnshowBefore() { }
@@ -6701,11 +6704,11 @@
             ];
         }
         _OnInitEmptyScreen() {
-            this._emptyScreenShowUI = FGuiRootManager.AddUI(FGUI_EmptyScreen, new FGuiData, EUILayer.Main);
+            this._emptyScreenShowUI = FGuiRootManager.AddUI(FGUI_EmptyScreen, EUILayer.Main);
         }
         _OnInitUILoaded() {
             this._emptyScreenShowUI.dispose();
-            this._loadShowUI = FGuiRootManager.AddUI(FGUI_splash, new FGuiData, EUILayer.Loading);
+            this._loadShowUI = FGuiRootManager.AddUI(FGUI_splash, EUILayer.Loading);
             this._loadShowUI.sortingOrder = Number.MAX_SAFE_INTEGER;
             this._loadShowUI.m_text_explain.text = MainConfig.GameWhatTeam;
             this._loadShowUI.m_text_logo.text = MainConfig.GameName_;
