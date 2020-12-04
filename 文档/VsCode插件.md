@@ -69,3 +69,23 @@
 
 # Search/Translate Hero
     一款让您在代码中进行搜索或者翻译的 VS Code 插件。
+
+# background
+    一个简单的工具，使您的vscode的背景看起来更好!
+    "background.customImages": [
+        "D:/图片/壁纸/静态壁纸/www.bidianer.com990054.jpg",
+        //图片地址
+    ],
+    "background.style": {
+        "content": "''",
+        "pointer-events": "none",
+        "position": "absolute", //图片位置
+        "width": "100%",
+        "height": "120%",
+        "z-index": "99999",
+        "background.repeat": "repeat-Y",
+        "background-size": "cover", //图片大小
+        "opacity": 0.03 //透明度
+    },
+    "background.useFront": true,
+    "background.useDefault": false, //是否使用默认图片
