@@ -6,11 +6,11 @@ export enum EEventScene {
     LookAd = '_EEventScene_LookAd',//看广告
     UnLookAd = '_EEventScene_UnLookAd',//看完广告
     GameLevelsBuild = '_EEventScene_GameLevelsBuild',//游戏关卡构建事件
-    GameOtherLevelsBuild = '_EEventScene_GameOtherLevelsBuild',//游戏关卡构建事件
+    GameOtherLevelsBuild = '_EEventScene_GameOtherLevelsBuild',//游戏其他关卡构建事件
     GameLevelsBuildBefore = '_EEventScene_GameLevelsBuildBefore',//游戏关卡构建前事件
     GameLevelsOnBuild = '_EEventScene_GameLevelsOnBuild',//游戏关卡构建完成事件
     GameLevelsDelete = '_EEventScene_GameLevelsDelete',//游戏清除关卡事件
-    GameOtherLevelsDelete = '_EEventScene_GameOtherLevelsDelete',//游戏清除关卡事件
+    GameOtherLevelsDelete = '_EEventScene_GameOtherLevelsDelete',//游戏清除其他关卡事件
     GameStart = "_EEventScene_Start",//游戏开始
     GameSuspend = '_EEventScene_GameSuspend',//游戏暂停
     GameGoOn = '_EEventScene_GameGoOn',//游戏继续

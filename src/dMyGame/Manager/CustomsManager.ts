@@ -1,6 +1,4 @@
 import ConManager from '../Control/ConManager';
-import { EProcessor } from '../PrefabProcessor/c_Enum/EProcessor';
-import CameraPro from '../PrefabProcessor/d_SpecialPro/CameraPro';
 import Scene from '../../aTGame/3D/Scene';
 import SceneManager from '../../aTGame/3D/SceneManager';
 import { Const } from '../Common/Const';
@@ -171,6 +169,8 @@ export default class CustomsManager implements IRootManager {
         _scene.buildScene(Laya.Handler.create(this, this.customsProgress, null, false)).then((_sceneSpr: Laya.Sprite3D) => {
             //
             this.m_ifSceneBuild = false;//加载结束
+            //设置环境
+            EnvironmentManager.instance.setOtherEnvironment(_name, _sceneSpr);
             //分配预制体
             ProManager.instance.AllotOtherScenePre(_name, _scene.prefabs);
             //判断是否有构建完成回调

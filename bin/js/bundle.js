@@ -929,34 +929,6 @@
     ValueConst.m_zeroV3 = new Laya.Vector3(0, 0, 0);
     ValueConst.m_zeroV2 = new Laya.Vector2(0, 0);
 
-    var EnvironmentConfig;
-    (function (EnvironmentConfig) {
-        class config {
-        }
-        EnvironmentConfig.config = config;
-        EnvironmentConfig.path = "res/config/EnvironmentConfig.json";
-    })(EnvironmentConfig || (EnvironmentConfig = {}));
-
-    class EnvironmentProxy extends BaseConfigDataProxy {
-        constructor() {
-            super();
-        }
-        static get instance() {
-            if (this._instance == null) {
-                this._instance = new EnvironmentProxy();
-            }
-            return this._instance;
-        }
-        initData() {
-            this.m_dataList = EnvironmentConfig.dataList;
-        }
-        byLevelIdGetData(_id) {
-            return this.m_dataList.find((item) => {
-                return item.id == _id;
-            });
-        }
-    }
-
     class ColorEx {
         static RgbToHex(r, g, b) {
             var color = r << 16 | g << 8 | b;
@@ -2046,6 +2018,67 @@
         }
     }
 
+    var EnvironmentConfig;
+    (function (EnvironmentConfig) {
+        class config {
+        }
+        EnvironmentConfig.config = config;
+        EnvironmentConfig.path = "res/config/EnvironmentConfig.json";
+    })(EnvironmentConfig || (EnvironmentConfig = {}));
+
+    class EnvironmentConfigProxy extends BaseConfigDataProxy {
+        constructor() {
+            super();
+        }
+        static get instance() {
+            if (this._instance == null) {
+                this._instance = new EnvironmentConfigProxy();
+            }
+            return this._instance;
+        }
+        initData() {
+            this.m_dataList = EnvironmentConfig.dataList;
+        }
+        byLevelIdGetData(_id) {
+            return this.m_dataList.find((item) => {
+                return item.id == _id;
+            });
+        }
+    }
+
+    var OtherEnvironmentConfig;
+    (function (OtherEnvironmentConfig) {
+        class config {
+        }
+        OtherEnvironmentConfig.config = config;
+        OtherEnvironmentConfig.path = "res/config/OtherEnvironmentConfig.json";
+    })(OtherEnvironmentConfig || (OtherEnvironmentConfig = {}));
+
+    class OtherEnvironmentConfigProxy extends BaseConfigDataProxy {
+        constructor() {
+            super();
+        }
+        static get instance() {
+            if (this._instance == null) {
+                this._instance = new OtherEnvironmentConfigProxy();
+            }
+            return this._instance;
+        }
+        initData() {
+            this.m_dataList = OtherEnvironmentConfig.dataList;
+        }
+        byLevelIdGetData(_id) {
+            return this.m_dataList.find((item) => {
+                return item.id == _id;
+            });
+        }
+        byLevelNameGetData(_name) {
+            return this.m_dataList.find((item) => {
+                return item.name == _name;
+            });
+        }
+    }
+
     class EnvironmentManager {
         constructor() { }
         static get instance() {
@@ -2062,13 +2095,20 @@
         setEnvironment(_scene) {
             this.m_scene = _scene;
             let _lv = GameDataSave.gameData.onCustoms;
-            this.m_enviromentConfig = EnvironmentProxy.instance.byLevelIdGetData(_lv);
+            this.m_enviromentConfig = EnvironmentConfigProxy.instance.byLevelIdGetData(_lv);
             console.log('关卡环境配置参数->' + _lv + '->', this.m_enviromentConfig);
             this.setS3D(this.m_s3d);
-            this.setCamera(this.m_camera);
-            this.setLight(this.light);
-            this.addAmbient(this.s3d);
+            this.setCamera(this.m_camera, this.m_enviromentConfig.clear_color);
+            this.setLight(this.light, this.m_enviromentConfig.light_color, this.m_enviromentConfig.light_intensity);
+            this.addAmbient(this.s3d, this.m_enviromentConfig.ambient_color);
             MesManager.instance.on3D(EEventScene.GameLevelsDelete, this, this.gameLevelsDelete);
+        }
+        setOtherEnvironment(_name, _scene, _s3d = this.m_s3d, _camera = this.m_camera, _light = this.m_light) {
+            let _enviromentConfig = OtherEnvironmentConfigProxy.instance.byLevelNameGetData(_name);
+            console.log('关卡环境配置参数->' + _name + '->', _enviromentConfig);
+            this.setCamera(_camera, _enviromentConfig.clear_color);
+            this.setLight(_light, _enviromentConfig.light_color, _enviromentConfig.light_intensity);
+            this.addAmbient(_s3d, _enviromentConfig.ambient_color);
         }
         get s3d() {
             return this.m_s3d;
@@ -2087,21 +2127,25 @@
                 return;
             this.m_ifSetS3D = true;
         }
-        setCamera(_camera) {
-            _camera.clearColor = ColorEx.HexToV4(this.m_enviromentConfig.clear_color);
+        setCamera(_camera, _clear_color) {
+            _camera.clearColor = ColorEx.HexToV4(_clear_color);
         }
-        setLight(_light) {
-            _light.color = ColorEx.HexToV3(this.m_enviromentConfig.light_color);
-            _light.intensity = this.m_enviromentConfig.light_intensity;
+        setLight(_light, _color, _instensity) {
+            _light.color = ColorEx.HexToV3(_color);
+            _light.intensity = _instensity;
             _light.shadowMode = Laya.ShadowMode.SoftLow;
             _light.shadowResolution = 2500;
             _light.shadowNormalBias = 0.5;
         }
-        addAmbient(_s3d) {
+        addAmbient(_s3d, _color) {
             _s3d.ambientMode = Laya.AmbientMode.SolidColor;
-            _s3d.ambientColor = ColorEx.HexToV3(this.m_enviromentConfig.ambient_color);
+            _s3d.ambientColor = ColorEx.HexToV3(_color);
         }
-        addFog(_color) {
+        addFog(_scene, _color, _fogRange, _fogStart) {
+            _scene.enableFog = true;
+            _scene.fogColor = ColorEx.HexToV3(_color);
+            _scene.fogRange = _fogRange;
+            _scene.fogStart = _fogStart;
         }
         gameLevelsDelete() {
         }
@@ -2167,6 +2211,8 @@
 
     class _PrefabsPrefabName {
     }
+    _PrefabsPrefabName.Camera = 'Camera';
+    _PrefabsPrefabName.DirectionalLight = 'DirectionalLight';
     _PrefabsPrefabName.Cube = 'Cube';
     _PrefabsPrefabName.Sphere = 'Sphere';
     _PrefabsPrefabName.Cylinder = 'Cylinder';
@@ -2330,6 +2376,7 @@
             MesManager.instance.eventUI(EEventUI.SceneGameCustomsLoading, [-1]);
             _scene.buildScene(Laya.Handler.create(this, this.customsProgress, null, false)).then((_sceneSpr) => {
                 this.m_ifSceneBuild = false;
+                EnvironmentManager.instance.setOtherEnvironment(_name, _sceneSpr);
                 ProManager.instance.AllotOtherScenePre(_name, _scene.prefabs);
                 if (_handler) {
                     _handler.run();
@@ -6829,6 +6876,7 @@
         OnSetLoadConfig() {
             ConfigManager.AddConfig(CameraConst);
             ConfigManager.AddConfig(EnvironmentConfig);
+            ConfigManager.AddConfig(OtherEnvironmentConfig);
             ConfigManager.AddConfig(GameConst);
             ConfigManager.AddConfig(GameStateConst);
             ConfigManager.AddConfig(LevelConfig);

@@ -3,13 +3,13 @@ import BaseConfigDataProxy from "../../aTGame/Config/RootDataProxy";
 /**
  * 环境数据处理类
  */
-export default class EnvironmentProxy extends BaseConfigDataProxy<EnvironmentConfig.config> {
+export default class EnvironmentConfigProxy extends BaseConfigDataProxy<EnvironmentConfig.config> {
     //
-    private static _instance: EnvironmentProxy;
+    private static _instance: EnvironmentConfigProxy;
     /** 单例 */
-    public static get instance(): EnvironmentProxy {
+    public static get instance(): EnvironmentConfigProxy {
         if (this._instance == null) {
-            this._instance = new EnvironmentProxy();
+            this._instance = new EnvironmentConfigProxy();
         }
         return this._instance;
     }

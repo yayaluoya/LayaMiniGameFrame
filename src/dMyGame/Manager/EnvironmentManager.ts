@@ -1,11 +1,14 @@
 import { EnvironmentConfig } from '../_config/EnvironmentConfig';
-import EnvironmentProxy from '../ConfigProxy/EnvironmentProxy';
 import ColorEx from '../../aTGame/Utils/ColorEx';
 import Global3D from '../../aTGame/3D/Global3D';
 import IRootManager from '../../aTGame/Manager/IRootManager';
 import { EEventScene } from '../EventEnum/EEventScene';
 import MesManager from './MesManager';
 import GameDataSave from '../GameData/GameDataSave';
+import { EOtherLevelName } from '../Enum/EOtherLevelName';
+import { OtherEnvironmentConfig } from '../_config/OtherEnvironmentConfig';
+import EnvironmentConfigProxy from '../ConfigProxy/EnvironmentConfigProxy';
+import OtherEnvironmentConfigProxy from '../ConfigProxy/OtherEnvironmentProxy';
 /**
  * 环境管理器，负责场景的环境管理
  */
@@ -46,16 +49,30 @@ export default class EnvironmentManager implements IRootManager {
     public setEnvironment(_scene: Laya.Sprite3D) {
         this.m_scene = _scene;
         let _lv: number = GameDataSave.gameData.onCustoms;
-        this.m_enviromentConfig = EnvironmentProxy.instance.byLevelIdGetData(_lv);
+        this.m_enviromentConfig = EnvironmentConfigProxy.instance.byLevelIdGetData(_lv);
         console.log('关卡环境配置参数->' + _lv + '->', this.m_enviromentConfig);
-        //注册其他节点
         //根据配置数据设置相关状态
         this.setS3D(this.m_s3d);
-        this.setCamera(this.m_camera);
-        this.setLight(this.light);
-        this.addAmbient(this.s3d);
+        this.setCamera(this.m_camera, this.m_enviromentConfig.clear_color);
+        this.setLight(this.light, this.m_enviromentConfig.light_color, this.m_enviromentConfig.light_intensity);
+        this.addAmbient(this.s3d, this.m_enviromentConfig.ambient_color);
         //监听事件
         MesManager.instance.on3D(EEventScene.GameLevelsDelete, this, this.gameLevelsDelete);
+    }
+
+    /**
+     * 设置其他场景环境
+     * @param _name 场景名字
+     * @param _scene 场景精灵
+     * @param _camera 摄像机
+     * @param _light 灯光
+     */
+    public setOtherEnvironment(_name: EOtherLevelName, _scene: Laya.Sprite3D, _s3d: Laya.Scene3D = this.m_s3d, _camera: Laya.Camera = this.m_camera, _light: Laya.DirectionLight = this.m_light) {
+        let _enviromentConfig: OtherEnvironmentConfig.config = OtherEnvironmentConfigProxy.instance.byLevelNameGetData(_name);
+        console.log('关卡环境配置参数->' + _name + '->', _enviromentConfig);
+        this.setCamera(_camera, _enviromentConfig.clear_color);
+        this.setLight(_light, _enviromentConfig.light_color, _enviromentConfig.light_intensity);
+        this.addAmbient(_s3d, _enviromentConfig.ambient_color);
     }
 
     /** 3d根节点 */
@@ -83,16 +100,16 @@ export default class EnvironmentManager implements IRootManager {
     }
 
     //设置摄像机
-    private setCamera(_camera: Laya.Camera) {
+    private setCamera(_camera: Laya.Camera, _clear_color: string) {
         //设置清除颜色
-        _camera.clearColor = ColorEx.HexToV4(this.m_enviromentConfig.clear_color);
+        _camera.clearColor = ColorEx.HexToV4(_clear_color);
     }
 
     //设置灯光
-    private setLight(_light: Laya.DirectionLight) {
+    private setLight(_light: Laya.DirectionLight, _color: string, _instensity: number) {
         //
-        _light.color = ColorEx.HexToV3(this.m_enviromentConfig.light_color);
-        _light.intensity = this.m_enviromentConfig.light_intensity;
+        _light.color = ColorEx.HexToV3(_color);
+        _light.intensity = _instensity;
         //灯光开启阴影
         _light.shadowMode = Laya.ShadowMode.SoftLow;
         _light.shadowResolution = 2500;
@@ -100,19 +117,23 @@ export default class EnvironmentManager implements IRootManager {
     }
 
     //加环境光
-    private addAmbient(_s3d: Laya.Scene3D) {
+    private addAmbient(_s3d: Laya.Scene3D, _color: string) {
         //设置环境光
         _s3d.ambientMode = Laya.AmbientMode.SolidColor;
-        _s3d.ambientColor = ColorEx.HexToV3(this.m_enviromentConfig.ambient_color);
+        _s3d.ambientColor = ColorEx.HexToV3(_color);
     }
 
     //加雾化
-    private addFog(_color: string) {
+    private addFog(_scene: Laya.Scene3D, _color: string, _fogRange: number, _fogStart: number) {
         //
+        _scene.enableFog = true;
+        _scene.fogColor = ColorEx.HexToV3(_color);
+        _scene.fogRange = _fogRange;
+        _scene.fogStart = _fogStart;
     }
 
     //删除场景
     private gameLevelsDelete() {
-        //销毁物品节点
+        //
     }
 }

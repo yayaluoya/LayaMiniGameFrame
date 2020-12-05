@@ -32,6 +32,7 @@ import { OtherConst } from '../_config/OtherConst';
 import { EBGMs } from '../ResList/EBGMs';
 import GameNewHandDataSave from '../GameData/GameNewHandDataSave';
 import { OtherLevelConfig } from '../_config/OtherLevelConfig';
+import { OtherEnvironmentConfig } from '../_config/OtherEnvironmentConfig';
 /**
  * 游戏进入之前的加载操作类
  */
@@ -102,6 +103,7 @@ export default class GameLoad extends RootGameLoad {
     protected OnSetLoadConfig() {
         ConfigManager.AddConfig(CameraConst);
         ConfigManager.AddConfig(EnvironmentConfig);
+        ConfigManager.AddConfig(OtherEnvironmentConfig);
         ConfigManager.AddConfig(GameConst);
         ConfigManager.AddConfig(GameStateConst);
         ConfigManager.AddConfig(LevelConfig);

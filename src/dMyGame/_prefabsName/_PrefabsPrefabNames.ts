@@ -5,6 +5,8 @@
 export default class _PrefabsPrefabName {
     //所有预制体
     //---->
+    public static readonly Camera: string = 'Camera';
+    public static readonly DirectionalLight: string = 'DirectionalLight';
     public static readonly Cube: string = 'Cube';
     public static readonly Sphere: string = 'Sphere';
     public static readonly Cylinder: string = 'Cylinder';
