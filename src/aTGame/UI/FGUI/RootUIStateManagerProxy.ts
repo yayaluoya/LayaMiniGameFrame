@@ -70,7 +70,7 @@ export default class RootUIStateManagerProxy extends RootClassProxy {
      * @param _uiStates 状态列表
      * @param _ifUnify 是否统一处理其他UI状态 默认为 true
      * @param _unifyState 统一处理其他UI的状态 默认为 {state: false, dispose: true}
-     * @param _affectLayer 受影响的层级列表,不设置代表所在的层级都受到影响
+     * 
      */
     public setUIState(
         _uiStates: IUIState[],
@@ -81,7 +81,8 @@ export default class RootUIStateManagerProxy extends RootClassProxy {
             /** 隐藏时是否删除默认为true */
             dispose?: boolean
         } = { state: false, dispose: true },
-        _affectLayer?: EUILayer[],
+        _showAffectLayer?: EUILayer[],
+        _hideAffectLayer?: EUILayer[],
     ) {
         //判断是否设置过ui代理列表
         if (!this.m_ifSetMediatroList) {
@@ -111,7 +112,7 @@ export default class RootUIStateManagerProxy extends RootClassProxy {
             return item.typeIndex;
         });
         //过滤不存在的状态
-        this.statesFilter(_uiStates);
+        _uiStates = this.statesFilter(_uiStates);
         //取出需要显示和需要隐藏的UI
         let _i: number;
         for (let _o of _uiStates) {
@@ -159,18 +160,26 @@ export default class RootUIStateManagerProxy extends RootClassProxy {
             //融合本来就显示的ui列表到显示列表中
             _showUI.unshift(...this.m_onShowUI);
         }
+        // console.log('设置层级前', _showUI, _hideUI);
         //检测是否在受影响列表中
-        if (typeof _affectLayer != 'undefined') {
+        if (typeof _showAffectLayer != 'undefined') {
             //先去重
-            ArrayEx.Unique(_affectLayer);
+            ArrayEx.Unique(_showAffectLayer);
+            // console.log('层级', _affectLayer);
             //过滤需要显示的列表，去掉受影响层级之外的元素
-            _showUI.filter((item) => {
-                return _affectLayer.findIndex((layer) => { return layer == this.m_UIMediator[item.typeIndex].layer }) != -1;
-            });
-            _hideUI.filter((item) => {
-                return _affectLayer.findIndex((layer) => { return layer == this.m_UIMediator[item.typeIndex].layer }) != -1;
+            _showUI = _showUI.filter((item) => {
+                return _showAffectLayer.findIndex((layer) => { return layer == this.m_UIMediator[item.typeIndex].layer }) != -1;
             });
         }
+        if (typeof _hideAffectLayer != 'undefined') {
+            //先去重
+            ArrayEx.Unique(_hideAffectLayer);
+            //过滤需要显示的列表，去掉受影响层级之外的元素
+            _hideUI = _hideUI.filter((item) => {
+                return _hideAffectLayer.findIndex((layer) => { return layer == this.m_UIMediator[item.typeIndex].layer }) != -1;
+            });
+        }
+        // console.log('设置层级后', _showUI, _hideUI);
         //隐藏上一批需要隐藏的列表
         for (let _o of _hideUI) {
             if (this.m_UIMediator[_o.typeIndex].ifBelongUIMediator) {
@@ -197,8 +206,8 @@ export default class RootUIStateManagerProxy extends RootClassProxy {
      * 是否存在的调度者ui过滤器
      * @param _o 
      */
-    private statesFilter(_states: IUIState[]) {
-        _states.filter((_o) => {
+    private statesFilter(_states: IUIState[]): IUIState[] {
+        return _states.filter((_o) => {
             return typeof this.m_UIMediator[_o.typeIndex] != 'undefined';
         });
     }

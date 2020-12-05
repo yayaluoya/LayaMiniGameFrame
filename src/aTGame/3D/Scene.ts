@@ -16,6 +16,9 @@ export default class Scene {
     //场景根节点
     private _scene: Laya.Sprite3D;
 
+    //附属资源列表
+    private m_affiliateResURLs: string[] = [];
+
     /** 根据预制体分类的物品列表 */
     public prefabs: { [key: string]: Laya.Sprite3D[] } = {};
 
@@ -43,12 +46,29 @@ export default class Scene {
         return this._scene;
     }
 
+    /** 设置附属资源列表 */
+    public set affiliateResURLs(_URLs: string[]) {
+        this.m_affiliateResURLs = _URLs;
+    }
+
+    /** 获取附属资源列表 */
+    public get affiliateResURLs(): string[] {
+        return this.m_affiliateResURLs;
+    }
+
+    /** 获取所有的资源路径列表 */
+    public get allResURLs(): string[] {
+        let _URLs: string[] = this.scenePrefabUrl();
+        _URLs.push(...this.m_affiliateResURLs);
+        return _URLs;
+    }
+
     /**
      * 异步加载资源
      * @param onProgress 加载进度回调
      */
     public loadRes(onProgress: Laya.Handler = null): Promise<void> {
-        return ResLoad.LoadAsync(this.scenePrefabUrl(), onProgress);
+        return ResLoad.LoadAsync(this.allResURLs, onProgress);
     }
 
     /**

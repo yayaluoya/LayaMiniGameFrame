@@ -328,6 +328,7 @@
     class Scene {
         constructor(sceneNode, sceneNode_, _sceneKey) {
             this._prefabRes = [];
+            this.m_affiliateResURLs = [];
             this.prefabs = {};
             this.sprite3Ds = [];
             this.sceneNode = sceneNode;
@@ -340,8 +341,19 @@
         get scene() {
             return this._scene;
         }
+        set affiliateResURLs(_URLs) {
+            this.m_affiliateResURLs = _URLs;
+        }
+        get affiliateResURLs() {
+            return this.m_affiliateResURLs;
+        }
+        get allResURLs() {
+            let _URLs = this.scenePrefabUrl();
+            _URLs.push(...this.m_affiliateResURLs);
+            return _URLs;
+        }
         loadRes(onProgress = null) {
-            return ResLoad.LoadAsync(this.scenePrefabUrl(), onProgress);
+            return ResLoad.LoadAsync(this.allResURLs, onProgress);
         }
         buildScene(onProgress = null) {
             return new Promise((r) => {
@@ -2871,7 +2883,7 @@
                 { typeIndex: _uiMeiatro.keyId, state: false },
             ], false);
         }
-        setUIState(_uiStates, _ifUnify = true, _unifyState = { state: false, dispose: true }, _affectLayer) {
+        setUIState(_uiStates, _ifUnify = true, _unifyState = { state: false, dispose: true }, _showAffectLayer, _hideAffectLayer) {
             if (!this.m_ifSetMediatroList) {
                 console.log(...ConsoleEx.packError('还没有为UI代理类设置代理UI调度者列表！'));
                 return;
@@ -2892,7 +2904,7 @@
             _uiStates = ArrayEx.ObjUnique(_uiStates, (item) => {
                 return item.typeIndex;
             });
-            this.statesFilter(_uiStates);
+            _uiStates = this.statesFilter(_uiStates);
             let _i;
             for (let _o of _uiStates) {
                 if (_o.state) {
@@ -2932,13 +2944,16 @@
             else {
                 _showUI.unshift(...this.m_onShowUI);
             }
-            if (typeof _affectLayer != 'undefined') {
-                ArrayEx.Unique(_affectLayer);
-                _showUI.filter((item) => {
-                    return _affectLayer.findIndex((layer) => { return layer == this.m_UIMediator[item.typeIndex].layer; }) != -1;
+            if (typeof _showAffectLayer != 'undefined') {
+                ArrayEx.Unique(_showAffectLayer);
+                _showUI = _showUI.filter((item) => {
+                    return _showAffectLayer.findIndex((layer) => { return layer == this.m_UIMediator[item.typeIndex].layer; }) != -1;
                 });
-                _hideUI.filter((item) => {
-                    return _affectLayer.findIndex((layer) => { return layer == this.m_UIMediator[item.typeIndex].layer; }) != -1;
+            }
+            if (typeof _hideAffectLayer != 'undefined') {
+                ArrayEx.Unique(_hideAffectLayer);
+                _hideUI = _hideUI.filter((item) => {
+                    return _hideAffectLayer.findIndex((layer) => { return layer == this.m_UIMediator[item.typeIndex].layer; }) != -1;
                 });
             }
             for (let _o of _hideUI) {
@@ -2958,7 +2973,7 @@
             this.m_onShowUI = _showUI;
         }
         statesFilter(_states) {
-            _states.filter((_o) => {
+            return _states.filter((_o) => {
                 return typeof this.m_UIMediator[_o.typeIndex] != 'undefined';
             });
         }
