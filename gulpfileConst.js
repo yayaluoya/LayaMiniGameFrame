@@ -21,6 +21,12 @@ let gulpfileConst = {
     /** 是否自动刷新 */
     ifAutoUpdate: false,
 
+    /** 是否自动唤醒编译 */
+    ifAutoAwakeCompile: true,
+
+    /** 自动唤醒编译时间 */
+    autoAwakeCompileTime: 10 * 60 * 1000,
+
     /** 监听文件列表 */
     watchFileList: ['src/**'],
 
