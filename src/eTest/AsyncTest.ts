@@ -5,7 +5,7 @@ import RootTest from "../aTGame/Test/RootTest";
  */
 export default class AsyncTest extends RootTest {
     //开始测试
-    protected startTest() {
+    public startTest() {
         //
         this.asyncTest();
     }

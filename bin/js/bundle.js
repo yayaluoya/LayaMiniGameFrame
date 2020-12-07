@@ -6951,24 +6951,25 @@
     }
 
     class RootTest {
-        constructor() {
-            this.startTest();
-        }
         startTest() { }
     }
 
     class ConsoleTest extends RootTest {
+        constructor() {
+            super(...arguments);
+            this._consoleExStr = '输出测试';
+        }
         startTest() {
             console.log('->开启测试<-');
-            console.log(...ConsoleEx.packLog('输出测试'));
-            console.log(...ConsoleEx.packWarn('输出测试'));
-            console.log(...ConsoleEx.packError('输出测试'));
+            console.log(...ConsoleEx.packLog(this._consoleExStr));
+            console.log(...ConsoleEx.packWarn(this._consoleExStr));
+            console.log(...ConsoleEx.packError(this._consoleExStr));
         }
     }
 
     class MainTest extends RootTest {
         startTest() {
-            new ConsoleTest();
+            new ConsoleTest().startTest();
         }
     }
 
@@ -7010,8 +7011,8 @@
 
     class MyMainTest extends RootTest {
         startTest() {
-            new AsyncTest();
-            new OIMODebug();
+            new AsyncTest().startTest();
+            new OIMODebug().startTest();
         }
     }
 
@@ -7022,14 +7023,14 @@
         }
         upGameLoad() {
             if (MainGameConfig.ifTest) {
-                new MainTest();
-                new MyMainTest();
+                new MainTest().startTest();
+                new MyMainTest().startTest();
             }
         }
         gameLoad() {
-            let _s = new GameLoad();
+            let _gameLoad = new GameLoad();
             console.log(...ConsoleEx.comLog('开始加载游戏'));
-            _s.Enter(Laya.Handler.create(this, this.OnGameLoad));
+            _gameLoad.Enter(Laya.Handler.create(this, this.OnGameLoad));
         }
         OnGameLoad() {
             console.log(...ConsoleEx.comLog('游戏加载完成'));

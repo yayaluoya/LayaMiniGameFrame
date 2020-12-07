@@ -1,5 +1,4 @@
-import { EVibrationModle } from '../../aTGame/Platform/EPlatform';
-import PlatformIntegrationT from '../../aTGame/Platform/PlatformIntegrationT';
+import PlatformManager from '../../aTGame/Platform/PlatformManager';
 import GameDataSave from '../GameData/GameDataSave';
 /**
  * 振动代理
@@ -21,10 +20,10 @@ export default class VibrabeProxy {
      * 振动
      * @param _modle 振动模式
      */
-    public vibrate(_modle: EVibrationModle = EVibrationModle.Short) {
+    public vibrate(isLong: boolean) {
         if (!GameDataSave.gameData.ifOpenVibrate) return;
         //
-        PlatformIntegrationT.vibration(_modle);
+        PlatformManager.PlatformInstance.device.Vibrate(isLong);
     }
 
     /**
@@ -34,6 +33,5 @@ export default class VibrabeProxy {
     public originalVibration(pattern: number | number[]) {
         if (!GameDataSave.gameData.ifOpenVibrate) return;
         //
-        PlatformIntegrationT.originalVibration(pattern);
     }
 }

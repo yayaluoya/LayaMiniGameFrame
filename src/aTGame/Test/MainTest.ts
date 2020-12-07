@@ -6,8 +6,8 @@ import RootTest from "./RootTest";
  */
 export default class MainTest extends RootTest {
     //开始测试
-    protected startTest() {
-        //打印测试
-        new ConsoleTest();
+    public startTest() {
+        //开始测试
+        new ConsoleTest().startTest();
     }
 }

@@ -29,8 +29,25 @@
 # Better Comments
     通过使用警告、信息、待办事项等注释来改进代码注释!
 
+## 常用 相比One Dark Pro更暗一些，而且各个层级更加容易分辨
 # Atom One Dark Theme
     一个基于Atom的黑暗主题
+
+# Dracula Official 一个感觉对比度很高的主题
+    官方吸血鬼主题。对于许多编辑器、shell等来说，这是一个黑暗的主题。
+
+# Material Theme 对比度超高
+    这是Visual Studio代码中最经典的主题
+
+# Tokyo Night
+    一个干净、黑暗(现在亮了)的Visual Studio代码主题，庆祝东京市中心夜晚的灯光。
+
+# Horizon Theme
+    一个漂亮温暖的双主题为Visual Studio代码
+
+# GitHub Plus Theme
+    一个GitHub启发颜色主题的VSCode代码和界面!
+
 
 ## 常用
 # One Dark Pro
@@ -73,7 +90,6 @@
 # background
     一个简单的工具，使您的vscode的背景看起来更好!
     "background.customImages": [
-        "D:/图片/壁纸/静态壁纸/www.bidianer.com990054.jpg",
         //图片地址
     ],
     "background.style": {
@@ -89,3 +105,16 @@
     },
     "background.useFront": true,
     "background.useDefault": false, //是否使用默认图片
+
+    当遇到 Cod似乎有损坏请重新安装的错误时
+    1.下载一个叫Fix VSCode Checksums的拓展
+    2.ctrl+shift+P打开命令面板
+    3.输入Fix Checksums: Apply
+    4.重启vscode即可
+
+# background-cover [推荐]
+    全屏的背景图，非常方便
+    同样可以在setting文件中设置图片和透明度
+
+# Color Highlight
+    在编辑器中突出显示web颜色

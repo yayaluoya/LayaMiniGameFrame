@@ -254,6 +254,7 @@ export default class RootUIStateManagerProxy extends RootClassProxy {
         }
     }
 }
+
 /**
  * UI状态
  */

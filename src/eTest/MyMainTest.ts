@@ -6,9 +6,9 @@ import OIMODebug from "./OIMODebug";
  */
 export default class MyMainTest extends RootTest {
     //开始测试
-    protected startTest() {
-        //
-        new AsyncTest();
-        new OIMODebug();
+    public startTest() {
+        //开启测试
+        new AsyncTest().startTest();
+        new OIMODebug().startTest();
     }
 }
