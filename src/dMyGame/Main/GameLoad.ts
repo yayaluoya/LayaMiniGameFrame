@@ -131,7 +131,7 @@ export default class GameLoad extends RootGameLoad {
         GameShortDataSave.instance.InitData();
     }
 
-    // 获取其它游戏资源,会依赖游戏表格
+    // 获取其它游戏资源, 可以依赖游戏表格
     protected OnGameResPrepared(urls: string[]) {
         //把所有音效添加进预加载列表
         let _str: string;
