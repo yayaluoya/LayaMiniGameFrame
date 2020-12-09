@@ -3,6 +3,7 @@ import SceneUtils, { ISceneNode, IScenePrefab } from "./SceneUtils";
 import GlobalUnitClassProxy from "./GlobalUnitClassProxy";
 import EssentialResUrls from '../Res/EssentialResUrls';
 import ConsoleEx from '../Console/ConsoleEx';
+import ArrayEx from '../Utils/ArrayEx';
 /**
  * 场景类
  */
@@ -61,6 +62,17 @@ export default class Scene {
         let _URLs: string[] = this.scenePrefabUrl();
         _URLs.push(...this.m_affiliateResURLs);
         return _URLs;
+    }
+
+    /**
+     * 添加附属资源
+     * @param _URLs 资源列表
+     */
+    public addAffiliateResURLs(_URLs: string[]) {
+        if (_URLs.length <= 0) { return; }
+        this.m_affiliateResURLs.push(..._URLs);
+        //去重
+        this.m_affiliateResURLs = ArrayEx.Unique<string>(this.m_affiliateResURLs);
     }
 
     /**
