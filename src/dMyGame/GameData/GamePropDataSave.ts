@@ -46,6 +46,8 @@ export default class GamePropDataSave extends RootLocalStorageSave<GamePropData>
      * @param num 金币数量
      */
     public static addCoin(num: number) {
+        //化整
+        num = Math.floor(num);
         //增加临时数据
         this._instance._saveData.coinCount += num;
         if (this._instance._saveData.coinCount < 0) {

@@ -321,3 +321,37 @@ export default class Vector3Ex {
         return false;
     }
 }
+
+/**
+ * 三维向量数据类
+ */
+export class Vector3Data {
+    /** X轴 */
+    public x: number;
+
+    /** Y轴 */
+    public y: number;
+
+    /** Z轴 */
+    public z: number;
+
+    //
+    public constructor(_x: number = 0, _y: number = 0, _z: number = 0) {
+        this.x = _x;
+        this.y = _y;
+        this.z = _z;
+    }
+
+    /**
+     * 三维向量转数据
+     * @param _V3 三维向量
+     */
+    public static V3ToData(_V3: Laya.Vector3): Vector3Data {
+        //
+        return new Vector3Data(_V3.x, _V3.y, _V3.z);
+    }
+
+    public static DataToV3(_data: Vector3Data): Laya.Vector3 {
+        return new Laya.Vector3(_data.x, _data.y, _data.z);
+    }
+}

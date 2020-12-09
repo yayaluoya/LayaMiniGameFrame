@@ -50,6 +50,9 @@ export default class GameDataSave extends RootLocalStorageSave<GameData>{
      * @param _maxCustoms 最大关卡数量
      */
     public static initCustoms(_maxCustoms: number) {
+        //化整
+        _maxCustoms = Math.floor(_maxCustoms);
+        //
         if (this._instance._saveData.maxCustoms == _maxCustoms) { return; }
         //
         this._instance._saveData.maxCustoms = _maxCustoms;
@@ -101,6 +104,9 @@ export default class GameDataSave extends RootLocalStorageSave<GameData>{
      * @param _n 关卡id
      */
     public static setCustoms(_n: number) {
+        //化整
+        _n = Math.floor(_n);
+        //
         if (_n > this._instance._saveData.maxCustoms) {
             return;
         }
@@ -113,6 +119,8 @@ export default class GameDataSave extends RootLocalStorageSave<GameData>{
      * @return 是否增加成功
      */
     public static addCustoms(_number: number = 1): boolean {
+        //化整
+        _number = Math.floor(_number);
         //设置当前关卡
         let _sum: number = this._instance._saveData.onCustoms + _number;
         let _win: boolean = false;

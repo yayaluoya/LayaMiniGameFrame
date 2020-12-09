@@ -105,4 +105,23 @@ export default class ArrayEx {
             return Math.random() - 0.5;
         });
     }
+
+    /**
+     * 随机获取数组中的随机值，可指定长度
+     */
+    public static RandomGet<T>(_array: T[], _n: number = 1): T[] {
+        let _rootArray: T[] = [];
+        let _newArray: T[] = [];
+        _array.forEach((item) => {
+            _rootArray.push(item);
+        });
+        let _index: number;
+        for (let _i = 0; _i < _n; _i++) {
+            if (_rootArray.length <= 0) { break; }
+            _index = Math.floor(Math.random() * _rootArray.length);
+            _newArray.push(_rootArray.splice(_index, 1)[0]);
+        }
+        //
+        return _newArray;
+    }
 }

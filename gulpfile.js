@@ -54,7 +54,7 @@ task("compile", function () {
 /** 监听编译 */
 function watchCompile(cb) {
     let _onTime = (new Date()).getTime();
-    // console.log(_onTime - _time);
+    console.log('监听到文件变化');
     if (_onTime - _time >= gulpfileConst.watchFileDelay) {
         console.log('\033[35m', '开始编译。。。', '\033[0m');
         _time = _onTime;

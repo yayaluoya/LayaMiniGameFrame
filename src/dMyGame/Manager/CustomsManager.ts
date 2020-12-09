@@ -102,20 +102,20 @@ export default class CustomsManager implements IRootManager {
             //添加控制器
             ConManager.addScrCon(scene.scene);//依赖脚本的控制器
             ConManager.addCommonCon();//没有任何依赖的控制器
-            //抛出事件场景初始化完成
-            MesManager.instance.event3D(EEventScene.GameLevelsOnBuild);
             //预加载场景
             if (Const.ifPreloadCustoms) {
                 let _preloadCustoms: number = GameDataSave.getPreloadCustoms();
                 SceneManager.instance.preloadSceneRes(_preloadCustoms);
             }
             this.onCustomsInit(lvId);
-            //显示隐藏页面
-            MesManager.instance.eventUI(EEventUI.SceneGameCustomsInit);
             //判断是否有构建完成回调
             if (_handler) {
                 _handler.run();
             }
+            //抛出事件场景初始化完成
+            MesManager.instance.event3D(EEventScene.GameLevelsOnBuild);
+            //显示隐藏页面
+            MesManager.instance.eventUI(EEventUI.SceneGameCustomsInit);
         });
     }
 
@@ -140,6 +140,8 @@ export default class CustomsManager implements IRootManager {
 
     //游戏结束销毁关卡
     private gameLevelsDelete() {
+        //关卡删除前事件
+        MesManager.instance.event3D(EEventScene.GameLevelsDeleteBefore);
         //销毁上一个场景
         if (this.m_scene && this.m_scene.scene) {
             this.m_scene.clearScene();
@@ -147,6 +149,7 @@ export default class CustomsManager implements IRootManager {
         //
         this.m_scene = null;
         //抛出事件
+        MesManager.instance.event3D(EEventScene.GameLevelsOnDelete);
         MesManager.instance.eventUI(EEventUI.SceneGameCustomDelete);
     }
 

@@ -11,6 +11,8 @@ export enum EEventScene {
     GameLevelsOnBuild = '_EEventScene_GameLevelsOnBuild',//游戏关卡构建完成事件
     GameLevelsDelete = '_EEventScene_GameLevelsDelete',//游戏清除关卡事件
     GameOtherLevelsDelete = '_EEventScene_GameOtherLevelsDelete',//游戏清除其他关卡事件
+    GameLevelsDeleteBefore = '_EEventScene_GameLevelsDeleteBefore',//游戏清除关卡前
+    GameLevelsOnDelete = '_EEventScene_GameLevelsOnDelete',//游戏清除完成
     GameStart = "_EEventScene_Start",//游戏开始
     GameSuspend = '_EEventScene_GameSuspend',//游戏暂停
     GameGoOn = '_EEventScene_GameGoOn',//游戏继续
