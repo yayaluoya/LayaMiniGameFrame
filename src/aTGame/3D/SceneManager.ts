@@ -1,12 +1,13 @@
 import ResLoad from '../Res/ResLoad';
 import Scene from "./Scene";
 import SceneManagerProxy from "./SceneManagerProxy";
-import { ECommonLeve } from '../Commom/CommonLeveEnum';
 import FrameLevelConfig, { IFrameLevelData } from '../../cFrameBridge/Config/FrameLevelConfig';
-import EssentialResUrls from '../Res/EssentialResUrls';
 import IRootManager from '../Manager/IRootManager';
 import { ISceneNode } from './SceneUtils';
 import ConsoleEx from '../Console/ConsoleEx';
+import { ELevelSceneName } from '../../cFrameBridge/Config/ELevelSceneName';
+import EssentialResUrls from '../Res/EssentialResUrls';
+import FrameLevelConst from '../../cFrameBridge/Config/FrameLevelConst';
 
 /**
  * 场景3d可取出关卡中的所有东西
@@ -23,7 +24,9 @@ export default class SceneManager implements IRootManager {
     }
 
     // 关卡配置数据
-    private _levelConfig: { [index: string]: ISceneNode } = {};
+    private _levelConfig: {
+        [_index: string]: { [index: string]: ISceneNode },
+    } = {};
 
     // 场景实例缓存
     private _scenes: { [index: string]: Scene } = {};
@@ -41,19 +44,28 @@ export default class SceneManager implements IRootManager {
      * 初始化配置
      */
     public initConfig() {
-        let url: string = EssentialResUrls.levelConfigURL;
-        //这里必须不使用克隆资源
-        let config = ResLoad.Get(url, true);
-        //
-        if (config.root) {
-            //获取根节点下的节点
-            for (let i = 0; i < config.root.length; i++) {
-                let data: ISceneNode = config.root[i] as ISceneNode;
-                this._levelConfig[data.name] = data;
+        let url: string;
+        let config: any;
+        for (let _i in ELevelSceneName) {
+            url = ELevelSceneName[_i];
+            if (!url) {
+                continue;
             }
+            url = EssentialResUrls.levelConfigURL(url);
+            //这里必须不使用克隆资源
+            config = ResLoad.Get(url, true);
+            //
+            if (config.root) {
+                this._levelConfig[ELevelSceneName[_i]] = {};
+                //获取根节点下的节点
+                for (let i = 0; i < config.root.length; i++) {
+                    let data: ISceneNode = config.root[i] as ISceneNode;
+                    this._levelConfig[ELevelSceneName[_i]][data.name] = data;
+                }
+            }
+            //清理资源缓存只使用一次
+            ResLoad.Unload(url);
         }
-        //清理资源缓存只使用一次
-        ResLoad.Unload(url);
     }
 
     /**
@@ -61,10 +73,13 @@ export default class SceneManager implements IRootManager {
      * @param urls 资源集
      */
     public Preload(urls: string[]) {
+        let _preloadUrls: string[] = [];
         // 当前 关卡 初始化
-        let preloadUrls = this.getSceneByLv(ECommonLeve.PrestrainLeveId).scenePrefabUrl();
+        FrameLevelConst.PrestrainLeveId.forEach((item) => {
+            _preloadUrls.push(...this.getOtherSceneByName(item).scenePrefabUrl());
+        });
         //添加进数组
-        urls.push(...preloadUrls);
+        urls.push(..._preloadUrls);
     }
 
     /**
@@ -78,6 +93,16 @@ export default class SceneManager implements IRootManager {
     }
 
     /**
+     * 根据场景名字预加载其它关卡资源
+     * @param name 关卡名字
+     */
+    public preloadOtherSceneRes(name: string) {
+        console.log(...ConsoleEx.packLog('预加载其它关卡->', name));
+        //
+        this.getOtherSceneByName(name).loadRes();
+    }
+
+    /**
      * 通过id获取关卡
      * @param id 关卡id
      */
@@ -86,13 +111,12 @@ export default class SceneManager implements IRootManager {
         if (!lvConfig) {
             console.log(...ConsoleEx.packError("不存在此关卡->", id));
         }
-        let _key: string = id + '$ID';//加一个后缀避免重名
         //查看缓存
-        if (!this._scenes[_key]) {
+        if (!this._scenes[lvConfig.key]) {
             //创建场景实例
-            this._scenes[_key] = this.getSceneByData(lvConfig);
+            this._scenes[lvConfig.key] = this.getSceneByData(lvConfig.key, lvConfig);
         }
-        return this._scenes[_key];
+        return this._scenes[lvConfig.key];
     }
 
     /**
@@ -104,17 +128,16 @@ export default class SceneManager implements IRootManager {
         if (!lvConfig) {
             console.log(...ConsoleEx.packError("不存在此关卡->", _name));
         }
-        let _key: string = _name + '$NAME';//加一个后缀避免重名
         //查看缓存
-        if (!this._scenes[_key]) {
+        if (!this._scenes[lvConfig.key]) {
             //创建场景实例
-            this._scenes[_key] = this.getSceneByData(lvConfig);
+            this._scenes[lvConfig.key] = this.getSceneByData(lvConfig.key, lvConfig);
         }
-        return this._scenes[_key];
+        return this._scenes[lvConfig.key];
     }
 
     //通过关卡数据构建关卡
-    private getSceneByData(_lvConfig: IFrameLevelData): Scene {
+    private getSceneByData(_key: string, _lvConfig: IFrameLevelData): Scene {
         //获取该关卡名字
         let sceneName: string[] = _lvConfig.sceneName;
         //获取该关卡其他资源加载名字
@@ -123,15 +146,18 @@ export default class SceneManager implements IRootManager {
         let sceneNodes: { [index: string]: ISceneNode } = {};
         let sceneNodes_: ISceneNode[] = [];
         //获取需要加载和预加载的节点
-        for (let _i in this._levelConfig) {
+        if (!this._levelConfig[_lvConfig.rootScene]) {
+            console.log(...ConsoleEx.packError('没有找到场景-', _lvConfig.rootScene, ' 请先注册。'));
+        }
+        for (let _i in this._levelConfig[_lvConfig.rootScene]) {
             if (sceneName.findIndex((item) => { return item == _i }) != -1) {
-                sceneNodes[_i] = this._levelConfig[_i];
+                sceneNodes[_i] = this._levelConfig[_lvConfig.rootScene][_i];
             }
             if (_sceneName_.findIndex((item) => { return item == _i }) != -1) {
-                sceneNodes_.push(this._levelConfig[_i]);
+                sceneNodes_.push(this._levelConfig[_lvConfig.rootScene][_i]);
             }
         }
-        return new Scene(sceneNodes, sceneNodes_, _lvConfig.sceneKey);
+        return new Scene(sceneNodes, sceneNodes_, _lvConfig);
     }
 
     /**

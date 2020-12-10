@@ -1,23 +1,10 @@
 import { EKeyResName } from './EKeyResName';
 import KeyResManager from './KeyResManager';
-import ResUrl from './ResUrl';
 /**
  * 必要的游戏资源路径
  * 游戏必须要得资源，会在游戏加载时被默认加载
  */
 export default class EssentialResUrls {
-    /**
-     * 获取所有必要的配置文件路径
-     * 资源列表必须在EssentialResUrls类中获取，便于清理
-     */
-    public static EssentialConfigUrl(): string[] {
-        let _URLs: string[] = [];
-        //添加资源
-        _URLs.push(this.levelConfigURL);
-        //
-        //
-        return _URLs;
-    }
 
     /**
      * 获取所有的其他资源列表
@@ -34,10 +21,11 @@ export default class EssentialResUrls {
     //* ----------单个资源---------- *//
 
     /**
-     * 关卡json文件路径
+     * 获取关卡配置文件
+     * @param _name 场景名字
      */
-    public static get levelConfigURL(): string {
-        return KeyResManager.instance.getResURL(EKeyResName.LvConfig) + 'level.json';
+    public static levelConfigURL(_name: string): string {
+        return KeyResManager.instance.getResURL(EKeyResName.LvConfig) + _name + '.json';
     }
 
     /**

@@ -9,10 +9,7 @@ export enum ECommonLeve {
     DefaultLeveId = 1,
 
     /** 测试关卡id */
-    DebugLeveId = -1,
-
-    /** 预加载关卡,游戏最开始时加载的 */
-    PrestrainLeveId = 0,
+    DebugLeveId = 0,
 
     /** 新手关卡 */
     NewHandLeveId = 1,

@@ -302,17 +302,12 @@
     }
 
     class EssentialResUrls {
-        static EssentialConfigUrl() {
-            let _URLs = [];
-            _URLs.push(this.levelConfigURL);
-            return _URLs;
-        }
         static EssentialOtherResUrl() {
             let _URLs = [];
             return _URLs;
         }
-        static get levelConfigURL() {
-            return KeyResManager.instance.getResURL(EKeyResName.LvConfig) + 'level.json';
+        static levelConfigURL(_name) {
+            return KeyResManager.instance.getResURL(EKeyResName.LvConfig) + _name + '.json';
         }
         static ConfigURL(_name) {
             return KeyResManager.instance.getResURL(EKeyResName.Config) + _name;
@@ -325,15 +320,88 @@
         }
     }
 
+    class ArrayEx {
+        static Unique(arr) {
+            return Array.from(new Set(arr));
+        }
+        static ReverseReserveUnique(arr) {
+            return Array.from(new Set(arr.reverse())).reverse();
+        }
+        static ObjUnique(arr, _F) {
+            for (let i = 0, len = arr.length; i < len; i++) {
+                for (let j = i + 1, len = arr.length; j < len; j++) {
+                    if (_F(arr[i]) === _F(arr[j])) {
+                        arr.splice(j, 1);
+                        j--;
+                        len--;
+                    }
+                }
+            }
+            return arr;
+        }
+        static Replace(arr, oldObj, newObj) {
+            let index = arr.indexOf(oldObj);
+            if (index < 0)
+                return false;
+            arr.splice(index, 1, newObj);
+            return true;
+        }
+        static RemoveItem(arr, obj) {
+            let index = arr.indexOf(obj);
+            if (index < 0)
+                return false;
+            arr.splice(index, 1);
+            return true;
+        }
+        static RemoveAt(arr, index) {
+            if (arr.length <= index)
+                return false;
+            arr.splice(index, 1);
+            return true;
+        }
+        static Contains(arr, obj) {
+            let index = arr.indexOf(obj);
+            return index >= 0;
+        }
+        static Copy(arr) {
+            let result = [];
+            for (let i = 0; i < arr.length; ++i) {
+                result.push(arr[i]);
+            }
+            return result;
+        }
+        static upsetArray(_array) {
+            _array.sort(() => {
+                return Math.random() - 0.5;
+            });
+        }
+        static RandomGet(_array, _n = 1) {
+            let _rootArray = [];
+            let _newArray = [];
+            _array.forEach((item) => {
+                _rootArray.push(item);
+            });
+            let _index;
+            for (let _i = 0; _i < _n; _i++) {
+                if (_rootArray.length <= 0) {
+                    break;
+                }
+                _index = Math.floor(Math.random() * _rootArray.length);
+                _newArray.push(_rootArray.splice(_index, 1)[0]);
+            }
+            return _newArray;
+        }
+    }
+
     class Scene {
-        constructor(sceneNode, sceneNode_, _sceneKey) {
+        constructor(sceneNode, sceneNode_, _lvConfig) {
             this._prefabRes = [];
             this.m_affiliateResURLs = [];
             this.prefabs = {};
             this.sprite3Ds = [];
             this.sceneNode = sceneNode;
             this.sceneNode_ = sceneNode_;
-            this._sceneKey = _sceneKey;
+            this._lvConfig = _lvConfig;
         }
         get ifDestroy() {
             return !Boolean(this._scene);
@@ -352,17 +420,24 @@
             _URLs.push(...this.m_affiliateResURLs);
             return _URLs;
         }
+        addAffiliateResURLs(_URLs) {
+            if (_URLs.length <= 0) {
+                return;
+            }
+            this.m_affiliateResURLs.push(..._URLs);
+            this.m_affiliateResURLs = ArrayEx.Unique(this.m_affiliateResURLs);
+        }
         loadRes(onProgress = null) {
             return ResLoad.LoadAsync(this.allResURLs, onProgress);
         }
         buildScene(onProgress = null) {
             return new Promise((r) => {
                 if (this._scene) {
-                    console.log(...ConsoleEx.packWarn('重复构建关卡'));
+                    console.log(...ConsoleEx.packWarn('重复构建关卡，请注意'));
                     r(this._scene);
                     return;
                 }
-                console.log(...ConsoleEx.packLog('开始构建关卡->' + this._sceneKey));
+                console.log(...ConsoleEx.packLog('开始构建关卡->' + this._lvConfig.key));
                 this.loadRes(onProgress).then(() => {
                     this._scene = new Laya.Sprite3D();
                     GlobalUnitClassProxy.s3d.addChild(this._scene);
@@ -372,15 +447,15 @@
                         this._scene.addChild(_spr);
                         this._buildScene(this.sceneNode[_i], _spr);
                     }
-                    console.log(...ConsoleEx.packLog('关卡->' + this._sceneKey + '构建完成'));
-                    console.log('关卡->' + this._sceneKey, '\n场景->', this._scene, '\n预制体->', this.prefabs, '\n物体->', this.sprite3Ds);
+                    console.log(...ConsoleEx.packLog('关卡->' + this._lvConfig.key + '构建完成'));
+                    console.log('关卡->' + this._lvConfig.key, '\n场景->', this._scene, '\n预制体->', this.prefabs, '\n物体->', this.sprite3Ds);
                     r(this._scene);
                 });
             });
         }
         clearScene() {
             if (this._scene) {
-                console.log(...ConsoleEx.packLog('清除关卡->' + this._sceneKey));
+                console.log(...ConsoleEx.packLog('清除关卡->' + this._lvConfig.key));
                 this._scene.destroy();
                 this._prefabRes = [];
                 this.prefabs = {};
@@ -418,7 +493,7 @@
                 _length++;
             }
             if (_length == 0) {
-                console.log(...ConsoleEx.packError('关卡->' + this._sceneKey + '<-不存在,或者是没有内容'));
+                console.log(...ConsoleEx.packError('关卡->' + this._lvConfig.key + '<-不存在,或者是没有内容'));
                 return;
             }
             if (!this._prefabRes || this._prefabRes.length <= 0) {
@@ -493,33 +568,34 @@
         }
     }
 
+    var ELevelSceneName;
+    (function (ELevelSceneName) {
+        ELevelSceneName["Export"] = "export";
+    })(ELevelSceneName || (ELevelSceneName = {}));
+    class LevelSceneNameConst {
+        static get defaultLevelSceneName() {
+            return ELevelSceneName.Export;
+        }
+    }
+
     class SceneManagerProxy {
         static set sevelConfig(_data) {
             this.m_sevelConfig = _data;
         }
-        static initCamera(camera) {
-            let cameraData = this.m_sevelConfig["camera"];
+        static initCamera(camera, _sceneName = LevelSceneNameConst.defaultLevelSceneName) {
+            let cameraData = this.m_sevelConfig[_sceneName]["camera"];
             if (cameraData) {
                 SceneUtils.initNode(camera, cameraData);
             }
         }
-        static initLight(light) {
-            let lightData = this.m_sevelConfig["light"];
+        static initLight(light, _sceneName = LevelSceneNameConst.defaultLevelSceneName) {
+            let lightData = this.m_sevelConfig[_sceneName]["light"];
             if (lightData) {
                 SceneUtils.initNode(light, lightData);
             }
         }
     }
     SceneManagerProxy.m_sevelConfig = {};
-
-    var ECommonLeve;
-    (function (ECommonLeve) {
-        ECommonLeve[ECommonLeve["MinLeveNumber"] = 3] = "MinLeveNumber";
-        ECommonLeve[ECommonLeve["DefaultLeveId"] = 1] = "DefaultLeveId";
-        ECommonLeve[ECommonLeve["DebugLeveId"] = -1] = "DebugLeveId";
-        ECommonLeve[ECommonLeve["PrestrainLeveId"] = 0] = "PrestrainLeveId";
-        ECommonLeve[ECommonLeve["NewHandLeveId"] = 1] = "NewHandLeveId";
-    })(ECommonLeve || (ECommonLeve = {}));
 
     var LevelConfig;
     (function (LevelConfig) {
@@ -608,22 +684,27 @@
     class FrameLevelConfig {
         static byLevelIdGetLevelData(_id) {
             let _levelConfigData = LevelConfigProxy.instance.byIdGetData(_id);
-            return this.getLevelData(_id.toString(), _levelConfigData.sceneName, _levelConfigData.sceneOtherRes);
+            return this.getLevelData('ID', _levelConfigData.sceneName, _levelConfigData.sceneOtherRes, _levelConfigData.rootScene);
         }
         static byLevelNameGetOtherLevelData(_name) {
             let _levelConfigData = OtherLevelConfigProxy.instance.byNameGetData(_name);
-            return this.getLevelData(_name, _levelConfigData.sceneName, _levelConfigData.sceneOtherRes);
+            return this.getLevelData('Name', _levelConfigData.sceneName, _levelConfigData.sceneOtherRes, _levelConfigData.rootScene);
         }
-        static getLevelData(_sceneKey, _sceneName, _sceneOtherRes) {
+        static getLevelData(_key, _sceneName, _sceneOtherRes, _rootScene) {
             _sceneName.replace(/\s+/g, '').replace(/^,+/, '').replace(/,+$/, '').replace(/,+/g, ',');
             _sceneOtherRes.replace(/\s+/g, '').replace(/^,+/, '').replace(/,+$/, '').replace(/,+/g, ',');
             return {
-                sceneKey: _sceneKey,
+                key: '$' + _rootScene + ':' + _key + '-' + _sceneName,
+                rootScene: _rootScene,
                 sceneName: _sceneName.split(','),
                 sceneOtherRes: _sceneOtherRes.split(','),
             };
         }
     }
+
+    class FrameLevelConst {
+    }
+    FrameLevelConst.PrestrainLeveId = ['prestrain'];
 
     class SceneManager {
         constructor() {
@@ -639,60 +720,77 @@
         }
         init() { }
         initConfig() {
-            let url = EssentialResUrls.levelConfigURL;
-            let config = ResLoad.Get(url, true);
-            if (config.root) {
-                for (let i = 0; i < config.root.length; i++) {
-                    let data = config.root[i];
-                    this._levelConfig[data.name] = data;
+            let url;
+            let config;
+            for (let _i in ELevelSceneName) {
+                url = ELevelSceneName[_i];
+                if (!url) {
+                    continue;
                 }
+                url = EssentialResUrls.levelConfigURL(url);
+                config = ResLoad.Get(url, true);
+                if (config.root) {
+                    this._levelConfig[ELevelSceneName[_i]] = {};
+                    for (let i = 0; i < config.root.length; i++) {
+                        let data = config.root[i];
+                        this._levelConfig[ELevelSceneName[_i]][data.name] = data;
+                    }
+                }
+                ResLoad.Unload(url);
             }
-            ResLoad.Unload(url);
         }
         Preload(urls) {
-            let preloadUrls = this.getSceneByLv(ECommonLeve.PrestrainLeveId).scenePrefabUrl();
-            urls.push(...preloadUrls);
+            let _preloadUrls = [];
+            FrameLevelConst.PrestrainLeveId.forEach((item) => {
+                _preloadUrls.push(...this.getOtherSceneByName(item).scenePrefabUrl());
+            });
+            urls.push(..._preloadUrls);
         }
         preloadSceneRes(id) {
             console.log(...ConsoleEx.packLog('预加载关卡->', id));
             this.getSceneByLv(id).loadRes();
+        }
+        preloadOtherSceneRes(name) {
+            console.log(...ConsoleEx.packLog('预加载其它关卡->', name));
+            this.getOtherSceneByName(name).loadRes();
         }
         getSceneByLv(id) {
             let lvConfig = FrameLevelConfig.byLevelIdGetLevelData(id);
             if (!lvConfig) {
                 console.log(...ConsoleEx.packError("不存在此关卡->", id));
             }
-            let _key = id + '$ID';
-            if (!this._scenes[_key]) {
-                this._scenes[_key] = this.getSceneByData(lvConfig);
+            if (!this._scenes[lvConfig.key]) {
+                this._scenes[lvConfig.key] = this.getSceneByData(lvConfig.key, lvConfig);
             }
-            return this._scenes[_key];
+            return this._scenes[lvConfig.key];
         }
         getOtherSceneByName(_name) {
             let lvConfig = FrameLevelConfig.byLevelNameGetOtherLevelData(_name);
             if (!lvConfig) {
                 console.log(...ConsoleEx.packError("不存在此关卡->", _name));
             }
-            let _key = _name + '$NAME';
-            if (!this._scenes[_key]) {
-                this._scenes[_key] = this.getSceneByData(lvConfig);
+            if (!this._scenes[lvConfig.key]) {
+                this._scenes[lvConfig.key] = this.getSceneByData(lvConfig.key, lvConfig);
             }
-            return this._scenes[_key];
+            return this._scenes[lvConfig.key];
         }
-        getSceneByData(_lvConfig) {
+        getSceneByData(_key, _lvConfig) {
             let sceneName = _lvConfig.sceneName;
             let _sceneName_ = _lvConfig.sceneOtherRes;
             let sceneNodes = {};
             let sceneNodes_ = [];
-            for (let _i in this._levelConfig) {
+            if (!this._levelConfig[_lvConfig.rootScene]) {
+                console.log(...ConsoleEx.packError('没有找到场景-', _lvConfig.rootScene, ' 请先注册。'));
+            }
+            for (let _i in this._levelConfig[_lvConfig.rootScene]) {
                 if (sceneName.findIndex((item) => { return item == _i; }) != -1) {
-                    sceneNodes[_i] = this._levelConfig[_i];
+                    sceneNodes[_i] = this._levelConfig[_lvConfig.rootScene][_i];
                 }
                 if (_sceneName_.findIndex((item) => { return item == _i; }) != -1) {
-                    sceneNodes_.push(this._levelConfig[_i]);
+                    sceneNodes_.push(this._levelConfig[_lvConfig.rootScene][_i]);
                 }
             }
-            return new Scene(sceneNodes, sceneNodes_, _lvConfig.sceneKey);
+            return new Scene(sceneNodes, sceneNodes_, _lvConfig);
         }
         getLvResName(id) {
             return this.getSceneByLv(id).scenePrefabResName();
@@ -1303,6 +1401,8 @@
         EEventScene["GameLevelsOnBuild"] = "_EEventScene_GameLevelsOnBuild";
         EEventScene["GameLevelsDelete"] = "_EEventScene_GameLevelsDelete";
         EEventScene["GameOtherLevelsDelete"] = "_EEventScene_GameOtherLevelsDelete";
+        EEventScene["GameLevelsDeleteBefore"] = "_EEventScene_GameLevelsDeleteBefore";
+        EEventScene["GameLevelsOnDelete"] = "_EEventScene_GameLevelsOnDelete";
         EEventScene["GameStart"] = "_EEventScene_Start";
         EEventScene["GameSuspend"] = "_EEventScene_GameSuspend";
         EEventScene["GameGoOn"] = "_EEventScene_GameGoOn";
@@ -1364,6 +1464,14 @@
             MesManager.instance.off(type, caller, listener);
         }
     }
+
+    var ECommonLeve;
+    (function (ECommonLeve) {
+        ECommonLeve[ECommonLeve["MinLeveNumber"] = 3] = "MinLeveNumber";
+        ECommonLeve[ECommonLeve["DefaultLeveId"] = 1] = "DefaultLeveId";
+        ECommonLeve[ECommonLeve["DebugLeveId"] = 0] = "DebugLeveId";
+        ECommonLeve[ECommonLeve["NewHandLeveId"] = 1] = "NewHandLeveId";
+    })(ECommonLeve || (ECommonLeve = {}));
 
     class MainConfig {
     }
@@ -1955,6 +2063,7 @@
             return this._instance._saveData.clone();
         }
         static initCustoms(_maxCustoms) {
+            _maxCustoms = Math.floor(_maxCustoms);
             if (this._instance._saveData.maxCustoms == _maxCustoms) {
                 return;
             }
@@ -1983,12 +2092,14 @@
             this.SaveToDisk();
         }
         static setCustoms(_n) {
+            _n = Math.floor(_n);
             if (_n > this._instance._saveData.maxCustoms) {
                 return;
             }
             this._instance._saveData.onCustoms = _n;
         }
         static addCustoms(_number = 1) {
+            _number = Math.floor(_number);
             let _sum = this._instance._saveData.onCustoms + _number;
             let _win = false;
             if (_sum <= this._instance._saveData.maxCustoms) {
@@ -2347,16 +2458,16 @@
                 ProManager.instance.AllotPre(scene.prefabs);
                 ConManager.addScrCon(scene.scene);
                 ConManager.addCommonCon();
-                MesManager.instance.event3D(EEventScene.GameLevelsOnBuild);
                 if (Const.ifPreloadCustoms) {
                     let _preloadCustoms = GameDataSave.getPreloadCustoms();
                     SceneManager.instance.preloadSceneRes(_preloadCustoms);
                 }
                 this.onCustomsInit(lvId);
-                MesManager.instance.eventUI(EEventUI.SceneGameCustomsInit);
                 if (_handler) {
                     _handler.run();
                 }
+                MesManager.instance.event3D(EEventScene.GameLevelsOnBuild);
+                MesManager.instance.eventUI(EEventUI.SceneGameCustomsInit);
             });
         }
         onCustomsInit(_lvId) {
@@ -2370,10 +2481,12 @@
             MesManager.instance.eventUI(EEventUI.SceneGameCustomsLoading, [_number * 100]);
         }
         gameLevelsDelete() {
+            MesManager.instance.event3D(EEventScene.GameLevelsDeleteBefore);
             if (this.m_scene && this.m_scene.scene) {
                 this.m_scene.clearScene();
             }
             this.m_scene = null;
+            MesManager.instance.event3D(EEventScene.GameLevelsOnDelete);
             MesManager.instance.eventUI(EEventUI.SceneGameCustomDelete);
         }
         gameOtherLevelsBuild(_name, _handler) {
@@ -2798,63 +2911,6 @@
         EUI["End"] = "EUI_End";
     })(EUI || (EUI = {}));
 
-    class ArrayEx {
-        static Unique(arr) {
-            return Array.from(new Set(arr));
-        }
-        static ReverseReserveUnique(arr) {
-            return Array.from(new Set(arr.reverse())).reverse();
-        }
-        static ObjUnique(arr, _F) {
-            for (let i = 0, len = arr.length; i < len; i++) {
-                for (let j = i + 1, len = arr.length; j < len; j++) {
-                    if (_F(arr[i]) === _F(arr[j])) {
-                        arr.splice(j, 1);
-                        j--;
-                        len--;
-                    }
-                }
-            }
-            return arr;
-        }
-        static Replace(arr, oldObj, newObj) {
-            let index = arr.indexOf(oldObj);
-            if (index < 0)
-                return false;
-            arr.splice(index, 1, newObj);
-            return true;
-        }
-        static RemoveItem(arr, obj) {
-            let index = arr.indexOf(obj);
-            if (index < 0)
-                return false;
-            arr.splice(index, 1);
-            return true;
-        }
-        static RemoveAt(arr, index) {
-            if (arr.length <= index)
-                return false;
-            arr.splice(index, 1);
-            return true;
-        }
-        static Contains(arr, obj) {
-            let index = arr.indexOf(obj);
-            return index >= 0;
-        }
-        static Copy(arr) {
-            let result = [];
-            for (let i = 0; i < arr.length; ++i) {
-                result.push(arr[i]);
-            }
-            return result;
-        }
-        static upsetArray(_array) {
-            _array.sort(() => {
-                return Math.random() - 0.5;
-            });
-        }
-    }
-
     class RootUIStateManagerProxy extends RootClassProxy {
         constructor() {
             super(...arguments);
@@ -2945,13 +3001,13 @@
                 _showUI.unshift(...this.m_onShowUI);
             }
             if (typeof _showAffectLayer != 'undefined') {
-                ArrayEx.Unique(_showAffectLayer);
+                _showAffectLayer = ArrayEx.Unique(_showAffectLayer);
                 _showUI = _showUI.filter((item) => {
                     return _showAffectLayer.findIndex((layer) => { return layer == this.m_UIMediator[item.typeIndex].layer; }) != -1;
                 });
             }
             if (typeof _hideAffectLayer != 'undefined') {
-                ArrayEx.Unique(_hideAffectLayer);
+                _hideAffectLayer = ArrayEx.Unique(_hideAffectLayer);
                 _hideUI = _hideUI.filter((item) => {
                     return _hideAffectLayer.findIndex((layer) => { return layer == this.m_UIMediator[item.typeIndex].layer; }) != -1;
                 });
@@ -6520,7 +6576,14 @@
         }
         OnConfigLoaded() {
             this.OnSetLoadConfig();
-            ConfigManager.AddExtraConfig(EssentialResUrls.EssentialConfigUrl());
+            let _levelSceneURLs = [];
+            for (let _i in ELevelSceneName) {
+                if (!ELevelSceneName[_i]) {
+                    continue;
+                }
+                _levelSceneURLs.push(EssentialResUrls.levelConfigURL(ELevelSceneName[_i]));
+            }
+            ConfigManager.AddExtraConfig(_levelSceneURLs);
             if (ConfigManager.needLoadCount <= 0) {
                 this._OnConfigProgress(1);
                 this._OnConfigLoaded();
@@ -6723,6 +6786,7 @@
             return this._instance._saveData.clone();
         }
         static addCoin(num) {
+            num = Math.floor(num);
             this._instance._saveData.coinCount += num;
             if (this._instance._saveData.coinCount < 0) {
                 this._instance._saveData.coinCount = 0;

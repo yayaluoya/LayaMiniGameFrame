@@ -102,9 +102,9 @@ namespace JsonEditor
         [MenuItem("GameObject/ExportLevelJson")]
         static void ExportJSON()
         {
-            string sceneName = ExportToJson.capitalizeFirstSetter(UnityEngine.SceneManagement.SceneManager.GetActiveScene().name);
+            string sceneName = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
             //关卡配置json文件导出目录
-            string filepath = @".\..\bin\res\LvConfig\level.json";
+            string filepath = @".\..\bin\res\LvConfig\" + sceneName + ".json";
             //filepath = @"C:\Users\EDZ\Desktop\LayaAir3D\huabingnvhai\New Unity Project\Assets\level.json";
             createFile(filepath);
             Object[] objAll = UnityEngine.SceneManagement.SceneManager.GetActiveScene().GetRootGameObjects();

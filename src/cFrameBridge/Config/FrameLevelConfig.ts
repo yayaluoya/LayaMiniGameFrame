@@ -13,7 +13,7 @@ export default class FrameLevelConfig {
      */
     public static byLevelIdGetLevelData(_id: number): IFrameLevelData {
         let _levelConfigData: LevelConfig.config = LevelConfigProxy.instance.byIdGetData(_id);
-        return this.getLevelData(_id.toString(), _levelConfigData.sceneName, _levelConfigData.sceneOtherRes);
+        return this.getLevelData('ID', _levelConfigData.sceneName, _levelConfigData.sceneOtherRes, _levelConfigData.rootScene);
     }
 
     /**
@@ -22,16 +22,17 @@ export default class FrameLevelConfig {
      */
     public static byLevelNameGetOtherLevelData(_name: string): IFrameLevelData {
         let _levelConfigData: OtherLevelConfig.config = OtherLevelConfigProxy.instance.byNameGetData(_name);
-        return this.getLevelData(_name, _levelConfigData.sceneName, _levelConfigData.sceneOtherRes);
+        return this.getLevelData('Name', _levelConfigData.sceneName, _levelConfigData.sceneOtherRes, _levelConfigData.rootScene);
     }
 
     //获取关卡数据
-    private static getLevelData(_sceneKey: string, _sceneName: string, _sceneOtherRes: string): IFrameLevelData {
+    private static getLevelData(_key: string, _sceneName: string, _sceneOtherRes: string, _rootScene: string): IFrameLevelData {
         //格式化，去空格和首尾逗号
         _sceneName.replace(/\s+/g, '').replace(/^,+/, '').replace(/,+$/, '').replace(/,+/g, ',');
         _sceneOtherRes.replace(/\s+/g, '').replace(/^,+/, '').replace(/,+$/, '').replace(/,+/g, ',');
         return {
-            sceneKey: _sceneKey,
+            key: '$' + _rootScene + ':' + _key + '-' + _sceneName,
+            rootScene: _rootScene,
             sceneName: _sceneName.split(','),
             sceneOtherRes: _sceneOtherRes.split(','),
         };
@@ -42,8 +43,11 @@ export default class FrameLevelConfig {
  * 框架依赖的关卡数据
  */
 export interface IFrameLevelData {
-    /** 关卡唯一键值 */
-    readonly sceneKey: string;
+    /** 唯一键值 */
+    readonly key: string;
+
+    /** 根场景名字 */
+    readonly rootScene: string;
 
     /** 关卡名字列表 */
     readonly sceneName: string[],

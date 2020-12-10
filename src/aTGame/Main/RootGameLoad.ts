@@ -8,6 +8,7 @@ import CommonDataSave from '../Commom/CommonDataSave';
 import KeyResManager from '../Res/KeyResManager';
 import FrameSubpackages from '../../cFrameBridge/FrameSubpackages';
 import PlatformManager from '../Platform/PlatformManager';
+import { ELevelSceneName } from '../../cFrameBridge/Config/ELevelSceneName';
 /**
  * 游戏进入之前的加载操作基类
  * 加载分包
@@ -193,7 +194,14 @@ export default class RootGameLoad {
         //设置要添加的配置文件
         this.OnSetLoadConfig();
         //添加其他必要配置文件路径列表
-        ConfigManager.AddExtraConfig(EssentialResUrls.EssentialConfigUrl());
+        let _levelSceneURLs: string[] = [];
+        for (let _i in ELevelSceneName) {
+            if (!ELevelSceneName[_i]) {
+                continue;
+            }
+            _levelSceneURLs.push(EssentialResUrls.levelConfigURL(ELevelSceneName[_i]));
+        }
+        ConfigManager.AddExtraConfig(_levelSceneURLs);
         //
         if (ConfigManager.needLoadCount <= 0) {
             this._OnConfigProgress(1);

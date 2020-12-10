@@ -4,12 +4,13 @@ import GlobalUnitClassProxy from "./GlobalUnitClassProxy";
 import EssentialResUrls from '../Res/EssentialResUrls';
 import ConsoleEx from '../Console/ConsoleEx';
 import ArrayEx from '../Utils/ArrayEx';
+import { IFrameLevelData } from '../../cFrameBridge/Config/FrameLevelConfig';
 /**
  * 场景类
  */
 export default class Scene {
     //
-    private _sceneKey: string;//关卡key
+    private _lvConfig: IFrameLevelData;//关卡数据
     private sceneNode: { [index: string]: ISceneNode };//关卡加载节点
     private sceneNode_: ISceneNode[];//关卡其他资源加载节点
     //预制体资源列表
@@ -28,13 +29,13 @@ export default class Scene {
 
     /**
      * 初始化
-     * @param sceneNode 关卡加载节点
+     * @param sceneNode 关卡构建节点
      * @param sceneNode_ 关卡其他资源加载节点
      */
-    constructor(sceneNode: { [index: string]: ISceneNode }, sceneNode_: ISceneNode[], _sceneKey: string) {
+    constructor(sceneNode: { [index: string]: ISceneNode }, sceneNode_: ISceneNode[], _lvConfig: IFrameLevelData) {
         this.sceneNode = sceneNode;
         this.sceneNode_ = sceneNode_;
-        this._sceneKey = _sceneKey;
+        this._lvConfig = _lvConfig;
     }
 
     /** 获取是否清除 */
@@ -90,11 +91,11 @@ export default class Scene {
     public buildScene(onProgress: Laya.Handler = null): Promise<Laya.Sprite3D> {
         return new Promise<Laya.Sprite3D>((r: Function) => {
             if (this._scene) {
-                console.log(...ConsoleEx.packWarn('重复构建关卡'));
+                console.log(...ConsoleEx.packWarn('重复构建关卡，请注意'));
                 r(this._scene);
                 return;
             }
-            console.log(...ConsoleEx.packLog('开始构建关卡->' + this._sceneKey));
+            console.log(...ConsoleEx.packLog('开始构建关卡->' + this._lvConfig.key));
             //同步加载资源
             this.loadRes(onProgress).then(() => {
                 //
@@ -108,8 +109,8 @@ export default class Scene {
                     this._buildScene(this.sceneNode[_i], _spr);
                 }
                 //
-                console.log(...ConsoleEx.packLog('关卡->' + this._sceneKey + '构建完成'));
-                console.log('关卡->' + this._sceneKey, '\n场景->', this._scene, '\n预制体->', this.prefabs, '\n物体->', this.sprite3Ds);
+                console.log(...ConsoleEx.packLog('关卡->' + this._lvConfig.key + '构建完成'));
+                console.log('关卡->' + this._lvConfig.key, '\n场景->', this._scene, '\n预制体->', this.prefabs, '\n物体->', this.sprite3Ds);
                 //返回场景
                 r(this._scene);
             });
@@ -122,7 +123,7 @@ export default class Scene {
     public clearScene() {
         //判断是否有场景
         if (this._scene) {
-            console.log(...ConsoleEx.packLog('清除关卡->' + this._sceneKey));
+            console.log(...ConsoleEx.packLog('清除关卡->' + this._lvConfig.key));
             //
             this._scene.destroy();
             //
@@ -180,7 +181,7 @@ export default class Scene {
         for (let _i in this.sceneNode) {
             _length++;
         }
-        if (_length == 0) { console.log(...ConsoleEx.packError('关卡->' + this._sceneKey + '<-不存在,或者是没有内容')); return; }
+        if (_length == 0) { console.log(...ConsoleEx.packError('关卡->' + this._lvConfig.key + '<-不存在,或者是没有内容')); return; }
         if (!this._prefabRes || this._prefabRes.length <= 0) {
             //判断需要构建的节点
             for (let _i in this.sceneNode) {

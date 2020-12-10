@@ -191,7 +191,7 @@ export class OimoManager {
      * 删除刚体
      * @param rig 
      * @param world 
-     * @param stopUpdate 是否停止更新
+     * @param offList # 如果为true的话就是彻底删除，再添加也没有用了
      */
     RemoveRig(rig: OIMO.RigidBody, world: OIMO.World = this._oimoWorld, offList: boolean = false) {
         if (rig) {
