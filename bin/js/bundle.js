@@ -375,19 +375,39 @@
                 return Math.random() - 0.5;
             });
         }
-        static RandomGet(_array, _n = 1) {
-            let _rootArray = [];
+        static RandomGet(_array, _n = 1, _weight = _array.map((item) => { return 1; })) {
             let _newArray = [];
-            _array.forEach((item) => {
-                _rootArray.push(item);
+            let _weightArray = [];
+            let _weightSum = 0;
+            _weight.forEach((item) => {
+                _weightSum += item;
             });
+            _weightArray = _array.map((item, _index) => {
+                return {
+                    _index: _index,
+                    _weight: _weight[_index] / _weightSum,
+                };
+            });
+            let _maxWeight = 0;
             let _index;
+            let _random;
             for (let _i = 0; _i < _n; _i++) {
-                if (_rootArray.length <= 0) {
+                if (_weightArray.length <= 0) {
                     break;
                 }
-                _index = Math.floor(Math.random() * _rootArray.length);
-                _newArray.push(_rootArray.splice(_index, 1)[0]);
+                _weightArray.sort((a, b) => { return a._weight - b._weight; });
+                _weightArray.forEach((item) => {
+                    _maxWeight = Math.max(_maxWeight, item._weight);
+                });
+                _random = Math.random() * _maxWeight;
+                _index = 0;
+                for (let _x = 0; _x < _weightArray.length; _x++) {
+                    if (_weightArray[_x]._weight >= _random) {
+                        _index = _x;
+                        break;
+                    }
+                }
+                _newArray.push(_array[_weightArray.splice(_index, 1)[0]._index]);
             }
             return _newArray;
         }
