@@ -2,6 +2,7 @@ const { watch, task, src } = require("gulp");
 const { exec } = require("child_process");
 const { server, reload } = require("gulp-connect");
 const rev = require("gulp-rev-append");
+const os = require('os');
 const gulpfileConst = require("./gulpfileConst");
 //是否正在编译
 let _ifCompile = false;
@@ -18,14 +19,17 @@ task("compile", function () {
     //自动编译
     compile((code, signal) => {
         console.log('\033[35m', '正在创建服务。。。', '\033[0m');
+        //获取ip
+        let _ip = getLocalIP();
         //主页地址
-        _homePage = '游戏主页: http://localhost:' + gulpfileConst.port + gulpfileConst.homepage;
+        _homePage = '游戏主页: http://' + _ip + ':' + gulpfileConst.port + gulpfileConst.homepage;
         //新建一个服务
         server({
             name: gulpfileConst.itemName,//项目名字
             livereload: gulpfileConst.livereload,//
             port: gulpfileConst.port,//端口
             root: gulpfileConst.root,//默认路径
+            host: '0.0.0.0',
             //建立服务完成
             serverInit: (_server) => {
                 //
@@ -126,4 +130,21 @@ function compile(_back) {
         console.log('\n ----▷ 编译完成', new Date());
         _back(code, signal);
     });
+}
+
+// 获取局域网ip
+function getLocalIP() {
+    let _ip = 'localhost';
+    var interfaces = os.networkInterfaces();
+    for (var devName in interfaces) {
+        var iface = interfaces[devName];
+        for (var i = 0; i < iface.length; i++) {
+            var alias = iface[i];
+            if (alias.family === 'IPv4' && alias.address !== '127.0.0.1' && !alias.internal) {
+                _ip = alias.address;
+            }
+        }
+    }
+    // console.log(_ip);
+    return _ip;
 }

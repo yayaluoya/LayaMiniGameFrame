@@ -376,38 +376,35 @@
             });
         }
         static RandomGet(_array, _n = 1, _weight = _array.map((item) => { return 1; })) {
+            if (_array.length <= 0) {
+                return;
+            }
+            let _rootArray = [];
             let _newArray = [];
-            let _weightArray = [];
-            let _weightSum = 0;
+            let _indexArray = [];
+            let _minWeight = _weight[0];
             _weight.forEach((item) => {
-                _weightSum += item;
+                _minWeight = Math.min(_minWeight, item);
             });
-            _weightArray = _array.map((item, _index) => {
-                return {
-                    _index: _index,
-                    _weight: _weight[_index] / _weightSum,
-                };
+            _weight = _weight.map((item) => {
+                return Math.floor(item * (1 / _minWeight));
             });
-            let _maxWeight = 0;
+            _array.forEach((item, index) => {
+                _rootArray.push(item);
+                for (let _i = 0; _i < _weight[index]; _i++) {
+                    _indexArray.push(index);
+                }
+            });
             let _index;
-            let _random;
             for (let _i = 0; _i < _n; _i++) {
-                if (_weightArray.length <= 0) {
+                if (_rootArray.length <= 0) {
                     break;
                 }
-                _weightArray.sort((a, b) => { return a._weight - b._weight; });
-                _weightArray.forEach((item) => {
-                    _maxWeight = Math.max(_maxWeight, item._weight);
+                _index = Math.floor(Math.random() * _indexArray.length);
+                _indexArray = _indexArray.filter((item) => {
+                    return item != _index;
                 });
-                _random = Math.random() * _maxWeight;
-                _index = 0;
-                for (let _x = 0; _x < _weightArray.length; _x++) {
-                    if (_weightArray[_x]._weight >= _random) {
-                        _index = _x;
-                        break;
-                    }
-                }
-                _newArray.push(_array[_weightArray.splice(_index, 1)[0]._index]);
+                _newArray.push(_rootArray.splice(_indexArray[_index], 1)[0]);
             }
             return _newArray;
         }

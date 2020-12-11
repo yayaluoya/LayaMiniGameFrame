@@ -30,6 +30,7 @@
     "browser-sync": "^2.26.13",
     "gulp": "^4.0.2",
     "gulp-connect": "^5.7.0",
-    "gulp-rev-append": "^0.1.8"
+    "gulp-rev-append": "^0.1.8",
+    "request": "^2.88.2"
   }
 }
