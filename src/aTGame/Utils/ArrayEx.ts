@@ -107,55 +107,40 @@ export default class ArrayEx {
     }
 
     /**
-     * 随机获取数组中的随机值，可指定长度和权重分配
-     * @param _array 源数组
-     * @param _n 随机产生的个数
-     * @param _weight 权重分配
+     * 随机获取数组中的随机值，可指定长度
+     * @param _array 原数组
+     * @param _n 随机个数
+     * @param _weight 权重列表
      */
-    public static RandomGet<T>(_array: T[], _n: number = 1, _weight: number[] = _array.map<number>((item) => { return 1; })): T[] {
+    public static RandomGet<T>(_array: T[], _n: number = 1, _weight: number[] = _array.map((item) => { return 1; })): T[] {
+        if (_array.length <= 0) { return; }
+        let _rootArray: T[] = [];
         let _newArray: T[] = [];
-        //索引权重映射表
-        let _weightArray: {
-            _weight: number,
-            _index: number,
-        }[] = [];
-        //总权重
-        let _weightSum: number = 0;
+        //权重索引列表
+        let _indexArray: number[] = [];
+        //找到最小的权重
+        let _minWeight: number = _weight[0];
         _weight.forEach((item) => {
-            _weightSum += item;
+            _minWeight = Math.min(_minWeight, item);
         });
-        _weightArray = _array.map((item, _index) => {
-            return {
-                _index: _index,
-                _weight: _weight[_index] / _weightSum,
-            };
+        _weight = _weight.map((item) => {
+            return Math.floor(item * (1 / _minWeight));
         });
-        //最大权重值
-        let _maxWeight: number = 0;
-        //
-        let _index: number;
-        let _random: number;
-        for (let _i = 0; _i < _n; _i++) {
-            //检测是否已经全部取出
-            if (_weightArray.length <= 0) { break; }
-            //权重表升序排列
-            _weightArray.sort((a, b) => { return a._weight - b._weight; });
-            //找出现在的最大权重值
-            _weightArray.forEach((item) => {
-                _maxWeight = Math.max(_maxWeight, item._weight);
-            });
-            //获取0~最大权重值之间的随机值
-            _random = Math.random() * _maxWeight;
-            //获取一个随机的索引
-            _index = 0;
-            for (let _x = 0; _x < _weightArray.length; _x++) {
-                if (_weightArray[_x]._weight >= _random) {
-                    _index = _x;
-                    break;
-                }
+        _array.forEach((item, index) => {
+            _rootArray.push(item);
+            //
+            for (let _i = 0; _i < _weight[index]; _i++) {
+                _indexArray.push(index);
             }
-            //提取
-            _newArray.push(_array[_weightArray.splice(_index, 1)[0]._index]);
+        });
+        let _index: number;
+        for (let _i = 0; _i < _n; _i++) {
+            if (_rootArray.length <= 0) { break; }
+            _index = Math.floor(Math.random() * _indexArray.length);
+            _indexArray = _indexArray.filter((item) => {
+                return item != _index;
+            });
+            _newArray.push(_rootArray.splice(_indexArray[_index], 1)[0]);
         }
         //
         return _newArray;
