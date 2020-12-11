@@ -7,18 +7,19 @@
     "layaminigameframe": "game.js"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "install-layaair2-cmd": "npm i layaair2-cmd -g --ignore-scripts",
-    "install-gulp": "npm i gulp -g --ignore-scripts",
-    "layaair2-cmd-auto-compile": "gulp compile",
-    "layaair2-cmd-compile": "layaair2-cmd compile",
-    "layaair2-cmd-publish-web": "layaair2-cmd publish -c web",
-    "layaair2-cmd-publish-wxgame": "layaair2-cmd publish -c wxgame",
-    "layaair2-cmd-publish-bdgame": "layaair2-cmd publish -c bdgame",
-    "layaair2-cmd-publish-xmgame": "layaair2-cmd publish -c xmgame",
-    "layaair2-cmd-publish-oppogame": "layaair2-cmd publish -c oppogame",
-    "layaair2-cmd-publish-vivogame": "layaair2-cmd publish -c vivogame",
-    "layaair2-cmd-publish-qqgame": "layaair2-cmd publish -c qqgame"
+    "项目编译": "layaair2-cmd compile",
+    "自动编译": "gulp compile",
+    "Http-服务": "gulp httpServer",
+    "打包-Web-Game": "layaair2-cmd publish -c web",
+    "打包到-微信-Game": "layaair2-cmd publish -c wxgame",
+    "打包到-百度-Game": "layaair2-cmd publish -c bdgame",
+    "打包到-小米-Game": "layaair2-cmd publish -c xmgame",
+    "打包到-OPPO-Game": "layaair2-cmd publish -c oppogame",
+    "打包到-VIVO-Game": "layaair2-cmd publish -c vivogame",
+    "打包到-QQ Game": "layaair2-cmd publish -c qqgame",
+    "安装-layaair2-cmd": "npm i layaair2-cmd -g --ignore-scripts",
+    "安装-gulp": "npm i gulp -g --ignore-scripts",
+    "安装-http-server": "npm i http-server -g --ignore-scripts"
   },
   "repository": {
     "type": "git",

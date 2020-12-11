@@ -29,7 +29,7 @@ task("compile", function () {
             livereload: gulpfileConst.livereload,//
             port: gulpfileConst.port,//端口
             root: gulpfileConst.root,//默认路径
-            host: '0.0.0.0',
+            host: _ip,
             //建立服务完成
             serverInit: (_server) => {
                 //
@@ -148,3 +148,12 @@ function getLocalIP() {
     // console.log(_ip);
     return _ip;
 }
+
+//创建一个名称为compile的gulp任务
+task("httpServer", function () {
+    console.log('开启 HTTP 服务');
+    let process = exec("http-server -p 3000 --cors");
+    process.stdout.on("data", (data) => {
+        console.log(data);
+    });
+});

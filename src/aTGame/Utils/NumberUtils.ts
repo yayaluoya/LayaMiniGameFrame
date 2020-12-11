@@ -74,4 +74,18 @@ export default class NumberUtils {
         }
         return num.toFixed(0) + this._strMap[count];
     }
+
+    /**
+     * 获取一个数的符号
+     * @param _n 
+     */
+    public static getNumberSymbol(_n: number): 1 | -1 | 0 {
+        if (_n > 0) {
+            return 1;
+        } else if (_n < 0) {
+            return -1;
+        } else {
+            return 0;
+        }
+    }
 }
