@@ -17,7 +17,7 @@ task("compile", function () {
     console.log('\033[35m', '开始自动编译。。。', '\033[0m');
     //自动编译
     compile((code, signal) => {
-        console.log('\033[35m', '编译成功，正在创建服务。。。', '\033[0m');
+        console.log('\033[35m', '正在创建服务。。。', '\033[0m');
         //主页地址
         _homePage = '游戏主页: http://localhost:' + gulpfileConst.port + gulpfileConst.homepage;
         //新建一个服务
@@ -64,7 +64,6 @@ function watchCompile(cb) {
     }
     //开始编译
     compile((code, signal) => {
-        console.log('\n ----▷ 编译完成');
         console.log(code, signal);
         //抛出提示
         console.log('\033[34m', '----▶ ' + _homePage, '\033[0m');
@@ -124,6 +123,7 @@ function compile(_back) {
     });
     process.on("exit", (code, signal) => {
         _ifCompile = false;
+        console.log('\n ----▷ 编译完成', new Date());
         _back(code, signal);
     });
 }
