@@ -7152,6 +7152,7 @@
             Laya.AtlasInfoManager.enable("fileconfig.json", Laya.Handler.create(this, this.onConfigLoaded));
         }
         onConfigLoaded() {
+            new LayaMiniGame.Main();
             new MainStart();
         }
     }
