@@ -1373,12 +1373,66 @@
         }
     }
 
+    class MainConfig {
+    }
+    MainConfig.GameWhatTeam = '小小游戏';
+    MainConfig.GameName = 'LayaMiniGame';
+    MainConfig.GameName_ = 'LayaBox小游戏';
+    MainConfig.GameExplain = 'LayaBox小游戏';
+    MainConfig.versions = '0.0.0';
+    MainConfig.OnLine = false;
+
     class MainGameConfig {
     }
     MainGameConfig.support2D = false;
     MainGameConfig.support3D = true;
     MainGameConfig.ifAddOimoSystem = false;
-    MainGameConfig.ifTest = false;
+    MainGameConfig.ifGameTest = (!MainConfig.OnLine) && false;
+    MainGameConfig.ifTest = (!MainConfig.OnLine) && false;
+    MainGameConfig.ifDebug = (!MainConfig.OnLine) && false;
+
+    class RootDebug {
+        static addItem(_key, _item) {
+            let _rootKey = this.prefix + ':' + _key;
+            if (this[_rootKey]) {
+                console.log(...ConsoleEx.packWarn('该调试对象已经存在了，将会被第二个覆盖', _rootKey));
+            }
+            this[_rootKey] = _item;
+        }
+        startDebug() {
+            if (window[RootDebug.prefix][this._name]) {
+                console.log(...ConsoleEx.packWarn('有一个调试对象名字重名了，将会被第二个覆盖', this._name));
+            }
+            window[RootDebug.prefix][this._name] = this;
+            this._startDebug();
+        }
+        addItem(_key, _item) {
+            if (this[_key]) {
+                console.log(...ConsoleEx.packWarn('该调试对象已经存在了，将会被第二个覆盖', this._name, '-', _key));
+            }
+            this[_key] = _item;
+        }
+        _startDebug() { }
+    }
+    RootDebug.prefix = '$Debug';
+    window[RootDebug.prefix] = {};
+
+    class EnvironmentDebug extends RootDebug {
+        constructor() {
+            super();
+            this._name = 'Environment';
+        }
+        static get instance() {
+            if (this._instance) {
+                return this._instance;
+            }
+            else {
+                this._instance = new EnvironmentDebug();
+                return this._instance;
+            }
+        }
+        _startDebug() { }
+    }
 
     class Global3D {
         static InitAll() {
@@ -1396,6 +1450,11 @@
                 GlobalUnitClassProxy.s3d = this.s3d;
                 GlobalUnitClassProxy.camera = this.camera;
                 GlobalUnitClassProxy.light = this.light;
+                if (MainGameConfig.ifDebug) {
+                    EnvironmentDebug.instance.s3d = this.s3d;
+                    EnvironmentDebug.instance.camera = this.camera;
+                    EnvironmentDebug.instance.light = this.light;
+                }
             }
             else {
                 console.log(...ConsoleEx.packLog('请设置支持3D!'));
@@ -1489,15 +1548,6 @@
         ECommonLeve[ECommonLeve["DebugLeveId"] = 0] = "DebugLeveId";
         ECommonLeve[ECommonLeve["NewHandLeveId"] = 1] = "NewHandLeveId";
     })(ECommonLeve || (ECommonLeve = {}));
-
-    class MainConfig {
-    }
-    MainConfig.GameWhatTeam = '小小游戏';
-    MainConfig.GameName = 'LayaMiniGame';
-    MainConfig.GameName_ = 'LayaBox小游戏';
-    MainConfig.GameExplain = 'LayaBox小游戏';
-    MainConfig.versions = '0.0.0';
-    MainConfig.OnLine = false;
 
     class StringEx {
         static SplitToIntArray(str, splitStr) {
@@ -6139,12 +6189,12 @@
             this.m_data = TestConst.data;
         }
         get ifDebug() {
-            if (MainConfig.OnLine)
+            if (!MainGameConfig.ifGameTest)
                 return false;
             return this.m_data.if_debug;
         }
         get ifShowOimoMesh() {
-            if (MainConfig.OnLine)
+            if (!MainGameConfig.ifGameTest)
                 return false;
             return this.m_data.if_show_oimo_mesh;
         }
@@ -7097,6 +7147,26 @@
         }
     }
 
+    class MainDebug extends RootDebug {
+        constructor() {
+            super(...arguments);
+            this._name = 'Main';
+        }
+        _startDebug() {
+            console.log('开启主调试');
+            EnvironmentDebug.instance.startDebug();
+        }
+    }
+
+    class MyMainDebug extends RootDebug {
+        constructor() {
+            super(...arguments);
+            this._name = 'MyMainDebug';
+        }
+        _startDebug() {
+        }
+    }
+
     class MainStart {
         constructor() {
             this.upGameLoad();
@@ -7106,6 +7176,10 @@
             if (MainGameConfig.ifTest) {
                 new MainTest().startTest();
                 new MyMainTest().startTest();
+            }
+            if (MainGameConfig.ifDebug) {
+                new MainDebug().startDebug();
+                new MyMainDebug().startDebug();
             }
         }
         gameLoad() {
@@ -7152,7 +7226,6 @@
             Laya.AtlasInfoManager.enable("fileconfig.json", Laya.Handler.create(this, this.onConfigLoaded));
         }
         onConfigLoaded() {
-            new LayaMiniGame.Main();
             new MainStart();
         }
     }

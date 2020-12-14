@@ -5,6 +5,8 @@ import MainTest from '../aTGame/Test/MainTest';
 import MainGameConfig from '../bTGameConfig/MainGameConfig';
 import ConsoleEx from '../aTGame/Console/ConsoleEx';
 import MyMainTest from '../eTest/MyMainTest';
+import MainDebug from '../aTGame/Debug/MainDebug';
+import MyMainDebug from '../fDebug/MyMainDebug';
 /**
  * 游戏开始类
  */
@@ -24,6 +26,12 @@ export default class MainStart {
             //激活测试类
             new MainTest().startTest();//主测试
             new MyMainTest().startTest();//项目测试
+        }
+        //判断是否开启调试
+        if (MainGameConfig.ifDebug) {
+            //激活调试类
+            new MainDebug().startDebug();//主调试
+            new MyMainDebug().startDebug();//项目调试
         }
     }
 

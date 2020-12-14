@@ -3,6 +3,7 @@ import GlobalUnitClassProxy from "./GlobalUnitClassProxy";
 import SceneManagerProxy from "./SceneManagerProxy";
 import MainGameConfig from '../../bTGameConfig/MainGameConfig';
 import ConsoleEx from '../Console/ConsoleEx';
+import EnvironmentDebug from '../Debug/EnvironmentDebug';
 /**
  * 全局3D类
  */
@@ -39,6 +40,13 @@ export default class Global3D {
             GlobalUnitClassProxy.s3d = this.s3d;
             GlobalUnitClassProxy.camera = this.camera;
             GlobalUnitClassProxy.light = this.light;
+            //判断是否是调试模式
+            if (MainGameConfig.ifDebug) {
+                //添加环境调试
+                EnvironmentDebug.instance.s3d = this.s3d;
+                EnvironmentDebug.instance.camera = this.camera;
+                EnvironmentDebug.instance.light = this.light;
+            }
         } else {
             //
             console.log(...ConsoleEx.packLog('请设置支持3D!'));

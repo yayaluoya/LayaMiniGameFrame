@@ -1,5 +1,5 @@
 import { BaseConstDataProxy } from '../../aTGame/Config/RootDataProxy';
-import MainConfig from '../../bTGameConfig/MainConfig';
+import MainGameConfig from '../../bTGameConfig/MainGameConfig';
 import { TestConst } from '../_config/TestConst';
 
 /**
@@ -30,13 +30,13 @@ export default class TestConstProxy extends BaseConstDataProxy<TestConst.config>
 
     /** 是否开启调试 */
     public get ifDebug(): boolean {
-        if (MainConfig.OnLine) return false;
+        if (!MainGameConfig.ifGameTest) return false;
         return this.m_data.if_debug;
     }
 
     /** 是否开启oimo物理 */
     public get ifShowOimoMesh(): boolean {
-        if (MainConfig.OnLine) return false;
+        if (!MainGameConfig.ifGameTest) return false;
         return this.m_data.if_show_oimo_mesh;
     }
 
