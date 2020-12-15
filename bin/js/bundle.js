@@ -7158,12 +7158,26 @@
         }
     }
 
+    class CustomDebug extends RootDebug {
+        constructor() {
+            super();
+            this._name = 'Custom';
+        }
+        static get instance() {
+            if (!this.m_instance) {
+                this.m_instance = new CustomDebug();
+            }
+            return this.m_instance;
+        }
+    }
+
     class MyMainDebug extends RootDebug {
         constructor() {
             super(...arguments);
             this._name = 'MyMainDebug';
         }
         _startDebug() {
+            CustomDebug.instance.startDebug();
         }
     }
 
