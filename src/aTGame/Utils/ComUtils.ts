@@ -1,7 +1,7 @@
 /**
  * 普通工具类
  */
-export class TUtils {
+export class ComUtils {
 
     /**
      * 缓存文件
@@ -38,13 +38,13 @@ export class TUtils {
             ret = ret + "00:00";
             return ret;
         }
-        if (time > TUtils.ONE_YEAR) {
+        if (time > ComUtils.ONE_YEAR) {
             ret = "大于一年";
             return ret;
         }
         if (flag) {
-            if (time > TUtils.ONE_DAY) {
-                var day: number = Math.floor(time / TUtils.ONE_DAY);
+            if (time > ComUtils.ONE_DAY) {
+                var day: number = Math.floor(time / ComUtils.ONE_DAY);
                 ret = day + "天";
             } else if (time >= 3600) {
                 hour = Math.floor(time / 3600);
@@ -59,10 +59,10 @@ export class TUtils {
             }
             return ret;
         }
-        if (time > TUtils.ONE_DAY) {
-            var day: number = Math.floor(time / TUtils.ONE_DAY);
+        if (time > ComUtils.ONE_DAY) {
+            var day: number = Math.floor(time / ComUtils.ONE_DAY);
             ret = day + "天";
-            time = time - day * TUtils.ONE_DAY;
+            time = time - day * ComUtils.ONE_DAY;
             if (flag) {
                 hour = Math.floor(time / 3600);
                 if (hour > 0) {
