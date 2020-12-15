@@ -1,7 +1,7 @@
 import BasePrefabPro from '../z_T/pro/BasePrefabPro';
 import { HeightFogManager } from '../../../aTGame/3D/material/HeightFogManager';
 import { LTBlinnPhong_HeightFog } from '../../../aTGame/3D/material/LTBlinnPhong_HeightFog';
-import ColorEx from '../../../aTGame/Utils/ColorEx';
+import ColorUtils from '../../../aTGame/Utils/ColorUtils';
 /**
  * 高度雾效加工者
  */
@@ -9,7 +9,7 @@ export default class HeightFogCubePro extends BasePrefabPro {
     protected ifAddProStampScript: boolean = false;//是否添加工厂印记
     // 加高度雾小
     // private addHightFog(_color: string){
-    //     HeightFogManager.instance.fogColor = ColorEx.HexToV3(_color);
+    //     HeightFogManager.instance.fogColor = ColorUtils.HexToV3(_color);
     //     HeightFogManager.instance.fogDistance = 300;
     //     HeightFogManager.instance.fogStartHeight = 100;
     //     let _shareMat: LTBlinnPhong_HeightFog;

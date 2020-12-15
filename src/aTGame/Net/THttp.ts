@@ -1,4 +1,4 @@
-import StringEx from '../Utils/StringEx';
+import StringUtils from '../Utils/StringUtils';
 /**
  * http请求工具类
  */
@@ -60,7 +60,7 @@ export default class THttp {
 
         if (isGet) {
             if (data != null) {
-                if (!StringEx.IsNullOrEmpty(param)) {
+                if (!StringUtils.IsNullOrEmpty(param)) {
                     param += this._param_split;
                 }
                 for (let i in data) {
@@ -69,12 +69,12 @@ export default class THttp {
                 param = param.slice(0, param.length - 1);
             }
             let combieUrl = origUrl;
-            if (!StringEx.IsNullOrEmpty(param)) {
+            if (!StringUtils.IsNullOrEmpty(param)) {
                 combieUrl = origUrl + this._url_split + param;
             }
             this.SendPro(combieUrl, onSuccess, onFailed, this._get_method, null, responseType, headers);
         } else {
-            if (!StringEx.IsNullOrEmpty(param)) {
+            if (!StringUtils.IsNullOrEmpty(param)) {
                 if (data == null) {
                     data = {};
                 }

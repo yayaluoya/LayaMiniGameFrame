@@ -1,5 +1,5 @@
 import ConsoleEx from "../../Console/ConsoleEx";
-import ArrayEx from "../../Utils/ArrayEx";
+import ArrayUtils from "../../Utils/ArrayUtils";
 import BaseUIMediator from "./BaseUIMediator";
 import RootUIStateManagerProxy from "./RootUIStateManagerProxy";
 /**
@@ -41,7 +41,7 @@ export default class BaseUIManager<UIProxy extends RootUIStateManagerProxy> {
             this.getUIBelongSerialNumber(this.m_UIMediator[_i], _serialNumber);
             //检测是否有重复使用的附属UI
             _serialNumberLenth = _serialNumber.length;
-            _serialNumber = ArrayEx.Unique<number>(_serialNumber);
+            _serialNumber = ArrayUtils.Unique<number>(_serialNumber);
             if (_serialNumberLenth != _serialNumber.length) {
                 console.log(...ConsoleEx.packError('UI调度者', _i, '的附属UI有重复出现！'));
             }

@@ -1,4 +1,4 @@
-import MathEx from "./MathEx";
+import MathUtils from "./MathUtils";
 /**
  * V3向量扩展
  */
@@ -208,25 +208,25 @@ export default class Vector3Ex {
 
         let normalized = Vector3Ex.Normalize(wrapFrom);
         let normalized2 = Vector3Ex.Normalize(wrapTo);
-        let num = Math.acos(MathEx.Clamp(Laya.Vector3.dot(normalized, normalized2), -1, 1)) * 57.29578;
+        let num = Math.acos(MathUtils.Clamp(Laya.Vector3.dot(normalized, normalized2), -1, 1)) * 57.29578;
         let cross = Vector3Ex.Cross(normalized, normalized2);
-        let num2 = MathEx.Sign(Laya.Vector3.dot(asix, cross));
+        let num2 = MathUtils.Sign(Laya.Vector3.dot(asix, cross));
         return num * num2;
     }
 
     public static SignedAngle(from: Laya.Vector3, to: Laya.Vector3, asix: Laya.Vector3): number {
         var normalized = Vector3Ex.Normalize(from);
         var normalized2 = Vector3Ex.Normalize(to);
-        var num = Math.acos(MathEx.Clamp(Laya.Vector3.dot(normalized, normalized2), -1, 1)) * 57.29578;
+        var num = Math.acos(MathUtils.Clamp(Laya.Vector3.dot(normalized, normalized2), -1, 1)) * 57.29578;
         var cross = Vector3Ex.Cross(normalized, normalized2);
-        var num2 = MathEx.Sign(Laya.Vector3.dot(asix, cross));
+        var num2 = MathUtils.Sign(Laya.Vector3.dot(asix, cross));
         return num * num2;
     }
 
     public static Angle(from: Laya.Vector3, to: Laya.Vector3, asix: Laya.Vector3): number {
         var normalized = Vector3Ex.Normalize(from);
         var normalized2 = Vector3Ex.Normalize(to);
-        var num = Math.acos(MathEx.Clamp(Laya.Vector3.dot(normalized, normalized2), -1, 1)) * 57.29578;
+        var num = Math.acos(MathUtils.Clamp(Laya.Vector3.dot(normalized, normalized2), -1, 1)) * 57.29578;
         return num;
     }
 

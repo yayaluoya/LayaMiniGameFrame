@@ -1,4 +1,4 @@
-import MathEx from "../Utils/MathEx";
+import MathUtils from "../Utils/MathUtils";
 import PlatformManagerProxy from "./PlatformManagerProxy";
 import { ShareInfo } from "./T/ShareInfo";
 /**
@@ -37,7 +37,7 @@ export default class ShareManager {
                 if (shareInfo.shareId == id) return shareInfo;
             }
         }
-        let randomShare = MathEx.RandomFromArray(this._shareInfoList);
+        let randomShare = MathUtils.RandomFromArray(this._shareInfoList);
         return randomShare;
     }
 

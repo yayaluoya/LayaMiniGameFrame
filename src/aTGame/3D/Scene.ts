@@ -3,7 +3,7 @@ import SceneUtils, { ISceneNode, IScenePrefab } from "./SceneUtils";
 import GlobalUnitClassProxy from "./GlobalUnitClassProxy";
 import EssentialResUrls from '../Res/EssentialResUrls';
 import ConsoleEx from '../Console/ConsoleEx';
-import ArrayEx from '../Utils/ArrayEx';
+import ArrayUtils from '../Utils/ArrayUtils';
 import { IFrameLevelData } from '../../cFrameBridge/Config/FrameLevelConfig';
 /**
  * 场景类
@@ -73,7 +73,7 @@ export default class Scene {
         if (_URLs.length <= 0) { return; }
         this.m_affiliateResURLs.push(..._URLs);
         //去重
-        this.m_affiliateResURLs = ArrayEx.Unique<string>(this.m_affiliateResURLs);
+        this.m_affiliateResURLs = ArrayUtils.Unique<string>(this.m_affiliateResURLs);
     }
 
     /**

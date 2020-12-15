@@ -1,4 +1,4 @@
-import MathEx from "./MathEx";
+import MathUtils from "./MathUtils";
 /**
  * V2向量扩展
  */
@@ -17,14 +17,14 @@ export default class Vector2Ex {
             return 0;
         }
         else {
-            let num2 = MathEx.Clamp(this.Dot(from, to) / num, -1, 1);
-            return Math.acos(num2) * MathEx.Rad2Deg;
+            let num2 = MathUtils.Clamp(this.Dot(from, to) / num, -1, 1);
+            return Math.acos(num2) * MathUtils.Rad2Deg;
         }
     }
 
     public static SignedAngle(from: Laya.Vector2, to: Laya.Vector2): number {
         let num = this.Angle(from, to);
-        let num2 = MathEx.Sign(from.x * to.y - from.y * to.x);
+        let num2 = MathUtils.Sign(from.x * to.y - from.y * to.x);
         return num * num2;
     }
 

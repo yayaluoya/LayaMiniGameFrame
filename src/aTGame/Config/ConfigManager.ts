@@ -1,6 +1,6 @@
 import EssentialResUrls from "../Res/EssentialResUrls";
 import ResLoad from "../Res/ResLoad";
-import ArrayEx from "../Utils/ArrayEx";
+import ArrayUtils from "../Utils/ArrayUtils";
 
 /**
  * 配置管理器
@@ -35,7 +35,7 @@ export class ConfigManager {
             //添加
             ConfigManager._extraConfig.push(..._url);
             //去重
-            ConfigManager._extraConfig = ArrayEx.Unique(ConfigManager._extraConfig);
+            ConfigManager._extraConfig = ArrayUtils.Unique(ConfigManager._extraConfig);
         }
     }
 

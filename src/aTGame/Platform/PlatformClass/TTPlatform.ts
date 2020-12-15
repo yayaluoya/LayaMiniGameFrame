@@ -1,5 +1,5 @@
 import ConsoleEx from "../../Console/ConsoleEx";
-import StringEx from "../../Utils/StringEx";
+import StringUtils from "../../Utils/StringUtils";
 import PlatformData from "../Data/PlatformData";
 import TTDevice from "../Device/TTDevice";
 import TTRecordManager from "../Record/TTRecordManager";
@@ -56,7 +56,7 @@ export default class TTPlatform extends WXPlatform {
     }
 
     protected _CreateBannerAd() {
-        if (StringEx.IsNullOrEmpty(this.platformData.bannerId)) {
+        if (StringUtils.IsNullOrEmpty(this.platformData.bannerId)) {
             console.log("无有效的banner广告ID,取消加载");
             return;
         }

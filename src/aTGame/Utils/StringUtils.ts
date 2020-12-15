@@ -1,7 +1,7 @@
 /**
  * 字符串处理工具
  */
-export default class StringEx {
+export default class StringUtils {
     /**
      * 分割成整型数组
      * @param str 字符串

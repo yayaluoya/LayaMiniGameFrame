@@ -1,4 +1,7 @@
 /**
  * 预制体特效
  */
-export enum EPrefabE { }
+export enum EPrefabE {
+    null = '',
+    //
+}

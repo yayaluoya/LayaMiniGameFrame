@@ -1,4 +1,4 @@
-import MathEx from "./MathEx";
+import MathUtils from "./MathUtils";
 import Vector3Ex from "./Vector3Ex";
 /**
  * 四元数扩展
@@ -35,13 +35,13 @@ export default class QuaternionEx {
     }
 
     public static FromEulerAngle(x: number, y: number, z: number): Laya.Quaternion {
-        var eulerX = x / 2 * MathEx.Deg2Rad;
+        var eulerX = x / 2 * MathUtils.Deg2Rad;
         var cX = Math.cos(eulerX);
         var sX = Math.sin(eulerX);
-        var eulerY = y / 2 * MathEx.Deg2Rad;
+        var eulerY = y / 2 * MathUtils.Deg2Rad;
         var cY = Math.cos(eulerY);
         var sY = Math.sin(eulerY);
-        var eulerZ = z / 2 * MathEx.Deg2Rad;
+        var eulerZ = z / 2 * MathUtils.Deg2Rad;
         var cZ = Math.cos(eulerZ);
         var sZ = Math.sin(eulerZ);
 

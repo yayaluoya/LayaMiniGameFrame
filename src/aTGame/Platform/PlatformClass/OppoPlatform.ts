@@ -1,5 +1,5 @@
 import Awaiters from "../../Async/Awaiters";
-import StringEx from "../../Utils/StringEx";
+import StringUtils from "../../Utils/StringUtils";
 import DefaultDevice from "../Device/DefaultDevice";
 import DefaultRecordManager from "../Record/DefaultRecordManager";
 import { EPlatformType } from "../T/EPlatformType";
@@ -204,7 +204,7 @@ export default class OppoPlatform extends WXPlatform {
     }
 
     protected _CreateInterstitalAd() {
-        // if (StringEx.IsNullOrEmpty(this._platformData.interstitialId)) {
+        // if (StringUtils.IsNullOrEmpty(this._platformData.interstitialId)) {
         //     console.log("无有效的插页广告ID,取消加载");
         //     return;
         // }
@@ -243,7 +243,7 @@ export default class OppoPlatform extends WXPlatform {
             console.error("无createRewardedVideoAd方法,跳过初始化");
             return;
         }
-        if (StringEx.IsNullOrEmpty(this.platformData.rewardVideoId)) {
+        if (StringUtils.IsNullOrEmpty(this.platformData.rewardVideoId)) {
             console.log("无有效的视频广告ID,取消加载");
             return;
         }
@@ -293,7 +293,7 @@ export default class OppoPlatform extends WXPlatform {
         return this._nativeAdLoaded;
     }
     async ShowBannerAd() {
-        if (StringEx.IsNullOrEmpty(this.platformData.bannerId)) {
+        if (StringUtils.IsNullOrEmpty(this.platformData.bannerId)) {
             console.log("无有效的banner广告ID,取消加载");
             return;
         }
@@ -411,7 +411,7 @@ export default class OppoPlatform extends WXPlatform {
     protected _DoNoCacheShowVideo(onSuccess: Laya.Handler, onSkipped: Laya.Handler) {
         this._rewardSuccessed = onSuccess;
         this._rewardSkipped = onSkipped;
-        if (StringEx.IsNullOrEmpty(this.platformData.rewardVideoId)) {
+        if (StringUtils.IsNullOrEmpty(this.platformData.rewardVideoId)) {
             console.log("无有效的视频广告ID,取消加载");
             this._rewardSkipped && this._rewardSkipped.run();
             return;
@@ -484,7 +484,7 @@ export default class OppoPlatform extends WXPlatform {
         if (this.lauchOption.referrerInfo == null) {
             return null;
         }
-        if (StringEx.IsNullOrEmpty(this.lauchOption.referrerInfo.appId)) {
+        if (StringUtils.IsNullOrEmpty(this.lauchOption.referrerInfo.appId)) {
             return null;
         }
         return this.lauchOption.referrerInfo.appId;

@@ -320,7 +320,7 @@
         }
     }
 
-    class ArrayEx {
+    class ArrayUtils {
         static Unique(arr) {
             return Array.from(new Set(arr));
         }
@@ -442,7 +442,7 @@
                 return;
             }
             this.m_affiliateResURLs.push(..._URLs);
-            this.m_affiliateResURLs = ArrayEx.Unique(this.m_affiliateResURLs);
+            this.m_affiliateResURLs = ArrayUtils.Unique(this.m_affiliateResURLs);
         }
         loadRes(onProgress = null) {
             return ResLoad.LoadAsync(this.allResURLs, onProgress);
@@ -1056,7 +1056,7 @@
     ValueConst.m_zeroV3 = new Laya.Vector3(0, 0, 0);
     ValueConst.m_zeroV2 = new Laya.Vector2(0, 0);
 
-    class ColorEx {
+    class ColorUtils {
         static RgbToHex(r, g, b) {
             var color = r << 16 | g << 8 | b;
             var str = color.toString(16);
@@ -1549,7 +1549,7 @@
         ECommonLeve[ECommonLeve["NewHandLeveId"] = 1] = "NewHandLeveId";
     })(ECommonLeve || (ECommonLeve = {}));
 
-    class StringEx {
+    class StringUtils {
         static SplitToIntArray(str, splitStr) {
             var splits = str.split(splitStr);
             var result = [];
@@ -2041,7 +2041,7 @@
             let _saveData = this.getNewData();
             _saveData.versions = undefined;
             try {
-                if (!StringEx.IsNullOrEmpty(readStr)) {
+                if (!StringUtils.IsNullOrEmpty(readStr)) {
                     let jsonData = JSON.parse(readStr);
                     for (let key in jsonData) {
                         _saveData[key] = jsonData[key];
@@ -2070,7 +2070,7 @@
             return _saveData;
         }
         getDifferData(_string) {
-            if (StringEx.IsNullOrEmpty(_string))
+            if (StringUtils.IsNullOrEmpty(_string))
                 return '';
             return this.encrypt(_string);
         }
@@ -2318,10 +2318,10 @@
             this.m_ifSetS3D = true;
         }
         setCamera(_camera, _clear_color) {
-            _camera.clearColor = ColorEx.HexToV4(_clear_color);
+            _camera.clearColor = ColorUtils.HexToV4(_clear_color);
         }
         setLight(_light, _color, _instensity) {
-            _light.color = ColorEx.HexToV3(_color);
+            _light.color = ColorUtils.HexToV3(_color);
             _light.intensity = _instensity;
             _light.shadowMode = Laya.ShadowMode.SoftLow;
             _light.shadowResolution = 2500;
@@ -2329,11 +2329,11 @@
         }
         addAmbient(_s3d, _color) {
             _s3d.ambientMode = Laya.AmbientMode.SolidColor;
-            _s3d.ambientColor = ColorEx.HexToV3(_color);
+            _s3d.ambientColor = ColorUtils.HexToV3(_color);
         }
         addFog(_scene, _color, _fogRange, _fogStart) {
             _scene.enableFog = true;
-            _scene.fogColor = ColorEx.HexToV3(_color);
+            _scene.fogColor = ColorUtils.HexToV3(_color);
             _scene.fogRange = _fogRange;
             _scene.fogStart = _fogStart;
         }
@@ -3024,7 +3024,7 @@
             }
             let _showUI = [];
             let _hideUI = [];
-            _uiStates = ArrayEx.ObjUnique(_uiStates, (item) => {
+            _uiStates = ArrayUtils.ObjUnique(_uiStates, (item) => {
                 return item.typeIndex;
             });
             _uiStates = this.statesFilter(_uiStates);
@@ -3068,13 +3068,13 @@
                 _showUI.unshift(...this.m_onShowUI);
             }
             if (typeof _showAffectLayer != 'undefined') {
-                _showAffectLayer = ArrayEx.Unique(_showAffectLayer);
+                _showAffectLayer = ArrayUtils.Unique(_showAffectLayer);
                 _showUI = _showUI.filter((item) => {
                     return _showAffectLayer.findIndex((layer) => { return layer == this.m_UIMediator[item.typeIndex].layer; }) != -1;
                 });
             }
             if (typeof _hideAffectLayer != 'undefined') {
-                _hideAffectLayer = ArrayEx.Unique(_hideAffectLayer);
+                _hideAffectLayer = ArrayUtils.Unique(_hideAffectLayer);
                 _hideUI = _hideUI.filter((item) => {
                     return _hideAffectLayer.findIndex((layer) => { return layer == this.m_UIMediator[item.typeIndex].layer; }) != -1;
                 });
@@ -3630,11 +3630,11 @@
         }
     }
 
-    class MathEx {
+    class MathUtils {
         static ToHex(num) {
             return num.toString(16);
         }
-        static RandomFromArrayExcept(numArr, except) {
+        static RandomFromArrayUtilscept(numArr, except) {
             let fakeRandomList = [];
             for (let i = 0; i < numArr.length; ++i) {
                 if (except == numArr[i])
@@ -3644,7 +3644,7 @@
             return this.RandomFromArray(fakeRandomList);
         }
         static RandomFromArray(numArr) {
-            let randomIndex = MathEx.RandomInt(0, numArr.length);
+            let randomIndex = MathUtils.RandomInt(0, numArr.length);
             return numArr[randomIndex];
         }
         static RandomArrayFromArray(arr, count) {
@@ -3654,9 +3654,9 @@
                 indexList.push(i);
             }
             for (let i = 0; i < count; ++i) {
-                let randomIndex = MathEx.RandomInt(0, indexList.length);
+                let randomIndex = MathUtils.RandomInt(0, indexList.length);
                 let getIndex = indexList[randomIndex];
-                ArrayEx.RemoveAt(indexList, randomIndex);
+                ArrayUtils.RemoveAt(indexList, randomIndex);
                 result.push(arr[getIndex]);
             }
             return result;
@@ -3669,7 +3669,7 @@
             for (var weight of weightArr) {
                 totalWeight += weight;
             }
-            var randomWeight = MathEx.Random(0, totalWeight);
+            var randomWeight = MathUtils.Random(0, totalWeight);
             var currentWeight = 0;
             for (var i = 0; i < numArr.length; ++i) {
                 currentWeight += weightArr[i];
@@ -3685,8 +3685,11 @@
         static Random(min, maxAddOne) {
             return (maxAddOne - min) * Math.random() + min;
         }
+        static randomRangeInt(min, max) {
+            return Math.floor(Math.random() * (max - min) + min);
+        }
         static RandomRatio(ratio) {
-            let v = MathEx.RandomInt(0, 10000) * 0.01;
+            let v = MathUtils.RandomInt(0, 10000) * 0.01;
             if (ratio > v) {
                 return true;
             }
@@ -3717,15 +3720,15 @@
             return numberCount;
         }
         static Lerp(from, to, progress) {
-            return from + (to - from) * MathEx.Clamp01(progress);
+            return from + (to - from) * MathUtils.Clamp01(progress);
         }
         static MoveTowardsAngle(current, target, maxDelta) {
-            var num = MathEx.DeltaAngle(current, target);
+            var num = MathUtils.DeltaAngle(current, target);
             if (0 - maxDelta < num && num < maxDelta) {
                 return target;
             }
             target = current + num;
-            return MathEx.MoveTowards(current, target, maxDelta);
+            return MathUtils.MoveTowards(current, target, maxDelta);
         }
         static MoveTowards(current, target, maxDelta) {
             if (Math.abs(target - current) <= maxDelta) {
@@ -3734,21 +3737,21 @@
             return current + Math.sign(target - current) * maxDelta;
         }
         static DeltaAngle(current, target) {
-            var num = MathEx.Repeat(target - current, 360);
+            var num = MathUtils.Repeat(target - current, 360);
             if (num > 180) {
                 num -= 360;
             }
             return num;
         }
         static Repeat(t, length) {
-            return MathEx.Clamp(t - Math.floor(t / length) * length, 0, length);
+            return MathUtils.Clamp(t - Math.floor(t / length) * length, 0, length);
         }
         static IsSimilar(n1, n2) {
             return n1 == n2;
         }
     }
-    MathEx.Deg2Rad = 0.0175;
-    MathEx.Rad2Deg = 57.2958;
+    MathUtils.Deg2Rad = 0.0175;
+    MathUtils.Rad2Deg = 57.2958;
 
     class ShareInfo {
     }
@@ -3781,7 +3784,7 @@
                         return shareInfo;
                 }
             }
-            let randomShare = MathEx.RandomFromArray(this._shareInfoList);
+            let randomShare = MathUtils.RandomFromArray(this._shareInfoList);
             return randomShare;
         }
         ShareAppMessage(shareInfo) {
@@ -3964,7 +3967,7 @@
             }
         }
         _CreateInterstitalAd() {
-            if (StringEx.IsNullOrEmpty(this.platformData.interstitialId)) {
+            if (StringUtils.IsNullOrEmpty(this.platformData.interstitialId)) {
                 console.log("无有效的插页广告ID,取消加载");
                 return;
             }
@@ -3998,7 +4001,7 @@
                 console.error("无createRewardedVideoAd方法,跳过初始化");
                 return;
             }
-            if (StringEx.IsNullOrEmpty(this.platformData.rewardVideoId)) {
+            if (StringUtils.IsNullOrEmpty(this.platformData.rewardVideoId)) {
                 console.log("无有效的视频广告ID,取消加载");
                 return;
             }
@@ -4035,7 +4038,7 @@
             });
         }
         _CreateBannerAd() {
-            if (StringEx.IsNullOrEmpty(this.platformData.bannerId)) {
+            if (StringUtils.IsNullOrEmpty(this.platformData.bannerId)) {
                 console.log("无有效的banner广告ID,取消加载");
                 return;
             }
@@ -4093,7 +4096,7 @@
         _DoNoCacheShowVideo(onSuccess, onSkipped) {
             this._rewardSuccessed = onSuccess;
             this._rewardSkipped = onSkipped;
-            if (StringEx.IsNullOrEmpty(this.platformData.rewardVideoId)) {
+            if (StringUtils.IsNullOrEmpty(this.platformData.rewardVideoId)) {
                 console.log("无有效的视频广告ID,取消加载");
                 onSkipped.run();
                 return;
@@ -4186,7 +4189,7 @@
             if (this.lauchOption.referrerInfo == null) {
                 return null;
             }
-            if (StringEx.IsNullOrEmpty(this.lauchOption.referrerInfo.appId)) {
+            if (StringUtils.IsNullOrEmpty(this.lauchOption.referrerInfo.appId)) {
                 return null;
             }
             return this.lauchOption.referrerInfo.appId;
@@ -4353,7 +4356,7 @@
             window["iplatform"] = this;
         }
         _CreateBannerAd() {
-            if (StringEx.IsNullOrEmpty(this.platformData.bannerId)) {
+            if (StringUtils.IsNullOrEmpty(this.platformData.bannerId)) {
                 console.log("无有效的banner广告ID,取消加载");
                 return;
             }
@@ -4379,7 +4382,7 @@
             });
         }
         _CreateVideoAd() {
-            if (StringEx.IsNullOrEmpty(this.platformData.rewardVideoId)) {
+            if (StringUtils.IsNullOrEmpty(this.platformData.rewardVideoId)) {
                 console.log("无有效的视频广告ID,取消加载");
                 return;
             }
@@ -4928,7 +4931,7 @@
                 console.error("无createRewardedVideoAd方法,跳过初始化");
                 return;
             }
-            if (StringEx.IsNullOrEmpty(this.platformData.rewardVideoId)) {
+            if (StringUtils.IsNullOrEmpty(this.platformData.rewardVideoId)) {
                 console.log("无有效的视频广告ID,取消加载");
                 return;
             }
@@ -4978,7 +4981,7 @@
         }
         ShowBannerAd() {
             return __awaiter(this, void 0, void 0, function* () {
-                if (StringEx.IsNullOrEmpty(this.platformData.bannerId)) {
+                if (StringUtils.IsNullOrEmpty(this.platformData.bannerId)) {
                     console.log("无有效的banner广告ID,取消加载");
                     return;
                 }
@@ -5080,7 +5083,7 @@
         _DoNoCacheShowVideo(onSuccess, onSkipped) {
             this._rewardSuccessed = onSuccess;
             this._rewardSkipped = onSkipped;
-            if (StringEx.IsNullOrEmpty(this.platformData.rewardVideoId)) {
+            if (StringUtils.IsNullOrEmpty(this.platformData.rewardVideoId)) {
                 console.log("无有效的视频广告ID,取消加载");
                 this._rewardSkipped && this._rewardSkipped.run();
                 return;
@@ -5153,7 +5156,7 @@
             if (this.lauchOption.referrerInfo == null) {
                 return null;
             }
-            if (StringEx.IsNullOrEmpty(this.lauchOption.referrerInfo.appId)) {
+            if (StringUtils.IsNullOrEmpty(this.lauchOption.referrerInfo.appId)) {
                 return null;
             }
             return this.lauchOption.referrerInfo.appId;
@@ -5287,7 +5290,7 @@
             }
         }
         _CreateBannerAd(show) {
-            if (StringEx.IsNullOrEmpty(this.platformData.bannerId)) {
+            if (StringUtils.IsNullOrEmpty(this.platformData.bannerId)) {
                 console.log("无有效的banner广告ID,取消加载");
                 return;
             }
@@ -5368,7 +5371,7 @@
             this._rewardSuccessed = onSuccess;
             this._rewardSkipped = onSkipped;
             if (!this._isVideoLoaded || !this._rewardVideo) {
-                if (StringEx.IsNullOrEmpty(this.platformData.rewardVideoId)) {
+                if (StringUtils.IsNullOrEmpty(this.platformData.rewardVideoId)) {
                     console.log("无有效的视频广告ID,取消加载");
                     onSkipped.run();
                     return;
@@ -5757,7 +5760,7 @@
             window["iplatform"] = this;
         }
         _CreateBannerAd() {
-            if (StringEx.IsNullOrEmpty(this.platformData.bannerId)) {
+            if (StringUtils.IsNullOrEmpty(this.platformData.bannerId)) {
                 console.log("无有效的banner广告ID,取消加载");
                 return;
             }
@@ -6007,7 +6010,7 @@
                 _serialNumber = [];
                 this.getUIBelongSerialNumber(this.m_UIMediator[_i], _serialNumber);
                 _serialNumberLenth = _serialNumber.length;
-                _serialNumber = ArrayEx.Unique(_serialNumber);
+                _serialNumber = ArrayUtils.Unique(_serialNumber);
                 if (_serialNumberLenth != _serialNumber.length) {
                     console.log(...ConsoleEx.packError('UI调度者', _i, '的附属UI有重复出现！'));
                 }
@@ -6435,7 +6438,7 @@
         static AddExtraConfig(_url) {
             if (_url.length > 0) {
                 ConfigManager._extraConfig.push(..._url);
-                ConfigManager._extraConfig = ArrayEx.Unique(ConfigManager._extraConfig);
+                ConfigManager._extraConfig = ArrayUtils.Unique(ConfigManager._extraConfig);
             }
         }
         static StartLoad(onFinished, onProgress = null) {

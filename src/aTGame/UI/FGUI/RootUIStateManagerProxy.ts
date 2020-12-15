@@ -1,5 +1,5 @@
 import RootClassProxy from "../../Root/RootClassProxy";
-import ArrayEx from "../../Utils/ArrayEx";
+import ArrayUtils from "../../Utils/ArrayUtils";
 import BaseUIMediator from './BaseUIMediator';
 import { EUILayer } from "./EUILayer";
 import { EUI } from '../../../dMyGame/Enum/EUI';
@@ -108,7 +108,7 @@ export default class RootUIStateManagerProxy extends RootClassProxy {
         let _showUI: IUIState[] = [];//需要显示的UI
         let _hideUI: IUIState[] = [];//需要隐藏的UI
         //数组去重
-        _uiStates = ArrayEx.ObjUnique<IUIState>(_uiStates, (item) => {
+        _uiStates = ArrayUtils.ObjUnique<IUIState>(_uiStates, (item) => {
             return item.typeIndex;
         });
         //过滤不存在的状态
@@ -164,7 +164,7 @@ export default class RootUIStateManagerProxy extends RootClassProxy {
         //检测是否在受影响列表中
         if (typeof _showAffectLayer != 'undefined') {
             //先去重
-            _showAffectLayer = ArrayEx.Unique(_showAffectLayer);
+            _showAffectLayer = ArrayUtils.Unique(_showAffectLayer);
             // console.log('层级', _affectLayer);
             //过滤需要显示的列表，去掉受影响层级之外的元素
             _showUI = _showUI.filter((item) => {
@@ -173,7 +173,7 @@ export default class RootUIStateManagerProxy extends RootClassProxy {
         }
         if (typeof _hideAffectLayer != 'undefined') {
             //先去重
-            _hideAffectLayer = ArrayEx.Unique(_hideAffectLayer);
+            _hideAffectLayer = ArrayUtils.Unique(_hideAffectLayer);
             //过滤需要显示的列表，去掉受影响层级之外的元素
             _hideUI = _hideUI.filter((item) => {
                 return _hideAffectLayer.findIndex((layer) => { return layer == this.m_UIMediator[item.typeIndex].layer }) != -1;

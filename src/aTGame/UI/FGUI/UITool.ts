@@ -3,5 +3,7 @@
  */
 export default interface IUIClass {
     [index: string]: any,
+
+    /** 创建一个实例 */
     createInstance(): fgui.GComponent,
 }

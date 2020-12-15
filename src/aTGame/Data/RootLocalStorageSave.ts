@@ -1,6 +1,6 @@
 import RootLocalStorageData from './RootLocalStorageData';
 import MainConfig from '../../bTGameConfig/MainConfig';
-import StringEx from '../Utils/StringEx';
+import StringUtils from '../Utils/StringUtils';
 import Md5 from './Md5';
 import RootDataManger from './RootDataManger';
 import Base64 from './Base64';
@@ -53,7 +53,7 @@ export default abstract class RootLocalStorageSave<T extends RootLocalStorageDat
         _saveData.versions = undefined;
         //判断数据是否被篡改
         try {
-            if (!StringEx.IsNullOrEmpty(readStr)) {
+            if (!StringUtils.IsNullOrEmpty(readStr)) {
                 let jsonData = JSON.parse(readStr);
                 for (let key in jsonData) {
                     _saveData[key] = jsonData[key];
@@ -95,7 +95,7 @@ export default abstract class RootLocalStorageSave<T extends RootLocalStorageDat
     //处理对比数据
     private getDifferData(_string: string): string {
         //判断是否为空
-        if (StringEx.IsNullOrEmpty(_string)) return '';
+        if (StringUtils.IsNullOrEmpty(_string)) return '';
         //加密
         return this.encrypt(_string);
     }

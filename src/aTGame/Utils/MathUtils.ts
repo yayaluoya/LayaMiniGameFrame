@@ -1,8 +1,8 @@
-import ArrayEx from "./ArrayEx";
+import ArrayUtils from "./ArrayUtils";
 /**
  * 数学函数扩展
  */
-export default class MathEx {
+export default class MathUtils {
 
     public static Deg2Rad = 0.0175;
     public static Rad2Deg = 57.2958;
@@ -11,7 +11,7 @@ export default class MathEx {
         return num.toString(16);
     }
 
-    public static RandomFromArrayExcept<T>(numArr: T[], except: T): T {
+    public static RandomFromArrayUtilscept<T>(numArr: T[], except: T): T {
         let fakeRandomList = [];
         for (let i = 0; i < numArr.length; ++i) {
             if (except == numArr[i]) continue;
@@ -21,7 +21,7 @@ export default class MathEx {
     }
 
     public static RandomFromArray<T>(numArr: T[]): T {
-        let randomIndex = MathEx.RandomInt(0, numArr.length);
+        let randomIndex = MathUtils.RandomInt(0, numArr.length);
         return numArr[randomIndex];
     }
 
@@ -32,9 +32,9 @@ export default class MathEx {
             indexList.push(i);
         }
         for (let i = 0; i < count; ++i) {
-            let randomIndex = MathEx.RandomInt(0, indexList.length);
+            let randomIndex = MathUtils.RandomInt(0, indexList.length);
             let getIndex = indexList[randomIndex];
-            ArrayEx.RemoveAt(indexList, randomIndex);
+            ArrayUtils.RemoveAt(indexList, randomIndex);
             result.push(arr[getIndex]);
         }
         return result;
@@ -48,7 +48,7 @@ export default class MathEx {
         for (var weight of weightArr) {
             totalWeight += weight;
         }
-        var randomWeight = MathEx.Random(0, totalWeight);
+        var randomWeight = MathUtils.Random(0, totalWeight);
         var currentWeight = 0;
         for (var i = 0; i < numArr.length; ++i) {
             currentWeight += weightArr[i];
@@ -70,11 +70,20 @@ export default class MathEx {
     }
 
     /**
+     * 获取一个范围内随机整数
+     * @param min 最小值
+     * @param max 最大值
+     */
+    public static randomRangeInt(min: number, max: number): number {
+        return Math.floor(Math.random() * (max - min) + min);
+    }
+
+    /**
      * 判定概率命中
      * @param ratio 概率，百分数
      */
     public static RandomRatio(ratio: number): boolean {
-        let v = MathEx.RandomInt(0, 10000) * 0.01;
+        let v = MathUtils.RandomInt(0, 10000) * 0.01;
         if (ratio > v) {
             return true;
         }
@@ -107,16 +116,16 @@ export default class MathEx {
     }
 
     public static Lerp(from: number, to: number, progress: number): number {
-        return from + (to - from) * MathEx.Clamp01(progress);
+        return from + (to - from) * MathUtils.Clamp01(progress);
     }
 
     public static MoveTowardsAngle(current: number, target: number, maxDelta: number) {
-        var num = MathEx.DeltaAngle(current, target);
+        var num = MathUtils.DeltaAngle(current, target);
         if (0 - maxDelta < num && num < maxDelta) {
             return target;
         }
         target = current + num;
-        return MathEx.MoveTowards(current, target, maxDelta);
+        return MathUtils.MoveTowards(current, target, maxDelta);
     }
 
     public static MoveTowards(current: number, target: number, maxDelta: number): number {
@@ -127,7 +136,7 @@ export default class MathEx {
     }
 
     public static DeltaAngle(current: number, target: number): number {
-        var num = MathEx.Repeat(target - current, 360);
+        var num = MathUtils.Repeat(target - current, 360);
         if (num > 180) {
             num -= 360;
         }
@@ -135,7 +144,7 @@ export default class MathEx {
     }
 
     public static Repeat(t: number, length: number): number {
-        return MathEx.Clamp(t - Math.floor(t / length) * length, 0, length);
+        return MathUtils.Clamp(t - Math.floor(t / length) * length, 0, length);
     }
 
     public static IsSimilar(n1: number, n2: number) {

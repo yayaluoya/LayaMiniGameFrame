@@ -2,7 +2,7 @@ import Vector3Ex from "./Vector3Ex";
 /**
  * 摄像机工具
  */
-export class CameraEx {
+export class CameraUtils {
     /**
      * 屏幕Pos到世界Pos
      * @param camera 

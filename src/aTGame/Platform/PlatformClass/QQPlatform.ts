@@ -1,5 +1,5 @@
 import ConsoleEx from "../../Console/ConsoleEx";
-import StringEx from "../../Utils/StringEx";
+import StringUtils from "../../Utils/StringUtils";
 import { PlatformCommonEvent } from "../Common/PlatformCommonEventId";
 import PlatformData from "../Data/PlatformData";
 import PlatformManagerProxy from "../PlatformManagerProxy";
@@ -52,7 +52,7 @@ export default class QQPlatform extends WXPlatform {
     }
 
     protected _CreateBannerAd(show?: boolean) {
-        if (StringEx.IsNullOrEmpty(this.platformData.bannerId)) {
+        if (StringUtils.IsNullOrEmpty(this.platformData.bannerId)) {
             console.log("无有效的banner广告ID,取消加载");
             return;
         }
@@ -144,7 +144,7 @@ export default class QQPlatform extends WXPlatform {
         this._rewardSuccessed = onSuccess;
         this._rewardSkipped = onSkipped;
         if (!this._isVideoLoaded || !this._rewardVideo) {
-            if (StringEx.IsNullOrEmpty(this.platformData.rewardVideoId)) {
+            if (StringUtils.IsNullOrEmpty(this.platformData.rewardVideoId)) {
                 console.log("无有效的视频广告ID,取消加载");
                 onSkipped.run();
                 return;

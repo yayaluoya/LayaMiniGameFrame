@@ -1,5 +1,5 @@
 import { EnvironmentConfig } from '../_config/EnvironmentConfig';
-import ColorEx from '../../aTGame/Utils/ColorEx';
+import ColorUtils from '../../aTGame/Utils/ColorUtils';
 import Global3D from '../../aTGame/3D/Global3D';
 import IRootManager from '../../aTGame/Manager/IRootManager';
 import { EEventScene } from '../EventEnum/EEventScene';
@@ -102,13 +102,13 @@ export default class EnvironmentManager implements IRootManager {
     //设置摄像机
     private setCamera(_camera: Laya.Camera, _clear_color: string) {
         //设置清除颜色
-        _camera.clearColor = ColorEx.HexToV4(_clear_color);
+        _camera.clearColor = ColorUtils.HexToV4(_clear_color);
     }
 
     //设置灯光
     private setLight(_light: Laya.DirectionLight, _color: string, _instensity: number) {
         //
-        _light.color = ColorEx.HexToV3(_color);
+        _light.color = ColorUtils.HexToV3(_color);
         _light.intensity = _instensity;
         //灯光开启阴影
         _light.shadowMode = Laya.ShadowMode.SoftLow;
@@ -120,14 +120,14 @@ export default class EnvironmentManager implements IRootManager {
     private addAmbient(_s3d: Laya.Scene3D, _color: string) {
         //设置环境光
         _s3d.ambientMode = Laya.AmbientMode.SolidColor;
-        _s3d.ambientColor = ColorEx.HexToV3(_color);
+        _s3d.ambientColor = ColorUtils.HexToV3(_color);
     }
 
     //加雾化
     private addFog(_scene: Laya.Scene3D, _color: string, _fogRange: number, _fogStart: number) {
         //
         _scene.enableFog = true;
-        _scene.fogColor = ColorEx.HexToV3(_color);
+        _scene.fogColor = ColorUtils.HexToV3(_color);
         _scene.fogRange = _fogRange;
         _scene.fogStart = _fogStart;
     }

@@ -1,7 +1,7 @@
 /**
  * 颜色操作类
  */
-export default class ColorEx {
+export default class ColorUtils {
     /**
      * rgb数据转字符串
      * @param r -

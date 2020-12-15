@@ -18,63 +18,6 @@ export default class NumberUtils {
         return parseFloat(_num);
     }
 
-    private static _strMap: string[];
-    /**
-     * 获得金币字符串显示
-     * @param num 
-     */
-    public static GetCoinStr(num: number): string {
-        if (this._strMap == null) {
-            this._strMap = ["", "K", "M", "B", "T", "Q"];
-            for (let i = 0; i < 500; ++i) {
-                let firstC = String.fromCharCode(Math.floor(i / 24) + 97);
-                let behind = String.fromCharCode(Math.floor(i % 24) + 97);
-                this._strMap.push(firstC + behind);
-            }
-        }
-        let count = 0;
-        while (num > 1000) {
-            num /= 1000;
-            count++;
-        }
-        if (count >= this._strMap.length) {
-            console.error("单位表越界");
-            return num.toFixed(1) + "aa"//"越界";
-        }
-        if (count <= 0) {
-            return num.toFixed(0);
-        }
-        return num.toFixed(1) + this._strMap[count];
-    }
-
-    /**
-     * 获得金币字符串显示
-     * @param num 
-     */
-    public static GetCoinStr1(num: number): string {
-        if (this._strMap == null) {
-            this._strMap = ["", "K", "M", "B", "T", "Q"];
-            for (let i = 0; i < 500; ++i) {
-                let firstC = String.fromCharCode(Math.floor(i / 24) + 97);
-                let behind = String.fromCharCode(Math.floor(i % 24) + 97);
-                this._strMap.push(firstC + behind);
-            }
-        }
-        let count = 0;
-        while (num > 1000) {
-            num /= 1000;
-            count++;
-        }
-        if (count >= this._strMap.length) {
-            console.error("单位表越界");
-            return num.toFixed(1) + "aa"//"越界";
-        }
-        if (count <= 0) {
-            return num.toFixed(0);
-        }
-        return num.toFixed(0) + this._strMap[count];
-    }
-
     /**
      * 获取一个数的符号
      * @param _n 

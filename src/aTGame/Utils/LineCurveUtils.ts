@@ -1,5 +1,5 @@
 import Vector3Ex from "./Vector3Ex";
-import ArrayEx from "./ArrayEx";
+import ArrayUtils from "./ArrayUtils";
 import QuaternionEx from './QuaternionEx';
 
 /**
@@ -14,9 +14,9 @@ export default class LineCurveUtils {
     public totalLength: number;
 
     constructor(keys: number[], posList: Laya.Vector3[], rotList: Laya.Quaternion[]) {
-        this._keys = ArrayEx.Copy(keys);
-        this._posList = ArrayEx.Copy(posList);
-        this._rotList = ArrayEx.Copy(rotList);
+        this._keys = ArrayUtils.Copy(keys);
+        this._posList = ArrayUtils.Copy(posList);
+        this._rotList = ArrayUtils.Copy(rotList);
         this._unitProgress = 1 / this._keys.length;
     }
 

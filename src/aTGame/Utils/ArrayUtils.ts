@@ -1,7 +1,7 @@
 /**
- * 数组扩展类
+ * 数组工具
  */
-export default class ArrayEx {
+export default class ArrayUtils {
 
     /**
      * 数组去重保留靠前的内容
