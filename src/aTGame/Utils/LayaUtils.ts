@@ -9,6 +9,13 @@ export default class LayaUtils {
     private static _deltaTimeSec: number = 0.016;
 
     /**
+     * 获取帧率
+     */
+    public static get frameRate(): number {
+        return 1000 / this.deltaTime;
+    }
+
+    /**
      * 获取每一帧的时间。毫秒级
      * 很卡的时候可能会很大
      */
