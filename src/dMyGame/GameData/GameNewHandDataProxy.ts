@@ -1,17 +1,16 @@
-import RootLocalStorageSave from '../../aTGame/Data/RootLocalStorageSave';
-import GameSignData from './GameSignData';
+import RootLocalStorageProxy from '../../aTGame/Data/RootLocalStorageProxy';
+import GameNewHandData from './GameNewHandData';
 
 /**
- * 签到数据保存类
+ * 新手引导数据保存类
  */
-export default class GameSignDataSave extends RootLocalStorageSave<GameSignData>{
-    private _saveData: GameSignData; // 需要保存的数据
+export default class GameNewHandDataProxy extends RootLocalStorageProxy<GameNewHandData>{
     //
-    private static _instance: GameSignDataSave;
+    private static _instance: GameNewHandDataProxy;
     /** 单例 */
-    public static get instance(): GameSignDataSave {
+    public static get instance(): GameNewHandDataProxy {
         if (this._instance == null) {
-            this._instance = new GameSignDataSave();
+            this._instance = new GameNewHandDataProxy();
         }
         //
         return this._instance;
@@ -24,19 +23,19 @@ export default class GameSignDataSave extends RootLocalStorageSave<GameSignData>
 
     /** 获取保存名称 */
     protected get _saveName(): string {
-        return "->GameSignDataSave<-";
+        return "->GameNewHandData<-";
     }
 
-    // 初始化
-    public InitData() {
-        this._saveData = this._ReadFromFile();
-    }
-
-    /**
-     * 获取当前游戏临时数据的副本
-     */
-    public static get signData(): GameSignData {
+    /** 获取原始数据 */
+    public static get rootData(): GameNewHandData {
         //
+        return this._instance._saveData;
+    }
+
+    /** 
+     * 获取数据的副本
+     */
+    public static get propData(): GameNewHandData {
         return this._instance._saveData.clone();
     }
 
@@ -45,8 +44,8 @@ export default class GameSignDataSave extends RootLocalStorageSave<GameSignData>
     // ** -------------------------------------------------------------------------------------- ** //
 
     //获取一个新的数据
-    protected getNewData(): GameSignData {
-        return new GameSignData();
+    protected getNewData(): GameNewHandData {
+        return new GameNewHandData();
     }
 
     /**

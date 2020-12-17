@@ -1,17 +1,16 @@
-import RootLocalStorageSave from '../../aTGame/Data/RootLocalStorageSave';
+import RootLocalStorageProxy from '../../aTGame/Data/RootLocalStorageProxy';
 import GamePropData from './GamePropData';
 
 /**
  * 道具数据保存类
  */
-export default class GamePropDataSave extends RootLocalStorageSave<GamePropData>{
-    private _saveData: GamePropData; // 需要保存的数据
+export default class GamePropDataProxy extends RootLocalStorageProxy<GamePropData>{
     //
-    private static _instance: GamePropDataSave;
+    private static _instance: GamePropDataProxy;
     /** 单例 */
-    public static get instance(): GamePropDataSave {
+    public static get instance(): GamePropDataProxy {
         if (this._instance == null) {
-            this._instance = new GamePropDataSave();
+            this._instance = new GamePropDataProxy();
         }
         //
         return this._instance;
@@ -24,12 +23,7 @@ export default class GamePropDataSave extends RootLocalStorageSave<GamePropData>
 
     /** 获取保存名称 */
     protected get _saveName(): string {
-        return "->GamePropDataSave<-";
-    }
-
-    // 初始化
-    public InitData() {
-        this._saveData = this._ReadFromFile();
+        return "->GamePropData<-";
     }
 
     /** 

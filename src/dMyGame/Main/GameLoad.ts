@@ -22,17 +22,18 @@ import { ESounds } from '../ResList/ESounds';
 import { CameraConst } from '../_config/CameraConst';
 import { LightingConst } from '../_config/LightingConst';
 import { TestConst } from '../_config/TestConst';
-import GameDataSave from '../GameData/GameDataSave';
-import GamePropDataSave from '../GameData/GamePropDataSave';
-import GameSkinDataSave from '../GameData/GameSkinDataSave';
-import GameSignDataSave from '../GameData/GameSignDataSave';
-import GameShortDataSave from '../GameData/GameShortDataSave';
+import GameDataProxy from '../GameData/GameDataProxy';
+import GamePropDataProxy from '../GameData/GamePropDataProxy';
+import GameSkinDataProxy from '../GameData/GameSkinDataProxy';
+import GameSignDataProxy from '../GameData/GameSignDataProxy';
+import GameShortDataProxy from '../GameData/GameShortDataProxy';
 import { LevelPropConfig } from '../_config/LevelPropConfig';
 import { OtherConst } from '../_config/OtherConst';
 import { EBGMs } from '../ResList/EBGMs';
-import GameNewHandDataSave from '../GameData/GameNewHandDataSave';
+import GameNewHandDataProxy from '../GameData/GameNewHandDataProxy';
 import { OtherLevelConfig } from '../_config/OtherLevelConfig';
 import { OtherEnvironmentConfig } from '../_config/OtherEnvironmentConfig';
+import GameTestDataProxy from '../GameData/GameTestDataProxy';
 /**
  * 游戏进入之前的加载操作类
  */
@@ -118,17 +119,19 @@ export default class GameLoad extends RootGameLoad {
     //注册数据
     protected loginData() {
         //游戏主要保存数据
-        GameDataSave.instance.InitData();
+        GameDataProxy.instance.InitData();
         //游戏新手引导数据
-        GameNewHandDataSave.instance.InitData();
+        GameNewHandDataProxy.instance.InitData();
         //游戏道具数据
-        GamePropDataSave.instance.InitData();
+        GamePropDataProxy.instance.InitData();
         //游戏皮肤数据
-        GameSkinDataSave.instance.InitData();
+        GameSkinDataProxy.instance.InitData();
         //游戏签到数据
-        GameSignDataSave.instance.InitData();
+        GameSignDataProxy.instance.InitData();
         //游戏临时数据
-        GameShortDataSave.instance.InitData();
+        GameShortDataProxy.instance.InitData();
+        //测试数据
+        GameTestDataProxy.instance.InitData();
     }
 
     // 获取其它游戏资源, 可以依赖游戏表格

@@ -5,10 +5,23 @@ import Md5 from './Md5';
 import RootDataManger from './RootDataManger';
 import Base64 from './Base64';
 /**
- * 保存本地数据基类
+ * 本地数据代理基类，用以使用和保存数据
  * 泛型为数据类型
  */
-export default abstract class RootLocalStorageSave<T extends RootLocalStorageData> extends RootDataManger {
+export default abstract class RootLocalStorageProxy<T extends RootLocalStorageData> extends RootDataManger {
+    /** 需要保存的数据 */
+    protected _saveData: T;
+
+    /** 
+     * 是否设置数据代理
+     * 监听数据变化自动保存
+     * 最低监听数组变化，当数组内容是对象时不会监听该对象。
+     */
+    protected _ifSetDataProxy: boolean = false;
+
+    /** 是否对比数据 */
+    protected _ifDifferData: boolean = true;
+
     /** 获取保存名称 */
     protected abstract get _saveName(): string;
 
@@ -23,6 +36,68 @@ export default abstract class RootLocalStorageSave<T extends RootLocalStorageDat
         return this.encrypt(this.saveName + '-(-__DifferData__LayaMiniGame__-)-');
     }
 
+    /** 获取保存数据，非副本，谨慎更改 */
+    public get saveData(): T {
+        return this._saveData;
+    }
+
+    /**
+     * 初始化数据
+     */
+    public InitData() {
+        this._saveData = this._ReadFromFile();
+        //判断是否设置数据代理
+        if (this._ifSetDataProxy) {
+            this._saveData = this.getProxyData(this._saveData) as T;
+        }
+        //
+        this._initData();
+    }
+
+    /**
+     * 获取一个代理对象
+     * @param _obj 需要代理的对象
+     */
+    private getProxyData(_obj: any): any {
+        if (typeof _obj == 'object' && _obj) {
+            //不监听数组中的对象
+            if (!Array.prototype.isPrototypeOf(_obj)) {
+                //遍历对象属性
+                for (let _i in _obj) {
+                    //注意 null 也为object
+                    if (typeof _obj[_i] == 'object' && _obj[_i]) {
+                        _obj[_i] = this.getProxyData(_obj[_i]);
+                    }
+                }
+            }
+        } else {
+            return _obj;
+        }
+        //返回代理对象
+        return new Proxy<any>(_obj, {
+            set: (target, key, value) => {
+                this.proxyDataSet(target, key, value);
+                return true;
+            },
+        });
+    }
+
+    /** 代理数据被设置时调用 */
+    protected proxyDataSet(target, key, value) {
+        console.log('数据属性改变', target, key, value);
+        //如果赋的值是一个对象则继续监听
+        if (typeof value == 'object' && value && !Array.prototype.isPrototypeOf(target)) {
+            target[key] = this.getProxyData(value);
+        } else {
+            target[key] = value;
+        }
+        //保存数据
+        this._SaveToDisk(this._saveData);
+    }
+
+    /** 初始化完成，继承使用 */
+    protected _initData() { }
+
     /**
      * 保存数据到本地
      */
@@ -30,7 +105,7 @@ export default abstract class RootLocalStorageSave<T extends RootLocalStorageDat
         let json = JSON.stringify(_saveData);
         Laya.LocalStorage.setJSON(this.saveName, json);
         //判断是否是线上环境
-        if (MainConfig.OnLine) {
+        if (MainConfig.OnLine && this._ifDifferData) {
             //获取对比数据
             let _differJson = this.getDifferData(json);
             //保存对比数据
@@ -42,7 +117,7 @@ export default abstract class RootLocalStorageSave<T extends RootLocalStorageDat
     protected _ReadFromFile(): T {
         let readStr = Laya.LocalStorage.getJSON(this.saveName);
         //判断是否是线上环境
-        if (MainConfig.OnLine) {
+        if (MainConfig.OnLine && this._ifDifferData) {
             //对比数据
             let _differ = Laya.LocalStorage.getJSON(this.differName);
             if (this.getDifferData(readStr) != _differ) {

@@ -1,17 +1,17 @@
-import RootShortSave from '../../aTGame/Data/RootShortSave';
+import RootShortProxy from '../../aTGame/Data/RootShortProxy';
 import GameOnCustomData from './shortData/GameOnCustomData';
 import GameShortData from './GameShortData';
 
 /**
  * 临时数据保存类
  */
-export default class GameShortDataSave extends RootShortSave<GameShortData>{
+export default class GameShortDataProxy extends RootShortProxy<GameShortData>{
     //
-    private static _instance: GameShortDataSave;
+    private static _instance: GameShortDataProxy;
     /** 单例 */
-    public static get instance(): GameShortDataSave {
+    public static get instance(): GameShortDataProxy {
         if (this._instance == null) {
-            this._instance = new GameShortDataSave();
+            this._instance = new GameShortDataProxy();
         }
         //
         return this._instance;

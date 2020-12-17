@@ -1,17 +1,16 @@
-import RootLocalStorageSave from '../../aTGame/Data/RootLocalStorageSave';
-import GameNewHandData from './GamePropData';
+import RootLocalStorageProxy from '../../aTGame/Data/RootLocalStorageProxy';
+import GameSignData from './GameSignData';
 
 /**
- * 新手引导数据保存类
+ * 签到数据保存类
  */
-export default class GameNewHandDataSave extends RootLocalStorageSave<GameNewHandData>{
-    private _saveData: GameNewHandData; // 需要保存的数据
+export default class GameSignDataProxy extends RootLocalStorageProxy<GameSignData>{
     //
-    private static _instance: GameNewHandDataSave;
+    private static _instance: GameSignDataProxy;
     /** 单例 */
-    public static get instance(): GameNewHandDataSave {
+    public static get instance(): GameSignDataProxy {
         if (this._instance == null) {
-            this._instance = new GameNewHandDataSave();
+            this._instance = new GameSignDataProxy();
         }
         //
         return this._instance;
@@ -24,18 +23,14 @@ export default class GameNewHandDataSave extends RootLocalStorageSave<GameNewHan
 
     /** 获取保存名称 */
     protected get _saveName(): string {
-        return "->GameNewHandDataSave<-";
+        return "->GameSignData<-";
     }
 
-    // 初始化
-    public InitData() {
-        this._saveData = this._ReadFromFile();
-    }
-
-    /** 
-     * 获取数据的副本
+    /**
+     * 获取当前游戏临时数据的副本
      */
-    public static get propData(): GameNewHandData {
+    public static get signData(): GameSignData {
+        //
         return this._instance._saveData.clone();
     }
 
@@ -44,8 +39,8 @@ export default class GameNewHandDataSave extends RootLocalStorageSave<GameNewHan
     // ** -------------------------------------------------------------------------------------- ** //
 
     //获取一个新的数据
-    protected getNewData(): GameNewHandData {
-        return new GameNewHandData();
+    protected getNewData(): GameSignData {
+        return new GameSignData();
     }
 
     /**

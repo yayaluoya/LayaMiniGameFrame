@@ -8,7 +8,7 @@ import IRootManager from '../../aTGame/Manager/IRootManager';
 import MesManager from './MesManager';
 import { EEventScene } from '../EventEnum/EEventScene';
 import { EEventUI } from '../EventEnum/EEventUI';
-import GameDataSave from '../GameData/GameDataSave';
+import GameDataProxy from '../GameData/GameDataProxy';
 import LevelConfigProxy from '../ConfigProxy/LevelConfigProxy';
 import { EOtherLevelName } from '../Enum/EOtherLevelName';
 /**
@@ -49,7 +49,7 @@ export default class CustomsManager implements IRootManager {
         //
         this.m_ifSceneBuild = false;
         //初始化关卡数据
-        GameDataSave.initCustoms(LevelConfigProxy.instance.getLevelNumber());
+        GameDataProxy.initCustoms(LevelConfigProxy.instance.getLevelNumber());
         //监听事件
         MesManager.instance.on3D(EEventScene.GameLevelsBuild, this, this.gameLevelsBuild);
         MesManager.instance.on3D(EEventScene.GameLevelsDelete, this, this.gameLevelsDelete);
@@ -78,11 +78,11 @@ export default class CustomsManager implements IRootManager {
         let lvId: number;
         //判断游戏是否已经初始化
         if (this.m_ifInit) {
-            lvId = GameDataSave.gameData.onCustoms;
+            lvId = GameDataProxy.gameData.onCustoms;
         } else {
             this.m_ifInit = true;
             // 获取默认关卡
-            lvId = GameDataSave.getDefaultCustoms();
+            lvId = GameDataProxy.getDefaultCustoms();
         }
         //
         let scene = SceneManager.instance.getSceneByLv(lvId);
@@ -104,7 +104,7 @@ export default class CustomsManager implements IRootManager {
             ConManager.addCommonCon();//没有任何依赖的控制器
             //预加载场景
             if (Const.ifPreloadCustoms) {
-                let _preloadCustoms: number = GameDataSave.getPreloadCustoms();
+                let _preloadCustoms: number = GameDataProxy.getPreloadCustoms();
                 SceneManager.instance.preloadSceneRes(_preloadCustoms);
             }
             this.onCustomsInit(lvId);

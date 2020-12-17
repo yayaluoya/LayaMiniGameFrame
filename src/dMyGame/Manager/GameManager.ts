@@ -1,6 +1,6 @@
 import IRootManager from '../../aTGame/Manager/IRootManager';
 import { EEventScene } from '../EventEnum/EEventScene';
-import GameShortDataSave from '../GameData/GameShortDataSave';
+import GameShortDataProxy from '../GameData/GameShortDataProxy';
 import MesManager from './MesManager';
 /**
  * 游戏管理器
@@ -31,7 +31,7 @@ export default class GameManager implements IRootManager {
     //游戏关卡构建之前调用
     private gameLevelsBuildBefore() {
         //清空临时数据
-        GameShortDataSave.emptyGameOnCustomData();
+        GameShortDataProxy.emptyGameOnCustomData();
     }
 
     //游戏关卡构建完成调用

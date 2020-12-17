@@ -4,7 +4,7 @@ import SceneManager from '../3D/SceneManager';
 import FGuiRootManager from '../UI/FGUI/FGuiRootManager';
 import Global3D from '../3D/Global3D';
 import EssentialResUrls from '../Res/EssentialResUrls';
-import CommonDataSave from '../Commom/CommonDataSave';
+import CommonDataProxy from '../Commom/CommonDataProxy';
 import KeyResManager from '../Res/KeyResManager';
 import FrameSubpackages from '../../cFrameBridge/FrameSubpackages';
 import PlatformManager from '../Platform/PlatformManager';
@@ -299,7 +299,7 @@ export default class RootGameLoad {
 
     //注册公共数据
     private loginCommonData() {
-        CommonDataSave.instance.InitData();
+        CommonDataProxy.instance.InitData();
     }
 
     //! //

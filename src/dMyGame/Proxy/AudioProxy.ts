@@ -1,5 +1,5 @@
 import AudioUtils from '../../aTGame/Audio/AudioUtils';
-import GameDataSave from '../GameData/GameDataSave';
+import GameDataProxy from '../GameData/GameDataProxy';
 import { EBGMs } from '../ResList/EBGMs';
 import { ESounds } from '../ResList/ESounds';
 /**
@@ -68,7 +68,7 @@ export default class AudioProxy {
      * @param _name 背景音乐名字
      */
     public playBGM(_name: EBGMs, loops?: number, complete?: Handler, startTime?: number): void {
-        if (!GameDataSave.gameData.ifOpenBgm || this.m_stop) return;
+        if (!GameDataProxy.gameData.ifOpenBgm || this.m_stop) return;
         AudioUtils.instance.playBGM(_name, loops, complete, startTime);
         //记录
         this.m_onBGM = _name;
@@ -83,7 +83,7 @@ export default class AudioProxy {
      * @param startTime 声音播放起始时间。
     */
     public playSound(_eSoundName: ESounds, loops?: number, complete?: Laya.Handler, soundClass?: any, startTime?: number) {
-        if (!GameDataSave.gameData.ifOpenSound || this.m_stop) return;
+        if (!GameDataProxy.gameData.ifOpenSound || this.m_stop) return;
         //判断是不是循环播放的音效，如果是的话就保存起来
         if (loops == 0) {
             this.m_onLoopSoundList.add(_eSoundName);

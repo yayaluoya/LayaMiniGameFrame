@@ -1,24 +1,21 @@
 import { ECommonLeve } from '../../aTGame/Commom/CommonLeveEnum';
-import RootLocalStorageSave from '../../aTGame/Data/RootLocalStorageSave';
+import RootLocalStorageProxy from '../../aTGame/Data/RootLocalStorageProxy';
 import GameData from './GameData';
 
 /**
  * 数据保存类
  */
-export default class GameDataSave extends RootLocalStorageSave<GameData>{
+export default class GameDataProxy extends RootLocalStorageProxy<GameData>{
     //
-    private static _instance: GameDataSave;
+    private static _instance: GameDataProxy;
     /** 单例 */
-    public static get instance(): GameDataSave {
+    public static get instance(): GameDataProxy {
         if (this._instance == null) {
-            this._instance = new GameDataSave();
+            this._instance = new GameDataProxy();
         }
         //
         return this._instance;
     }
-
-    //
-    private _saveData: GameData; // 需要保存的数据
 
     /** 不允许外界实例化 */
     private constructor() {
@@ -27,12 +24,13 @@ export default class GameDataSave extends RootLocalStorageSave<GameData>{
 
     /** 获取保存名称 */
     protected get _saveName(): string {
-        return "->GameDataSave<-";
+        return "->GameData<-";
     }
 
-    // 初始化
-    public InitData() {
-        this._saveData = this._ReadFromFile();
+    /** 获取原始数据 */
+    public static get rootData(): GameData {
+        //
+        return this._instance._saveData;
     }
 
     /**

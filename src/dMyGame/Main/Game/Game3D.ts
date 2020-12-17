@@ -61,7 +61,8 @@ export default class Game3D {
         } else {
             Laya.Stat.hide();
         }
-        //
+        // 关闭多点触控
+        // Laya.MouseManager.multiTouchEnabled = true;
     }
 
     //开始游戏

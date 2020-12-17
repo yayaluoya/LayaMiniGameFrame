@@ -2015,24 +2015,70 @@
     }
     Base64._keyStr = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
 
-    class RootLocalStorageSave extends RootDataManger {
+    class RootLocalStorageProxy extends RootDataManger {
+        constructor() {
+            super(...arguments);
+            this._ifSetDataProxy = false;
+            this._ifDifferData = true;
+        }
         get saveName() {
             return MainConfig.GameName + this._saveName;
         }
         get differName() {
             return this.encrypt(this.saveName + '-(-__DifferData__LayaMiniGame__-)-');
         }
+        get saveData() {
+            return this._saveData;
+        }
+        InitData() {
+            this._saveData = this._ReadFromFile();
+            if (this._ifSetDataProxy) {
+                this._saveData = this.getProxyData(this._saveData);
+            }
+            this._initData();
+        }
+        getProxyData(_obj) {
+            if (typeof _obj == 'object' && _obj) {
+                if (!Array.prototype.isPrototypeOf(_obj)) {
+                    for (let _i in _obj) {
+                        if (typeof _obj[_i] == 'object' && _obj[_i]) {
+                            _obj[_i] = this.getProxyData(_obj[_i]);
+                        }
+                    }
+                }
+            }
+            else {
+                return _obj;
+            }
+            return new Proxy(_obj, {
+                set: (target, key, value) => {
+                    this.proxyDataSet(target, key, value);
+                    return true;
+                },
+            });
+        }
+        proxyDataSet(target, key, value) {
+            console.log('数据属性改变', target, key, value);
+            if (typeof value == 'object' && value && !Array.prototype.isPrototypeOf(target)) {
+                target[key] = this.getProxyData(value);
+            }
+            else {
+                target[key] = value;
+            }
+            this._SaveToDisk(this._saveData);
+        }
+        _initData() { }
         _SaveToDisk(_saveData) {
             let json = JSON.stringify(_saveData);
             Laya.LocalStorage.setJSON(this.saveName, json);
-            if (MainConfig.OnLine) {
+            if (MainConfig.OnLine && this._ifDifferData) {
                 let _differJson = this.getDifferData(json);
                 Laya.LocalStorage.setJSON(this.differName, _differJson);
             }
         }
         _ReadFromFile() {
             let readStr = Laya.LocalStorage.getJSON(this.saveName);
-            if (MainConfig.OnLine) {
+            if (MainConfig.OnLine && this._ifDifferData) {
                 let _differ = Laya.LocalStorage.getJSON(this.differName);
                 if (this.getDifferData(readStr) != _differ) {
                     return this._saveNewData();
@@ -2110,21 +2156,21 @@
         }
     }
 
-    class GameDataSave extends RootLocalStorageSave {
+    class GameDataProxy extends RootLocalStorageProxy {
         constructor() {
             super();
         }
         static get instance() {
             if (this._instance == null) {
-                this._instance = new GameDataSave();
+                this._instance = new GameDataProxy();
             }
             return this._instance;
         }
         get _saveName() {
-            return "->GameDataSave<-";
+            return "->GameData<-";
         }
-        InitData() {
-            this._saveData = this._ReadFromFile();
+        static get rootData() {
+            return this._instance._saveData;
         }
         static get gameData() {
             return this._instance._saveData.clone();
@@ -2284,7 +2330,7 @@
         }
         setEnvironment(_scene) {
             this.m_scene = _scene;
-            let _lv = GameDataSave.gameData.onCustoms;
+            let _lv = GameDataProxy.gameData.onCustoms;
             this.m_enviromentConfig = EnvironmentConfigProxy.instance.byLevelIdGetData(_lv);
             console.log('关卡环境配置参数->' + _lv + '->', this.m_enviromentConfig);
             this.setS3D(this.m_s3d);
@@ -2492,7 +2538,7 @@
         }
         init() {
             this.m_ifSceneBuild = false;
-            GameDataSave.initCustoms(LevelConfigProxy.instance.getLevelNumber());
+            GameDataProxy.initCustoms(LevelConfigProxy.instance.getLevelNumber());
             MesManager.instance.on3D(EEventScene.GameLevelsBuild, this, this.gameLevelsBuild);
             MesManager.instance.on3D(EEventScene.GameLevelsDelete, this, this.gameLevelsDelete);
             MesManager.instance.on3D(EEventScene.GameOtherLevelsBuild, this, this.gameOtherLevelsBuild);
@@ -2508,11 +2554,11 @@
             }
             let lvId;
             if (this.m_ifInit) {
-                lvId = GameDataSave.gameData.onCustoms;
+                lvId = GameDataProxy.gameData.onCustoms;
             }
             else {
                 this.m_ifInit = true;
-                lvId = GameDataSave.getDefaultCustoms();
+                lvId = GameDataProxy.getDefaultCustoms();
             }
             let scene = SceneManager.instance.getSceneByLv(lvId);
             this.m_scene = scene;
@@ -2526,7 +2572,7 @@
                 ConManager.addScrCon(scene.scene);
                 ConManager.addCommonCon();
                 if (Const.ifPreloadCustoms) {
-                    let _preloadCustoms = GameDataSave.getPreloadCustoms();
+                    let _preloadCustoms = GameDataProxy.getPreloadCustoms();
                     SceneManager.instance.preloadSceneRes(_preloadCustoms);
                 }
                 this.onCustomsInit(lvId);
@@ -3344,6 +3390,44 @@
     }
     FGUI_PGameTestMain.URL = "ui://kk7g5mmmo9js9x";
 
+    class GameTestData extends RootLocalStorageData {
+        constructor() {
+            super(...arguments);
+            this.testNumber = 0;
+            this.testBoolean = false;
+            this.testArray = [];
+            this.testObject = {
+                a: 0,
+                b: 0,
+            };
+        }
+        clone() {
+            return JSON.parse(JSON.stringify(this));
+        }
+    }
+
+    class GameTestDataProxy extends RootLocalStorageProxy {
+        constructor() {
+            super();
+            this._ifSetDataProxy = true;
+        }
+        static get instance() {
+            if (this._instance == null) {
+                this._instance = new GameTestDataProxy();
+            }
+            return this._instance;
+        }
+        get _saveName() {
+            return "->GameTestData<-";
+        }
+        static get testData() {
+            return this._instance._saveData.clone();
+        }
+        getNewData() {
+            return new GameTestData();
+        }
+    }
+
     class PGameTestMainMediator extends BaseUIMediator {
         constructor() { super(); }
         static get instance() {
@@ -3360,6 +3444,11 @@
             UIManagerProxy.instance.setUIState([
                 { typeIndex: EUI.TestPlatform },
             ], false);
+            GameTestDataProxy.instance.saveData.testNumber++;
+            GameTestDataProxy.instance.saveData.testBoolean = true;
+            GameTestDataProxy.instance.saveData.testArray.push(GameTestDataProxy.instance.saveData.testNumber + '');
+            GameTestDataProxy.instance.saveData.testObject['a']++;
+            GameTestDataProxy.instance.saveData.testObject['b']++;
         }
         _OnHide() { }
     }
@@ -6098,7 +6187,7 @@
         }
     }
 
-    class RootShortSave extends RootDataManger {
+    class RootShortProxy extends RootDataManger {
     }
 
     class GameOnCustomData extends RootGameData {
@@ -6117,13 +6206,13 @@
         }
     }
 
-    class GameShortDataSave extends RootShortSave {
+    class GameShortDataProxy extends RootShortProxy {
         constructor() {
             super();
         }
         static get instance() {
             if (this._instance == null) {
-                this._instance = new GameShortDataSave();
+                this._instance = new GameShortDataProxy();
             }
             return this._instance;
         }
@@ -6159,7 +6248,7 @@
             MesManager.instance.on3D(EEventScene.GameStart, this, this.gameStart);
         }
         gameLevelsBuildBefore() {
-            GameShortDataSave.emptyGameOnCustomData();
+            GameShortDataProxy.emptyGameOnCustomData();
         }
         gameLevelsOnBuild() {
         }
@@ -6335,13 +6424,13 @@
             }
         }
         playBGM(_name, loops, complete, startTime) {
-            if (!GameDataSave.gameData.ifOpenBgm || this.m_stop)
+            if (!GameDataProxy.gameData.ifOpenBgm || this.m_stop)
                 return;
             AudioUtils.instance.playBGM(_name, loops, complete, startTime);
             this.m_onBGM = _name;
         }
         playSound(_eSoundName, loops, complete, soundClass, startTime) {
-            if (!GameDataSave.gameData.ifOpenSound || this.m_stop)
+            if (!GameDataProxy.gameData.ifOpenSound || this.m_stop)
                 return;
             if (loops == 0) {
                 this.m_onLoopSoundList.add(_eSoundName);
@@ -6517,13 +6606,13 @@
     class ComData extends RootLocalStorageData {
     }
 
-    class CommonDataSave extends RootLocalStorageSave {
+    class CommonDataProxy extends RootLocalStorageProxy {
         constructor() {
             super();
         }
         static get instance() {
             if (this._instance == null) {
-                this._instance = new CommonDataSave();
+                this._instance = new CommonDataProxy();
             }
             return this._instance;
         }
@@ -6531,10 +6620,7 @@
             return this._instance._saveData;
         }
         get _saveName() {
-            return "->CommonDataSave<-";
-        }
-        InitData() {
-            this._saveData = this._ReadFromFile();
+            return "->CommonData<-";
         }
         getNewData() {
             return new ComData();
@@ -6709,7 +6795,7 @@
             this.m_backHandler.run();
         }
         loginCommonData() {
-            CommonDataSave.instance.InitData();
+            CommonDataProxy.instance.InitData();
         }
         OnBindUI() { }
         OnSetLoadConfig() { }
@@ -6836,21 +6922,18 @@
         }
     }
 
-    class GamePropDataSave extends RootLocalStorageSave {
+    class GamePropDataProxy extends RootLocalStorageProxy {
         constructor() {
             super();
         }
         static get instance() {
             if (this._instance == null) {
-                this._instance = new GamePropDataSave();
+                this._instance = new GamePropDataProxy();
             }
             return this._instance;
         }
         get _saveName() {
-            return "->GamePropDataSave<-";
-        }
-        InitData() {
-            this._saveData = this._ReadFromFile();
+            return "->GamePropData<-";
         }
         static get propData() {
             return this._instance._saveData.clone();
@@ -6877,21 +6960,18 @@
         }
     }
 
-    class GameSkinDataSave extends RootLocalStorageSave {
+    class GameSkinDataProxy extends RootLocalStorageProxy {
         constructor() {
             super();
         }
         static get instance() {
             if (this._instance == null) {
-                this._instance = new GameSkinDataSave();
+                this._instance = new GameSkinDataProxy();
             }
             return this._instance;
         }
         get _saveName() {
             return "->GameSkinData<-";
-        }
-        InitData() {
-            this._saveData = this._ReadFromFile();
         }
         static get skinData() {
             return this._instance._saveData.clone();
@@ -6915,21 +6995,18 @@
         }
     }
 
-    class GameSignDataSave extends RootLocalStorageSave {
+    class GameSignDataProxy extends RootLocalStorageProxy {
         constructor() {
             super();
         }
         static get instance() {
             if (this._instance == null) {
-                this._instance = new GameSignDataSave();
+                this._instance = new GameSignDataProxy();
             }
             return this._instance;
         }
         get _saveName() {
-            return "->GameSignDataSave<-";
-        }
-        InitData() {
-            this._saveData = this._ReadFromFile();
+            return "->GameSignData<-";
         }
         static get signData() {
             return this._instance._saveData.clone();
@@ -6963,27 +7040,33 @@
         EBGMs["null"] = "";
     })(EBGMs || (EBGMs = {}));
 
-    class GameNewHandDataSave extends RootLocalStorageSave {
+    class GameNewHandData extends RootLocalStorageData {
+        clone() {
+            return JSON.parse(JSON.stringify(this));
+        }
+    }
+
+    class GameNewHandDataProxy extends RootLocalStorageProxy {
         constructor() {
             super();
         }
         static get instance() {
             if (this._instance == null) {
-                this._instance = new GameNewHandDataSave();
+                this._instance = new GameNewHandDataProxy();
             }
             return this._instance;
         }
         get _saveName() {
-            return "->GameNewHandDataSave<-";
+            return "->GameNewHandData<-";
         }
-        InitData() {
-            this._saveData = this._ReadFromFile();
+        static get rootData() {
+            return this._instance._saveData;
         }
         static get propData() {
             return this._instance._saveData.clone();
         }
         getNewData() {
-            return new GamePropData();
+            return new GameNewHandData();
         }
         static SaveToDisk() {
             this._instance._SaveToDisk(this._instance._saveData);
@@ -7037,12 +7120,13 @@
             ConfigManager.AddConfig(TestConst);
         }
         loginData() {
-            GameDataSave.instance.InitData();
-            GameNewHandDataSave.instance.InitData();
-            GamePropDataSave.instance.InitData();
-            GameSkinDataSave.instance.InitData();
-            GameSignDataSave.instance.InitData();
-            GameShortDataSave.instance.InitData();
+            GameDataProxy.instance.InitData();
+            GameNewHandDataProxy.instance.InitData();
+            GamePropDataProxy.instance.InitData();
+            GameSkinDataProxy.instance.InitData();
+            GameSignDataProxy.instance.InitData();
+            GameShortDataProxy.instance.InitData();
+            GameTestDataProxy.instance.InitData();
         }
         OnGameResPrepared(urls) {
             let _str;

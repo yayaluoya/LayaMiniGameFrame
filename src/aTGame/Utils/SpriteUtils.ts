@@ -105,4 +105,17 @@ export default class SpriteUtils {
             this.SetLayer(getChild as Laya.Sprite3D, layerIndex);
         }
     }
+
+    /**
+     * 获取一个物体的物理组件
+     * @param _spr 该物体
+     */
+    public static getPhysicComponent(_spr: Laya.Sprite3D): Laya.PhysicsComponent {
+        let _physicsCom: Laya.PhysicsComponent = _spr.getComponent(Laya.PhysicsCollider) as Laya.PhysicsComponent;
+        if (!_physicsCom) {
+            _physicsCom = _spr.getComponent(Laya.Rigidbody3D) as Laya.PhysicsComponent;
+        }
+        //
+        return _physicsCom;
+    }
 }

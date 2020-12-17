@@ -1,18 +1,17 @@
-import RootLocalStorageSave from '../../aTGame/Data/RootLocalStorageSave';
+import RootLocalStorageProxy from '../../aTGame/Data/RootLocalStorageProxy';
 import GameSkinData from './GameSkinData';
 
 
 /**
  * 皮肤数据保存类
  */
-export default class GameSkinDataSave extends RootLocalStorageSave<GameSkinData>{
-    private _saveData: GameSkinData; // 需要保存的数据
+export default class GameSkinDataProxy extends RootLocalStorageProxy<GameSkinData>{
     //
-    private static _instance: GameSkinDataSave;
+    private static _instance: GameSkinDataProxy;
     /** 单例 */
-    public static get instance(): GameSkinDataSave {
+    public static get instance(): GameSkinDataProxy {
         if (this._instance == null) {
-            this._instance = new GameSkinDataSave();
+            this._instance = new GameSkinDataProxy();
         }
         //
         return this._instance;
@@ -26,11 +25,6 @@ export default class GameSkinDataSave extends RootLocalStorageSave<GameSkinData>
     /** 获取保存名称 */
     protected get _saveName(): string {
         return "->GameSkinData<-";
-    }
-
-    // 初始化
-    public InitData() {
-        this._saveData = this._ReadFromFile();
     }
 
     /**

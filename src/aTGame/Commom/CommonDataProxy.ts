@@ -1,16 +1,16 @@
-import RootLocalStorageSave from '../Data/RootLocalStorageSave';
+import RootLocalStorageProxy from '../Data/RootLocalStorageProxy';
 import ComData from './ComData';
 
 /**
  * 公共数据保存类
  */
-export default class CommonDataSave extends RootLocalStorageSave<ComData> {
+export default class CommonDataProxy extends RootLocalStorageProxy<ComData> {
     //
-    private static _instance: CommonDataSave;
+    private static _instance: CommonDataProxy;
     /** 单例 */
-    public static get instance(): CommonDataSave {
+    public static get instance(): CommonDataProxy {
         if (this._instance == null) {
-            this._instance = new CommonDataSave();
+            this._instance = new CommonDataProxy();
         }
         return this._instance;
     }
@@ -19,9 +19,6 @@ export default class CommonDataSave extends RootLocalStorageSave<ComData> {
         return this._instance._saveData;
     }
 
-    //本地保存的数据
-    private _saveData: ComData;
-
     /** 不允许外界实例化 */
     private constructor() {
         super();
@@ -29,17 +26,12 @@ export default class CommonDataSave extends RootLocalStorageSave<ComData> {
 
     /** 获取保存名称 */
     protected get _saveName(): string {
-        return "->CommonDataSave<-";
+        return "->CommonData<-";
     }
 
     // ** -------------------------------------------------------------------------------------- ** //
 
     // ** -------------------------------------------------------------------------------------- ** //
-
-    // 初始化数据
-    public InitData() {
-        this._saveData = this._ReadFromFile();
-    }
 
     //获取一个新的数据
     protected getNewData(): ComData {
