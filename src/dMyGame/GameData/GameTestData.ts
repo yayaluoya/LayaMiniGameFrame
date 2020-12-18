@@ -18,5 +18,6 @@ export default class GameTestData extends RootLocalStorageData {
     public testObject: object = {
         a: 0,
         b: 0,
+        c: 0,
     };
 }

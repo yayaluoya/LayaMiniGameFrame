@@ -10,8 +10,17 @@ import ConsoleEx from '../Console/ConsoleEx';
  * 泛型为数据类型
  */
 export default abstract class RootLocalStorageProxy<T extends RootLocalStorageData> extends RootDataManger {
+    /** 
+     * 全局唯一属性，代理数据根数据
+     * 根据这个可以找到代理数据的原始数据和原始数据对比就能找出数据代理层级
+     */
+    public static $RootObjectKey: symbol = Symbol('$RootObjectKey');
+
     /** 需要保存的数据 */
     protected _saveData: T;
+
+    /** 原始数据，用来和和代理数据对比查看哪个数据被改动了*/
+    protected _rootData: T;
 
     /** 
      * 是否设置数据代理
@@ -23,10 +32,13 @@ export default abstract class RootLocalStorageProxy<T extends RootLocalStorageDa
     /** 数据设置监听，当数据设置时会执行的监听 */
     private _dataSetMonitor: {
         _this: any,
-        _f: (target, key, value) => any,
+        _f: (target, key, value, rootData) => any,
     }[] = [];
 
-    /** 是否对比数据 */
+    /**
+     * 是否对比数据
+     * 默认为true，如果为真当为线上模式时会生成一个加密的对比数据，防止用户改动本地数据
+     */
     protected _ifDifferData: boolean = true;
 
     /** 获取保存名称 */
@@ -40,7 +52,7 @@ export default abstract class RootLocalStorageProxy<T extends RootLocalStorageDa
     // 获取对比数据的保存名字
     private get differName(): string {
         //
-        return this.encrypt(this.saveName + '-(-__DifferData__LayaMiniGame__-)-');
+        return this.encrypt(this.saveName + '__LayaMiniGame__DifferData__');
     }
 
     /** 获取保存数据，非副本，谨慎更改 */
@@ -48,8 +60,15 @@ export default abstract class RootLocalStorageProxy<T extends RootLocalStorageDa
         return this._saveData;
     }
 
-    /** 添加数据设置监听 */
-    public addDataSetMonitor(_this: any, _dataSetMonitor: (target, key, value) => void) {
+    /** 获取原始数据，不能更改 */
+    public get rootData(): T {
+        return this._rootData;
+    }
+
+    /** 
+     * 添加数据设置监听
+     */
+    public addDataSetMonitor(_this: any, _dataSetMonitor: (target, key, value, rootData) => void) {
         //判断是否设置了数据代理
         if (!this._ifSetDataProxy) {
             console.log(...ConsoleEx.packWarn('没有设置数据代理，数据被设置时不会被监听！'));
@@ -61,14 +80,18 @@ export default abstract class RootLocalStorageProxy<T extends RootLocalStorageDa
         }
     }
 
-    /** 删除设置数据监听 */
-    public offDataSetMonitor(_this: any, _dataSetMonitor: (target, key, value) => void) {
+    /** 
+     * 删除设置数据监听
+     */
+    public offDataSetMonitor(_this: any, _dataSetMonitor: (target, key, value, rootData) => void) {
         this._dataSetMonitor = this._dataSetMonitor.filter((item) => {
             return item._this !== _this && item._f !== _dataSetMonitor;
         });
     }
 
-    /** 删除全部设置数据监听 */
+    /** 
+     * 删除全部设置数据监听
+     */
     public offAllDataSetMonitor(_this: any) {
         this._dataSetMonitor = this._dataSetMonitor.filter((item) => {
             return item._this !== _this;
@@ -80,6 +103,8 @@ export default abstract class RootLocalStorageProxy<T extends RootLocalStorageDa
      */
     public InitData() {
         this._saveData = this._ReadFromFile();
+        //保存原始数据
+        this._rootData = this._saveData;
         //判断是否设置数据代理
         if (this._ifSetDataProxy) {
             this._saveData = this.getProxyData(this._saveData) as T;
@@ -93,6 +118,8 @@ export default abstract class RootLocalStorageProxy<T extends RootLocalStorageDa
      * @param _obj 需要代理的对象
      */
     private getProxyData(_obj: any): any {
+        //防止原始对象被污染
+        let _rootObj: any = {};
         if (typeof _obj == 'object' && _obj) {
             //不监听数组中的对象
             if (!Array.prototype.isPrototypeOf(_obj)) {
@@ -100,15 +127,22 @@ export default abstract class RootLocalStorageProxy<T extends RootLocalStorageDa
                 for (let _i in _obj) {
                     //注意 null 也为object
                     if (typeof _obj[_i] == 'object' && _obj[_i]) {
-                        _obj[_i] = this.getProxyData(_obj[_i]);
+                        _rootObj[_i] = this.getProxyData(_obj[_i]);
+                    } else {
+                        _rootObj[_i] = _obj[_i];
                     }
                 }
+            } else {
+                _rootObj = _obj;
             }
         } else {
             return _obj;
         }
+        //设置原始对象
+        _rootObj[RootLocalStorageProxy.$RootObjectKey] = _obj;
+        // console.log('设置原始对象', _rootObj);
         //返回代理对象
-        return new Proxy<any>(_obj, {
+        return new Proxy<any>(_rootObj, {
             set: (target, key, value) => {
                 this.proxyDataSet(target, key, value);
                 return true;
@@ -118,16 +152,25 @@ export default abstract class RootLocalStorageProxy<T extends RootLocalStorageDa
 
     /** 代理数据被设置时调用 */
     protected proxyDataSet(target, key, value) {
+        //判断是不是原始数据节点
+        if (key == RootLocalStorageProxy.$RootObjectKey) {
+            console.warn('试图更改数据的原始对象，被阻止', target, key, value);
+            return;
+        }
         // console.log('数据属性改变', target, key, value);
         //如果赋的值是一个对象则继续监听
         if (typeof value == 'object' && value && !Array.prototype.isPrototypeOf(target)) {
             target[key] = this.getProxyData(value);
         } else {
             target[key] = value;
+            //判断是不是数组长度改变，这个不用被监听
+            if (Array.prototype.isPrototypeOf(target) && key == 'length') {
+                return;
+            }
         }
         //执行数据监听
         this._dataSetMonitor.forEach((item) => {
-            item._f.call(item._this, target, key, value);
+            item._f.call(item._this, target, key, value, target[RootLocalStorageProxy.$RootObjectKey]);
         });
         //保存数据
         this._SaveToDisk(this._saveData);

@@ -30,11 +30,17 @@ export default class GameTestDataProxyShell extends RootDataProxyShell {
     protected initData() {
         //获取代理数据，并添加一个设置数据监听
         this.m_data = GameTestDataProxy.instance.saveData;
-        GameTestDataProxy.instance.addDataSetMonitor(this, this.proxyShell);
+        GameTestDataProxy.instance.addDataSetMonitor(this, this.propDataSetMonitor);
     }
 
     //
-    private proxyShell(target, key, value) {
-        console.log('属性改变', target, key, value);
+    private propDataSetMonitor(target, key, value, rootData) {
+        if (rootData == GameTestDataProxy.instance.rootData.testObject) {
+            console.log('对象属性改变', target, key, value);
+        } else if (rootData == GameTestDataProxy.instance.rootData) {
+            console.log('根属性改变', target, key, value);
+        } else if (rootData == GameTestDataProxy.instance.rootData.testArray) {
+            console.log('数组属性改变', target, key, value);
+        }
     }
 }

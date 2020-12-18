@@ -2026,10 +2026,13 @@
             return MainConfig.GameName + this._saveName;
         }
         get differName() {
-            return this.encrypt(this.saveName + '-(-__DifferData__LayaMiniGame__-)-');
+            return this.encrypt(this.saveName + '__LayaMiniGame__DifferData__');
         }
         get saveData() {
             return this._saveData;
+        }
+        get rootData() {
+            return this._rootData;
         }
         addDataSetMonitor(_this, _dataSetMonitor) {
             if (!this._ifSetDataProxy) {
@@ -2054,25 +2057,34 @@
         }
         InitData() {
             this._saveData = this._ReadFromFile();
+            this._rootData = this._saveData;
             if (this._ifSetDataProxy) {
                 this._saveData = this.getProxyData(this._saveData);
             }
             this._initData();
         }
         getProxyData(_obj) {
+            let _rootObj = {};
             if (typeof _obj == 'object' && _obj) {
                 if (!Array.prototype.isPrototypeOf(_obj)) {
                     for (let _i in _obj) {
                         if (typeof _obj[_i] == 'object' && _obj[_i]) {
-                            _obj[_i] = this.getProxyData(_obj[_i]);
+                            _rootObj[_i] = this.getProxyData(_obj[_i]);
+                        }
+                        else {
+                            _rootObj[_i] = _obj[_i];
                         }
                     }
+                }
+                else {
+                    _rootObj = _obj;
                 }
             }
             else {
                 return _obj;
             }
-            return new Proxy(_obj, {
+            _rootObj[RootLocalStorageProxy.$RootObjectKey] = _obj;
+            return new Proxy(_rootObj, {
                 set: (target, key, value) => {
                     this.proxyDataSet(target, key, value);
                     return true;
@@ -2080,14 +2092,21 @@
             });
         }
         proxyDataSet(target, key, value) {
+            if (key == RootLocalStorageProxy.$RootObjectKey) {
+                console.warn('试图更改数据的原始对象，被阻止', target, key, value);
+                return;
+            }
             if (typeof value == 'object' && value && !Array.prototype.isPrototypeOf(target)) {
                 target[key] = this.getProxyData(value);
             }
             else {
                 target[key] = value;
+                if (Array.prototype.isPrototypeOf(target) && key == 'length') {
+                    return;
+                }
             }
             this._dataSetMonitor.forEach((item) => {
-                item._f.call(item._this, target, key, value);
+                item._f.call(item._this, target, key, value, target[RootLocalStorageProxy.$RootObjectKey]);
             });
             this._SaveToDisk(this._saveData);
         }
@@ -2154,6 +2173,7 @@
             }
         }
     }
+    RootLocalStorageProxy.$RootObjectKey = Symbol('$RootObjectKey');
 
     class RootGameData {
     }
@@ -3414,6 +3434,80 @@
     }
     FGUI_PGameTestMain.URL = "ui://kk7g5mmmo9js9x";
 
+    class RootDataProxyShell {
+        constructor() {
+            this.initData();
+        }
+        initData() { }
+    }
+
+    class GameTestData extends RootLocalStorageData {
+        constructor() {
+            super(...arguments);
+            this.testNumber = 0;
+            this.testBoolean = false;
+            this.testArray = [];
+            this.testObject = {
+                a: 0,
+                b: 0,
+                c: 0,
+            };
+        }
+        clone() {
+            return JSON.parse(JSON.stringify(this));
+        }
+    }
+
+    class GameTestDataProxy extends RootLocalStorageProxy {
+        constructor() {
+            super();
+            this._ifSetDataProxy = true;
+        }
+        static get instance() {
+            if (this._instance == null) {
+                this._instance = new GameTestDataProxy();
+            }
+            return this._instance;
+        }
+        get _saveName() {
+            return "->GameTestData<-";
+        }
+        static get testData() {
+            return this._instance._saveData.clone();
+        }
+        getNewData() {
+            return new GameTestData();
+        }
+    }
+
+    class GameTestDataProxyShell extends RootDataProxyShell {
+        constructor() { super(); }
+        static get instance() {
+            if (!this.m_instance) {
+                this.m_instance = new GameTestDataProxyShell();
+            }
+            return this.m_instance;
+        }
+        get data() {
+            return this.m_data;
+        }
+        initData() {
+            this.m_data = GameTestDataProxy.instance.saveData;
+            GameTestDataProxy.instance.addDataSetMonitor(this, this.propDataSetMonitor);
+        }
+        propDataSetMonitor(target, key, value, rootData) {
+            if (rootData == GameTestDataProxy.instance.rootData.testObject) {
+                console.log('对象属性改变', target, key, value);
+            }
+            else if (rootData == GameTestDataProxy.instance.rootData) {
+                console.log('根属性改变', target, key, value);
+            }
+            else if (rootData == GameTestDataProxy.instance.rootData.testArray) {
+                console.log('数组属性改变', target, key, value);
+            }
+        }
+    }
+
     class PGameTestMainMediator extends BaseUIMediator {
         constructor() { super(); }
         static get instance() {
@@ -3430,6 +3524,9 @@
             UIManagerProxy.instance.setUIState([
                 { typeIndex: EUI.TestPlatform },
             ], false);
+            GameTestDataProxyShell.instance.data.testObject['a']++;
+            GameTestDataProxyShell.instance.data.testNumber++;
+            GameTestDataProxyShell.instance.data.testArray.push('1');
         }
         _OnHide() { }
     }
@@ -7051,44 +7148,6 @@
         }
         static SaveToDisk() {
             this._instance._SaveToDisk(this._instance._saveData);
-        }
-    }
-
-    class GameTestData extends RootLocalStorageData {
-        constructor() {
-            super(...arguments);
-            this.testNumber = 0;
-            this.testBoolean = false;
-            this.testArray = [];
-            this.testObject = {
-                a: 0,
-                b: 0,
-            };
-        }
-        clone() {
-            return JSON.parse(JSON.stringify(this));
-        }
-    }
-
-    class GameTestDataProxy extends RootLocalStorageProxy {
-        constructor() {
-            super();
-            this._ifSetDataProxy = true;
-        }
-        static get instance() {
-            if (this._instance == null) {
-                this._instance = new GameTestDataProxy();
-            }
-            return this._instance;
-        }
-        get _saveName() {
-            return "->GameTestData<-";
-        }
-        static get testData() {
-            return this._instance._saveData.clone();
-        }
-        getNewData() {
-            return new GameTestData();
         }
     }
 
