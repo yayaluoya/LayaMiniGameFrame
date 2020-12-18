@@ -2030,6 +2030,15 @@
         get saveData() {
             return this._saveData;
         }
+        setProxyShell(_this, _setProxyShell) {
+            if (!this._ifSetDataProxy) {
+                console.log(...ConsoleEx.packWarn('没有设置数据代理，代理外壳将不会被执行！'));
+            }
+            else {
+                this._setProxyShellThis = _this;
+                this._setProxyShell = _setProxyShell;
+            }
+        }
         InitData() {
             this._saveData = this._ReadFromFile();
             if (this._ifSetDataProxy) {
@@ -2058,12 +2067,14 @@
             });
         }
         proxyDataSet(target, key, value) {
-            console.log('数据属性改变', target, key, value);
             if (typeof value == 'object' && value && !Array.prototype.isPrototypeOf(target)) {
                 target[key] = this.getProxyData(value);
             }
             else {
                 target[key] = value;
+            }
+            if (this._setProxyShellThis && this.setProxyShell) {
+                this._setProxyShell.call(this._setProxyShellThis, target, key, value);
             }
             this._SaveToDisk(this._saveData);
         }

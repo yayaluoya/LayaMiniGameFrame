@@ -4,6 +4,7 @@ import StringUtils from '../Utils/StringUtils';
 import Md5 from './Md5';
 import RootDataManger from './RootDataManger';
 import Base64 from './Base64';
+import ConsoleEx from '../Console/ConsoleEx';
 /**
  * 本地数据代理基类，用以使用和保存数据
  * 泛型为数据类型
@@ -18,6 +19,10 @@ export default abstract class RootLocalStorageProxy<T extends RootLocalStorageDa
      * 最低监听数组变化，当数组内容是对象时不会监听该对象。
      */
     protected _ifSetDataProxy: boolean = false;
+
+    /** 数据监听外壳 */
+    private _setProxyShell: (target, key, value) => void;
+    private _setProxyShellThis: any;
 
     /** 是否对比数据 */
     protected _ifDifferData: boolean = true;
@@ -39,6 +44,16 @@ export default abstract class RootLocalStorageProxy<T extends RootLocalStorageDa
     /** 获取保存数据，非副本，谨慎更改 */
     public get saveData(): T {
         return this._saveData;
+    }
+
+    /** 设置代理外壳 */
+    public setProxyShell(_this: any, _setProxyShell: (target, key, value) => void) {
+        if (!this._ifSetDataProxy) {
+            console.log(...ConsoleEx.packWarn('没有设置数据代理，代理外壳将不会被执行！'));
+        } else {
+            this._setProxyShellThis = _this;
+            this._setProxyShell = _setProxyShell;
+        }
     }
 
     /**
@@ -84,12 +99,16 @@ export default abstract class RootLocalStorageProxy<T extends RootLocalStorageDa
 
     /** 代理数据被设置时调用 */
     protected proxyDataSet(target, key, value) {
-        console.log('数据属性改变', target, key, value);
+        // console.log('数据属性改变', target, key, value);
         //如果赋的值是一个对象则继续监听
         if (typeof value == 'object' && value && !Array.prototype.isPrototypeOf(target)) {
             target[key] = this.getProxyData(value);
         } else {
             target[key] = value;
+        }
+        //执行代理外壳
+        if (this._setProxyShellThis && this.setProxyShell) {
+            this._setProxyShell.call(this._setProxyShellThis, target, key, value);
         }
         //保存数据
         this._SaveToDisk(this._saveData);
