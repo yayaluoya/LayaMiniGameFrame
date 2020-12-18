@@ -20,9 +20,11 @@ export default abstract class RootLocalStorageProxy<T extends RootLocalStorageDa
      */
     protected _ifSetDataProxy: boolean = false;
 
-    /** 数据监听外壳 */
-    private _setProxyShell: (target, key, value) => void;
-    private _setProxyShellThis: any;
+    /** 数据设置监听，当数据设置时会执行的监听 */
+    private _dataSetMonitor: {
+        _this: any,
+        _f: (target, key, value) => any,
+    }[] = [];
 
     /** 是否对比数据 */
     protected _ifDifferData: boolean = true;
@@ -46,14 +48,31 @@ export default abstract class RootLocalStorageProxy<T extends RootLocalStorageDa
         return this._saveData;
     }
 
-    /** 设置代理外壳 */
-    public setProxyShell(_this: any, _setProxyShell: (target, key, value) => void) {
+    /** 添加数据设置监听 */
+    public addDataSetMonitor(_this: any, _dataSetMonitor: (target, key, value) => void) {
+        //判断是否设置了数据代理
         if (!this._ifSetDataProxy) {
-            console.log(...ConsoleEx.packWarn('没有设置数据代理，代理外壳将不会被执行！'));
+            console.log(...ConsoleEx.packWarn('没有设置数据代理，数据被设置时不会被监听！'));
         } else {
-            this._setProxyShellThis = _this;
-            this._setProxyShell = _setProxyShell;
+            this._dataSetMonitor.push({
+                _this: _this,
+                _f: _dataSetMonitor,
+            });
         }
+    }
+
+    /** 删除设置数据监听 */
+    public offDataSetMonitor(_this: any, _dataSetMonitor: (target, key, value) => void) {
+        this._dataSetMonitor = this._dataSetMonitor.filter((item) => {
+            return item._this !== _this && item._f !== _dataSetMonitor;
+        });
+    }
+
+    /** 删除全部设置数据监听 */
+    public offAllDataSetMonitor(_this: any) {
+        this._dataSetMonitor = this._dataSetMonitor.filter((item) => {
+            return item._this !== _this;
+        });
     }
 
     /**
@@ -106,10 +125,10 @@ export default abstract class RootLocalStorageProxy<T extends RootLocalStorageDa
         } else {
             target[key] = value;
         }
-        //执行代理外壳
-        if (this._setProxyShellThis && this.setProxyShell) {
-            this._setProxyShell.call(this._setProxyShellThis, target, key, value);
-        }
+        //执行数据监听
+        this._dataSetMonitor.forEach((item) => {
+            item._f.call(item._this, target, key, value);
+        });
         //保存数据
         this._SaveToDisk(this._saveData);
     }

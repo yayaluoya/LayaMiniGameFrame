@@ -28,9 +28,9 @@ export default class GameTestDataProxyShell extends RootDataProxyShell {
 
     //初始化数据
     protected initData() {
-        //获取代理数据
+        //获取代理数据，并添加一个设置数据监听
         this.m_data = GameTestDataProxy.instance.saveData;
-        GameTestDataProxy.instance.setProxyShell(this, this.proxyShell);
+        GameTestDataProxy.instance.addDataSetMonitor(this, this.proxyShell);
     }
 
     //

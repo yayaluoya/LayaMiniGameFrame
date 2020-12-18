@@ -2019,6 +2019,7 @@
         constructor() {
             super(...arguments);
             this._ifSetDataProxy = false;
+            this._dataSetMonitor = [];
             this._ifDifferData = true;
         }
         get saveName() {
@@ -2030,14 +2031,26 @@
         get saveData() {
             return this._saveData;
         }
-        setProxyShell(_this, _setProxyShell) {
+        addDataSetMonitor(_this, _dataSetMonitor) {
             if (!this._ifSetDataProxy) {
-                console.log(...ConsoleEx.packWarn('没有设置数据代理，代理外壳将不会被执行！'));
+                console.log(...ConsoleEx.packWarn('没有设置数据代理，数据被设置时不会被监听！'));
             }
             else {
-                this._setProxyShellThis = _this;
-                this._setProxyShell = _setProxyShell;
+                this._dataSetMonitor.push({
+                    _this: _this,
+                    _f: _dataSetMonitor,
+                });
             }
+        }
+        offDataSetMonitor(_this, _dataSetMonitor) {
+            this._dataSetMonitor = this._dataSetMonitor.filter((item) => {
+                return item._this !== _this && item._f !== _dataSetMonitor;
+            });
+        }
+        offAllDataSetMonitor(_this) {
+            this._dataSetMonitor = this._dataSetMonitor.filter((item) => {
+                return item._this !== _this;
+            });
         }
         InitData() {
             this._saveData = this._ReadFromFile();
@@ -2073,9 +2086,9 @@
             else {
                 target[key] = value;
             }
-            if (this._setProxyShellThis && this.setProxyShell) {
-                this._setProxyShell.call(this._setProxyShellThis, target, key, value);
-            }
+            this._dataSetMonitor.forEach((item) => {
+                item._f.call(item._this, target, key, value);
+            });
             this._SaveToDisk(this._saveData);
         }
         _initData() { }
