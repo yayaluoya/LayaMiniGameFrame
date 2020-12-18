@@ -35,7 +35,7 @@ export default class GameNewHandDataProxy extends RootLocalStorageProxy<GameNewH
     /** 
      * 获取数据的副本
      */
-    public static get propData(): GameNewHandData {
+    public static get newHandData(): GameNewHandData {
         return this._instance._saveData.clone();
     }
 
