@@ -7364,6 +7364,14 @@
         OnGameEnter() { }
     }
 
+    class LayaMiniGameConfig {
+        constructor() {
+            this.name = "LayaMiniGame";
+            this.ZHName = "LayaBox小游戏";
+            this.versions = "1.2.1";
+        }
+    }
+
     class Main {
         constructor() {
             if (window["Laya3D"])
@@ -7393,6 +7401,8 @@
             new MainStart();
         }
     }
+    let _LayaMiniGameConfig = new LayaMiniGameConfig();
+    window[_LayaMiniGameConfig.name] = _LayaMiniGameConfig;
     new Main();
 
 }());

@@ -1,5 +1,6 @@
 import GameConfig from "./GameConfig";
 import MainStart from './dMyGame/MainStart';
+import LayaMiniGameConfig from "./LayaMiniGameConfig";
 class Main {
 	constructor() {
 		//根据IDE设置初始化引擎		
@@ -36,5 +37,10 @@ class Main {
 		new MainStart();
 	}
 }
+
+//注入框架信息
+let _LayaMiniGameConfig: LayaMiniGameConfig = new LayaMiniGameConfig();
+window[_LayaMiniGameConfig.name] = _LayaMiniGameConfig;
+
 //激活启动类
 new Main();
