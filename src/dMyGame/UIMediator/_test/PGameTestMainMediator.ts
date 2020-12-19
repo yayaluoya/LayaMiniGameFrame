@@ -34,9 +34,10 @@ export default class PGameTestMainMediator extends BaseUIMediator<FGUI_PGameTest
             { typeIndex: EUI.TestPlatform },
         ], false);
         //
-        GameTestDataProxyShell.instance.data.testObject['a']++;
-        GameTestDataProxyShell.instance.data.testNumber++;
-        GameTestDataProxyShell.instance.data.testArray.push('1');
+        // GameTestDataProxyShell.instance.data.testObject['a']++;
+        // GameTestDataProxyShell.instance.data.testObject['b']++;
+        // GameTestDataProxyShell.instance.data.testNumber++;
+        // GameTestDataProxyShell.instance.data.testArray.push('1');
     }
 
     //隐藏时的生命周期函数

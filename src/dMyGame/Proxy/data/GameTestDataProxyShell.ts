@@ -30,17 +30,33 @@ export default class GameTestDataProxyShell extends RootDataProxyShell {
     protected initData() {
         //获取代理数据，并添加一个设置数据监听
         this.m_data = GameTestDataProxy.instance.saveData;
-        GameTestDataProxy.instance.addDataSetMonitor(this, this.propDataSetMonitor);
+        GameTestDataProxy.instance.addDataSetMonitor(this, () => {
+            console.log('根属性testNumber改变');
+        }, GameTestDataProxy.instance.rootData, GameTestDataProxy.instance.rootData.testNumber);
+        //
+        GameTestDataProxy.instance.addDataSetMonitor(this, () => {
+            console.log('对象属性a改变');
+        }, GameTestDataProxy.instance.rootData.testObject, 'b');
+        //
+        GameTestDataProxy.instance.addDataSetMonitor(this, () => {
+            console.log('数组属性改变');
+        }, GameTestDataProxy.instance.rootData.testArray);
     }
+}
 
-    //
-    private propDataSetMonitor(target, key, value, rootData) {
-        if (rootData == GameTestDataProxy.instance.rootData.testObject) {
-            console.log('对象属性改变', target, key, value);
-        } else if (rootData == GameTestDataProxy.instance.rootData) {
-            console.log('根属性改变', target, key, value);
-        } else if (rootData == GameTestDataProxy.instance.rootData.testArray) {
-            console.log('数组属性改变', target, key, value);
+var res = '';
+function propName(prop, value) {
+    for (var i in prop) {
+        if (typeof prop[i] == 'object') {
+            if (propName(prop[i], value)) {
+                return res;
+            }
+        } else {
+            if (prop[i] == value) {
+                res = i;
+                return res;
+            }
         }
     }
+    return undefined;
 }

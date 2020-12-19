@@ -2034,14 +2034,19 @@
         get rootData() {
             return this._rootData;
         }
-        addDataSetMonitor(_this, _dataSetMonitor) {
+        addDataSetMonitor(_this, _dataSetMonitor, _rootData, _key) {
             if (!this._ifSetDataProxy) {
                 console.log(...ConsoleEx.packWarn('没有设置数据代理，数据被设置时不会被监听！'));
             }
             else {
+                if (_key && typeof _key == 'object') {
+                    _key = _key[RootLocalStorageProxy.$RootDataCruxKey];
+                }
                 this._dataSetMonitor.push({
                     _this: _this,
                     _f: _dataSetMonitor,
+                    _rootData: _rootData,
+                    _key: _key,
                 });
             }
         }
@@ -2073,6 +2078,10 @@
                         }
                         else {
                             _rootObj[_i] = _obj[_i];
+                            _obj[_i] = {
+                                [RootLocalStorageProxy.$RootDataCruxKey]: Symbol('key'),
+                                value: _obj[_i],
+                            };
                         }
                     }
                 }
@@ -2105,9 +2114,22 @@
                     return;
                 }
             }
-            this._dataSetMonitor.forEach((item) => {
+            for (let item of this._dataSetMonitor) {
+                if (item._rootData && item._rootData != target[RootLocalStorageProxy.$RootObjectKey]) {
+                    continue;
+                }
+                if (typeof item._key != 'undefined') {
+                    if (typeof item._key == 'symbol') {
+                        if (item._key != target[RootLocalStorageProxy.$RootObjectKey][key][RootLocalStorageProxy.$RootDataCruxKey]) {
+                            continue;
+                        }
+                    }
+                    else if (item._key != key) {
+                        continue;
+                    }
+                }
                 item._f.call(item._this, target, key, value, target[RootLocalStorageProxy.$RootObjectKey]);
-            });
+            }
             this._SaveToDisk(this._saveData);
         }
         _initData() { }
@@ -2174,6 +2196,7 @@
         }
     }
     RootLocalStorageProxy.$RootObjectKey = Symbol('$RootObjectKey');
+    RootLocalStorageProxy.$RootDataCruxKey = Symbol('$RootDataCruxKey');
 
     class RootGameData {
     }
@@ -3434,80 +3457,6 @@
     }
     FGUI_PGameTestMain.URL = "ui://kk7g5mmmo9js9x";
 
-    class RootDataProxyShell {
-        constructor() {
-            this.initData();
-        }
-        initData() { }
-    }
-
-    class GameTestData extends RootLocalStorageData {
-        constructor() {
-            super(...arguments);
-            this.testNumber = 0;
-            this.testBoolean = false;
-            this.testArray = [];
-            this.testObject = {
-                a: 0,
-                b: 0,
-                c: 0,
-            };
-        }
-        clone() {
-            return JSON.parse(JSON.stringify(this));
-        }
-    }
-
-    class GameTestDataProxy extends RootLocalStorageProxy {
-        constructor() {
-            super();
-            this._ifSetDataProxy = true;
-        }
-        static get instance() {
-            if (this._instance == null) {
-                this._instance = new GameTestDataProxy();
-            }
-            return this._instance;
-        }
-        get _saveName() {
-            return "->GameTestData<-";
-        }
-        static get testData() {
-            return this._instance._saveData.clone();
-        }
-        getNewData() {
-            return new GameTestData();
-        }
-    }
-
-    class GameTestDataProxyShell extends RootDataProxyShell {
-        constructor() { super(); }
-        static get instance() {
-            if (!this.m_instance) {
-                this.m_instance = new GameTestDataProxyShell();
-            }
-            return this.m_instance;
-        }
-        get data() {
-            return this.m_data;
-        }
-        initData() {
-            this.m_data = GameTestDataProxy.instance.saveData;
-            GameTestDataProxy.instance.addDataSetMonitor(this, this.propDataSetMonitor);
-        }
-        propDataSetMonitor(target, key, value, rootData) {
-            if (rootData == GameTestDataProxy.instance.rootData.testObject) {
-                console.log('对象属性改变', target, key, value);
-            }
-            else if (rootData == GameTestDataProxy.instance.rootData) {
-                console.log('根属性改变', target, key, value);
-            }
-            else if (rootData == GameTestDataProxy.instance.rootData.testArray) {
-                console.log('数组属性改变', target, key, value);
-            }
-        }
-    }
-
     class PGameTestMainMediator extends BaseUIMediator {
         constructor() { super(); }
         static get instance() {
@@ -3524,9 +3473,6 @@
             UIManagerProxy.instance.setUIState([
                 { typeIndex: EUI.TestPlatform },
             ], false);
-            GameTestDataProxyShell.instance.data.testObject['a']++;
-            GameTestDataProxyShell.instance.data.testNumber++;
-            GameTestDataProxyShell.instance.data.testArray.push('1');
         }
         _OnHide() { }
     }
@@ -7148,6 +7094,45 @@
         }
         static SaveToDisk() {
             this._instance._SaveToDisk(this._instance._saveData);
+        }
+    }
+
+    class GameTestData extends RootLocalStorageData {
+        constructor() {
+            super(...arguments);
+            this.testNumber = 0;
+            this.testBoolean = false;
+            this.testArray = [];
+            this.testObject = {
+                a: 0,
+                b: 0,
+                c: 0,
+            };
+        }
+        clone() {
+            return JSON.parse(JSON.stringify(this));
+        }
+    }
+
+    class GameTestDataProxy extends RootLocalStorageProxy {
+        constructor() {
+            super();
+            this._ifSetDataProxy = true;
+        }
+        static get instance() {
+            if (this._instance == null) {
+                this._instance = new GameTestDataProxy();
+            }
+            return this._instance;
+        }
+        get _saveName() {
+            return "->GameTestData<-";
+        }
+        static get testData() {
+            return this._instance._saveData.clone();
+        }
+        getNewData() {
+            return new GameTestData();
         }
     }
 

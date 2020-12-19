@@ -16,6 +16,9 @@ export default abstract class RootLocalStorageProxy<T extends RootLocalStorageDa
      */
     public static $RootObjectKey: symbol = Symbol('$RootObjectKey');
 
+    /** 根数据关键键值 */
+    private static $RootDataCruxKey: symbol = Symbol('$RootDataCruxKey');
+
     /** 需要保存的数据 */
     protected _saveData: T;
 
@@ -33,6 +36,8 @@ export default abstract class RootLocalStorageProxy<T extends RootLocalStorageDa
     private _dataSetMonitor: {
         _this: any,
         _f: (target, key, value, rootData) => any,
+        _rootData: any,
+        _key: string | number | boolean,//值类型
     }[] = [];
 
     /**
@@ -65,17 +70,28 @@ export default abstract class RootLocalStorageProxy<T extends RootLocalStorageDa
         return this._rootData;
     }
 
-    /** 
+    /**
      * 添加数据设置监听
+     * @param _this 执行域
+     * @param _dataSetMonitor 执行方法
+     * @param _rootData 受监听的原始对象，不设置则监听全部内容
+     * @param _key 受监听的对象的属性，可以直接是个字符串
      */
-    public addDataSetMonitor(_this: any, _dataSetMonitor: (target, key, value, rootData) => void) {
+    public addDataSetMonitor(_this: any, _dataSetMonitor: (target, key, value, rootData) => void, _rootData?: object, _key?: string | number | boolean) {
         //判断是否设置了数据代理
         if (!this._ifSetDataProxy) {
             console.log(...ConsoleEx.packWarn('没有设置数据代理，数据被设置时不会被监听！'));
         } else {
+            //判断是否是对象属性
+            if (_key && typeof _key == 'object') {
+                _key = _key[RootLocalStorageProxy.$RootDataCruxKey];
+            }
+            //添加到监听列表
             this._dataSetMonitor.push({
                 _this: _this,
                 _f: _dataSetMonitor,
+                _rootData: _rootData,
+                _key: _key,
             });
         }
     }
@@ -129,7 +145,13 @@ export default abstract class RootLocalStorageProxy<T extends RootLocalStorageDa
                     if (typeof _obj[_i] == 'object' && _obj[_i]) {
                         _rootObj[_i] = this.getProxyData(_obj[_i]);
                     } else {
+                        //
                         _rootObj[_i] = _obj[_i];
+                        //包装原始对象值类型
+                        _obj[_i] = {
+                            [RootLocalStorageProxy.$RootDataCruxKey]: Symbol('key'),
+                            value: _obj[_i],
+                        };
                     }
                 }
             } else {
@@ -157,7 +179,6 @@ export default abstract class RootLocalStorageProxy<T extends RootLocalStorageDa
             console.warn('试图更改数据的原始对象，被阻止', target, key, value);
             return;
         }
-        // console.log('数据属性改变', target, key, value);
         //如果赋的值是一个对象则继续监听
         if (typeof value == 'object' && value && !Array.prototype.isPrototypeOf(target)) {
             target[key] = this.getProxyData(value);
@@ -169,9 +190,22 @@ export default abstract class RootLocalStorageProxy<T extends RootLocalStorageDa
             }
         }
         //执行数据监听
-        this._dataSetMonitor.forEach((item) => {
+        for (let item of this._dataSetMonitor) {
+            if (item._rootData && item._rootData != target[RootLocalStorageProxy.$RootObjectKey]) {
+                continue;
+            }
+            if (typeof item._key != 'undefined') {
+                if (typeof item._key == 'symbol') {
+                    if (item._key != target[RootLocalStorageProxy.$RootObjectKey][key][RootLocalStorageProxy.$RootDataCruxKey]) {
+                        continue;
+                    }
+                } else if (item._key != key) {
+                    continue;
+                }
+            }
+            //
             item._f.call(item._this, target, key, value, target[RootLocalStorageProxy.$RootObjectKey]);
-        });
+        }
         //保存数据
         this._SaveToDisk(this._saveData);
     }
