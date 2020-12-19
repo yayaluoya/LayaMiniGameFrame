@@ -2040,6 +2040,9 @@
             }
             else {
                 if (_key && typeof _key == 'object') {
+                    if (_key[RootLocalStorageProxy.$RootParentDataKey] != _rootData) {
+                        console.log(...ConsoleEx.packError('监听的对象属性不存在该对象属性列表中！'));
+                    }
                     _key = _key[RootLocalStorageProxy.$RootDataCruxKey];
                 }
                 this._dataSetMonitor.push({
@@ -2079,7 +2082,8 @@
                         else {
                             _rootObj[_i] = _obj[_i];
                             _obj[_i] = {
-                                [RootLocalStorageProxy.$RootDataCruxKey]: Symbol('key'),
+                                [RootLocalStorageProxy.$RootDataCruxKey]: Symbol('$key'),
+                                [RootLocalStorageProxy.$RootParentDataKey]: _obj,
                                 value: _obj[_i],
                             };
                         }
@@ -2197,6 +2201,7 @@
     }
     RootLocalStorageProxy.$RootObjectKey = Symbol('$RootObjectKey');
     RootLocalStorageProxy.$RootDataCruxKey = Symbol('$RootDataCruxKey');
+    RootLocalStorageProxy.$RootParentDataKey = Symbol('$RootParentDataKey');
 
     class RootGameData {
     }

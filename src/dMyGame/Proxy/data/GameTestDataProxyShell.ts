@@ -36,27 +36,10 @@ export default class GameTestDataProxyShell extends RootDataProxyShell {
         //
         GameTestDataProxy.instance.addDataSetMonitor(this, () => {
             console.log('对象属性a改变');
-        }, GameTestDataProxy.instance.rootData.testObject, 'b');
+        }, GameTestDataProxy.instance.rootData.testObject, GameTestDataProxy.instance.rootData.testObject['a']);
         //
         GameTestDataProxy.instance.addDataSetMonitor(this, () => {
             console.log('数组属性改变');
         }, GameTestDataProxy.instance.rootData.testArray);
     }
-}
-
-var res = '';
-function propName(prop, value) {
-    for (var i in prop) {
-        if (typeof prop[i] == 'object') {
-            if (propName(prop[i], value)) {
-                return res;
-            }
-        } else {
-            if (prop[i] == value) {
-                res = i;
-                return res;
-            }
-        }
-    }
-    return undefined;
 }

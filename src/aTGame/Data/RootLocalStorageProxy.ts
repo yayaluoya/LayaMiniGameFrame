@@ -19,6 +19,9 @@ export default abstract class RootLocalStorageProxy<T extends RootLocalStorageDa
     /** 根数据关键键值 */
     private static $RootDataCruxKey: symbol = Symbol('$RootDataCruxKey');
 
+    /** 根数据父节点 */
+    private static $RootParentDataKey: symbol = Symbol('$RootParentDataKey');
+
     /** 需要保存的数据 */
     protected _saveData: T;
 
@@ -65,7 +68,10 @@ export default abstract class RootLocalStorageProxy<T extends RootLocalStorageDa
         return this._saveData;
     }
 
-    /** 获取原始数据，不能更改 */
+    /** 
+     * 获取原始数据，不能更改
+     * 使用这个数据来设置监听数据的层级和位置
+     */
     public get rootData(): T {
         return this._rootData;
     }
@@ -74,7 +80,7 @@ export default abstract class RootLocalStorageProxy<T extends RootLocalStorageDa
      * 添加数据设置监听
      * @param _this 执行域
      * @param _dataSetMonitor 执行方法
-     * @param _rootData 受监听的原始对象，不设置则监听全部内容
+     * @param _rootData 受监听的原始对象，不设置则监听全部内容，只能在this.rootData找属性进行监听
      * @param _key 受监听的对象的属性，可以直接是个字符串
      */
     public addDataSetMonitor(_this: any, _dataSetMonitor: (target, key, value, rootData) => void, _rootData?: object, _key?: string | number | boolean) {
@@ -84,6 +90,10 @@ export default abstract class RootLocalStorageProxy<T extends RootLocalStorageDa
         } else {
             //判断是否是对象属性
             if (_key && typeof _key == 'object') {
+                //判断对象和键值是否匹配
+                if (_key[RootLocalStorageProxy.$RootParentDataKey] != _rootData) {
+                    console.log(...ConsoleEx.packError('监听的对象属性不存在该对象属性列表中！'));
+                }
                 _key = _key[RootLocalStorageProxy.$RootDataCruxKey];
             }
             //添加到监听列表
@@ -124,6 +134,9 @@ export default abstract class RootLocalStorageProxy<T extends RootLocalStorageDa
         //判断是否设置数据代理
         if (this._ifSetDataProxy) {
             this._saveData = this.getProxyData(this._saveData) as T;
+            //
+            // console.log(this._rootData);
+            // console.log(this._saveData);
         }
         //
         this._initData();
@@ -136,6 +149,7 @@ export default abstract class RootLocalStorageProxy<T extends RootLocalStorageDa
     private getProxyData(_obj: any): any {
         //防止原始对象被污染
         let _rootObj: any = {};
+        //
         if (typeof _obj == 'object' && _obj) {
             //不监听数组中的对象
             if (!Array.prototype.isPrototypeOf(_obj)) {
@@ -149,7 +163,11 @@ export default abstract class RootLocalStorageProxy<T extends RootLocalStorageDa
                         _rootObj[_i] = _obj[_i];
                         //包装原始对象值类型
                         _obj[_i] = {
-                            [RootLocalStorageProxy.$RootDataCruxKey]: Symbol('key'),
+                            //关键键值
+                            [RootLocalStorageProxy.$RootDataCruxKey]: Symbol('$key'),
+                            //父对象
+                            [RootLocalStorageProxy.$RootParentDataKey]: _obj,
+                            //本身值
                             value: _obj[_i],
                         };
                     }
