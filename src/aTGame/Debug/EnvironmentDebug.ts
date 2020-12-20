@@ -30,5 +30,7 @@ export default class EnvironmentDebug extends RootDebug {
     public light: Laya.DirectionLight;
 
     //开启调试
-    protected _startDebug() { }
+    protected _startDebug() {
+        console.log('开启环境调试');
+    }
 }

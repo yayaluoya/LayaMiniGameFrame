@@ -21,4 +21,7 @@ export default class MainGameConfig {
 
     /** 是否开启调试类 */
     public static ifDebug: boolean = (!MainConfig.OnLine) && false;
+
+    /** 是否打开一个新窗口调试 */
+    public static ifOpenWindowDebug: boolean = (!MainConfig.OnLine) && false;
 }

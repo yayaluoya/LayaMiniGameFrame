@@ -1,3 +1,4 @@
+import DataDebug from "./DataDebug";
 import EnvironmentDebug from "./EnvironmentDebug";
 import RootDebug from "./RootDebug";
 
@@ -12,5 +13,7 @@ export default class MainDebug extends RootDebug {
         console.log('开启主调试');
         //环境调试类
         EnvironmentDebug.instance.startDebug();
+        //数据调试
+        DataDebug.instance.startDebug();
     }
 }

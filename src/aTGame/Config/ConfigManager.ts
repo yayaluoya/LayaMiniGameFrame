@@ -53,7 +53,7 @@ export class ConfigManager {
             return;
         }
         //获取配置路径列表
-        var loadUrls = [];
+        let loadUrls = [];
         for (let configName of ConfigManager._configList) {
             loadUrls.push(EssentialResUrls.ConfigURL(configName.path.match(/[a-zA-Z0-9.]*$/)[0]));
         }

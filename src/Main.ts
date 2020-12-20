@@ -40,7 +40,7 @@ class Main {
 
 //注入框架信息
 let _LayaMiniGameConfig: LayaMiniGameConfig = new LayaMiniGameConfig();
-window[_LayaMiniGameConfig.name] = _LayaMiniGameConfig;
+window['$' + _LayaMiniGameConfig.name] = _LayaMiniGameConfig;
 
 //激活启动类
 new Main();

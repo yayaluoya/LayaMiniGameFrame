@@ -5,11 +5,6 @@ import RootLocalStorageData from "../../aTGame/Data/RootLocalStorageData";
  * 游戏需要持久化的主要数据
  */
 export default class GameData extends RootLocalStorageData {
-    /** 返回一个副本 */
-    public clone(): GameData {
-        return JSON.parse(JSON.stringify(this));
-    }
-
     /** 最大关卡数量 */
     public maxCustoms: number = 0;
 

@@ -1390,8 +1390,50 @@
     MainGameConfig.ifGameTest = (!MainConfig.OnLine) && false;
     MainGameConfig.ifTest = (!MainConfig.OnLine) && false;
     MainGameConfig.ifDebug = (!MainConfig.OnLine) && false;
+    MainGameConfig.ifOpenWindowDebug = (!MainConfig.OnLine) && false;
+
+    class DebugWindowCommunication {
+        constructor() {
+            this.m_mesList = [];
+        }
+        onMes(_this, _key, _f) {
+            this.m_mesList.push({
+                this: _this,
+                key: _key,
+                f: _f,
+            });
+        }
+        eventMes(_key, ..._data) {
+            this.m_mesList.forEach((item) => {
+                if (item.key == _key) {
+                    item.f.call(item.this, ..._data);
+                }
+            });
+        }
+        removeMes(_this, _key) {
+            this.m_mesList = this.m_mesList.filter((item) => {
+                if (typeof _key != "undefined") {
+                    return item.this != _this && item.key != _key;
+                }
+                else {
+                    return item.this != _this;
+                }
+            });
+        }
+    }
+
+    const html = `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" href="/favicon.ico"><title>DebugWindow</title><link href="/css/app.95e24fb6.css" rel="preload" as="style"><link href="/css/chunk-vendors.84bb20f7.css" rel="preload" as="style"><link href="/js/app.ce391a18.js" rel="preload" as="script"><link href="/js/chunk-vendors.1d158a68.js" rel="preload" as="script"><link href="/css/chunk-vendors.84bb20f7.css" rel="stylesheet"><link href="/css/app.95e24fb6.css" rel="stylesheet"></head><body><noscript><strong>We're sorry but DebugWindow doesn't work properly without JavaScript enabled. Please enable it to continue.</strong></noscript><div id="app"></div><script src="/js/chunk-vendors.1d158a68.js"></script><script src="/js/app.ce391a18.js"></script></body></html>`;
+
+    var EDebugWindow;
+    (function (EDebugWindow) {
+        EDebugWindow["DebugWindow"] = "$DebugWindow";
+        EDebugWindow["Mes"] = "$Mes";
+    })(EDebugWindow || (EDebugWindow = {}));
 
     class RootDebug {
+        constructor() {
+            this._ifStart = false;
+        }
         static addItem(_key, _item) {
             let _rootKey = this.prefix + ':' + _key;
             if (this[_rootKey]) {
@@ -1400,6 +1442,7 @@
             this[_rootKey] = _item;
         }
         startDebug() {
+            this._ifStart = true;
             if (window[RootDebug.prefix][this._name]) {
                 console.log(...ConsoleEx.packWarn('有一个调试对象名字重名了，将会被第二个覆盖', this._name));
             }
@@ -1407,15 +1450,44 @@
             this._startDebug();
         }
         addItem(_key, _item) {
+            if (!this._ifStart) {
+                return;
+            }
             if (this[_key]) {
                 console.log(...ConsoleEx.packWarn('该调试对象已经存在了，将会被第二个覆盖', this._name, '-', _key));
             }
             this[_key] = _item;
         }
         _startDebug() { }
+        static openWindowDebug() {
+            let _win = window.open('', MainConfig.GameName, `fullscreen=yes,width=414,height=736`);
+            window[EDebugWindow.DebugWindow] = _win;
+            let _url = window.location.href.replace('bin/index.html', 'DebugWindow/dist/');
+            _win.document.getElementsByTagName('html')[0].innerHTML = html.replace(/"\//g, '"' + _url);
+            console.log(...ConsoleEx.packWarn('打开调式窗口，并注入全局对象。'));
+            let _HTMLCollection = _win.document.getElementsByTagName('body')[0].getElementsByTagName('script');
+            _win[EDebugWindow.Mes] = new DebugWindowCommunication();
+            let _scriptSrc = [];
+            for (let item of _HTMLCollection) {
+                _scriptSrc.push(item.src);
+            }
+            ;
+            _scriptSrc.forEach((item) => {
+                let script = _win.document.createElement("script");
+                script.async = false;
+                script.src = item;
+                _win.document.body.appendChild(script);
+            });
+        }
+        static fendDebugWindow(_mes, ..._data) {
+            window[EDebugWindow.DebugWindow][EDebugWindow.Mes].eventMes(_mes, ..._data);
+        }
     }
     RootDebug.prefix = '$Debug';
     window[RootDebug.prefix] = {};
+    if (MainGameConfig.ifDebug) {
+        console.log(...ConsoleEx.packWarn('开启调试模式，通过', RootDebug.prefix, '访问'));
+    }
 
     class EnvironmentDebug extends RootDebug {
         constructor() {
@@ -1431,7 +1503,9 @@
                 return this._instance;
             }
         }
-        _startDebug() { }
+        _startDebug() {
+            console.log('开启环境调试');
+        }
     }
 
     class Global3D {
@@ -1450,11 +1524,9 @@
                 GlobalUnitClassProxy.s3d = this.s3d;
                 GlobalUnitClassProxy.camera = this.camera;
                 GlobalUnitClassProxy.light = this.light;
-                if (MainGameConfig.ifDebug) {
-                    EnvironmentDebug.instance.s3d = this.s3d;
-                    EnvironmentDebug.instance.camera = this.camera;
-                    EnvironmentDebug.instance.light = this.light;
-                }
+                EnvironmentDebug.instance.s3d = this.s3d;
+                EnvironmentDebug.instance.camera = this.camera;
+                EnvironmentDebug.instance.light = this.light;
             }
             else {
                 console.log(...ConsoleEx.packLog('请设置支持3D!'));
@@ -2015,6 +2087,25 @@
     }
     Base64._keyStr = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
 
+    class DataDebug extends RootDebug {
+        constructor() {
+            super();
+            this._name = 'Data';
+        }
+        static get instance() {
+            if (this._instance) {
+                return this._instance;
+            }
+            else {
+                this._instance = new DataDebug();
+                return this._instance;
+            }
+        }
+        _startDebug() {
+            console.log('开启数据调试');
+        }
+    }
+
     class RootLocalStorageProxy extends RootDataManger {
         constructor() {
             super(...arguments);
@@ -2023,10 +2114,10 @@
             this._ifDifferData = true;
         }
         get saveName() {
-            return MainConfig.GameName + this._saveName;
+            return MainConfig.GameName + '->' + this._saveName + '->' + MainConfig.versions;
         }
         get differName() {
-            return this.encrypt(this.saveName + '__LayaMiniGame__DifferData__');
+            return this.encrypt(this.saveName + '__verify');
         }
         get saveData() {
             return this._saveData;
@@ -2069,6 +2160,7 @@
             if (this._ifSetDataProxy) {
                 this._saveData = this.getProxyData(this._saveData);
             }
+            DataDebug.instance.addItem(this._saveName, this);
             this._initData();
         }
         getProxyData(_obj) {
@@ -2109,6 +2201,7 @@
                 console.warn('试图更改数据的原始对象，被阻止', target, key, value);
                 return;
             }
+            let _rotValue = target[key];
             if (typeof value == 'object' && value && !Array.prototype.isPrototypeOf(target)) {
                 target[key] = this.getProxyData(value);
             }
@@ -2132,7 +2225,7 @@
                         continue;
                     }
                 }
-                item._f.call(item._this, target, key, value, target[RootLocalStorageProxy.$RootObjectKey]);
+                item._f.call(item._this, target, key, value, _rotValue, target[RootLocalStorageProxy.$RootObjectKey]);
             }
             this._SaveToDisk(this._saveData);
         }
@@ -2154,11 +2247,10 @@
                 }
             }
             let _saveData = this.getNewData();
-            _saveData.versions = undefined;
             try {
                 if (!StringUtils.IsNullOrEmpty(readStr)) {
                     let jsonData = JSON.parse(readStr);
-                    for (let key in jsonData) {
+                    for (let key in _saveData) {
                         _saveData[key] = jsonData[key];
                     }
                 }
@@ -2169,18 +2261,10 @@
             catch (_a) {
                 return this._saveNewData();
             }
-            if (_saveData.versions == MainConfig.versions) {
-                return _saveData;
-            }
-            else {
-                return this._saveNewData();
-            }
+            return _saveData;
         }
         _saveNewData() {
             let _saveData = this.getNewData();
-            _saveData.versions = MainConfig.versions;
-            _saveData.GameName = MainConfig.GameName;
-            _saveData.GameExplain = MainConfig.GameExplain;
             this._SaveToDisk(_saveData);
             return _saveData;
         }
@@ -2190,7 +2274,7 @@
             return this.encrypt(_string);
         }
         encrypt(_string) {
-            let _encryptStr = 'LayaMiniGame' + '-(-' + _string + '-)' + '-ModifiedWithout-' + MainConfig.GameName + '-' + MainConfig.versions;
+            let _encryptStr = 'LayaMiniGame-(-' + _string + '-)-ModifiedWithout-' + this.saveName;
             if (Md5.ifUse) {
                 return Md5.hashStr(_encryptStr).toString();
             }
@@ -2208,7 +2292,7 @@
 
     class RootLocalStorageData extends RootGameData {
         clone() {
-            return;
+            return JSON.parse(JSON.stringify(this));
         }
     }
 
@@ -2223,9 +2307,6 @@
             this.onCustoms = ECommonLeve.DebugLeveId;
             this.maxCustomsRecord = 1;
         }
-        clone() {
-            return JSON.parse(JSON.stringify(this));
-        }
     }
 
     class GameDataProxy extends RootLocalStorageProxy {
@@ -2239,7 +2320,7 @@
             return this._instance;
         }
         get _saveName() {
-            return "->GameData<-";
+            return "Game";
         }
         static get rootData() {
             return this._instance._saveData;
@@ -2387,6 +2468,11 @@
         }
     }
 
+    var EDebugWindowEvent;
+    (function (EDebugWindowEvent) {
+        EDebugWindowEvent["SetEnvironment"] = "setEnvironment";
+    })(EDebugWindowEvent || (EDebugWindowEvent = {}));
+
     class EnvironmentManager {
         constructor() { }
         static get instance() {
@@ -2410,6 +2496,9 @@
             this.setLight(this.light, this.m_enviromentConfig.light_color, this.m_enviromentConfig.light_intensity);
             this.addAmbient(this.s3d, this.m_enviromentConfig.ambient_color);
             MesManager.instance.on3D(EEventScene.GameLevelsDelete, this, this.gameLevelsDelete);
+            if (MainGameConfig.ifDebug && MainGameConfig.ifOpenWindowDebug) {
+                RootDebug.fendDebugWindow(EDebugWindowEvent.SetEnvironment);
+            }
         }
         setOtherEnvironment(_name, _scene, _s3d = this.m_s3d, _camera = this.m_camera, _light = this.m_light) {
             let _enviromentConfig = OtherEnvironmentConfigProxy.instance.byLevelNameGetData(_name);
@@ -6566,7 +6655,7 @@
                 }
                 return;
             }
-            var loadUrls = [];
+            let loadUrls = [];
             for (let configName of ConfigManager._configList) {
                 loadUrls.push(EssentialResUrls.ConfigURL(configName.path.match(/[a-zA-Z0-9.]*$/)[0]));
             }
@@ -6649,7 +6738,7 @@
             return this._instance._saveData;
         }
         get _saveName() {
-            return "->CommonData<-";
+            return "Common";
         }
         getNewData() {
             return new ComData();
@@ -6946,9 +7035,6 @@
             super(...arguments);
             this.coinCount = 0;
         }
-        clone() {
-            return JSON.parse(JSON.stringify(this));
-        }
     }
 
     class GamePropDataProxy extends RootLocalStorageProxy {
@@ -6962,7 +7048,7 @@
             return this._instance;
         }
         get _saveName() {
-            return "->GamePropData<-";
+            return "GameProp";
         }
         static get propData() {
             return this._instance._saveData.clone();
@@ -6984,9 +7070,6 @@
     }
 
     class GameSkinData extends RootLocalStorageData {
-        clone() {
-            return JSON.parse(JSON.stringify(this));
-        }
     }
 
     class GameSkinDataProxy extends RootLocalStorageProxy {
@@ -7000,7 +7083,7 @@
             return this._instance;
         }
         get _saveName() {
-            return "->GameSkinData<-";
+            return "GameSkin";
         }
         static get skinData() {
             return this._instance._saveData.clone();
@@ -7019,9 +7102,6 @@
             this.ifSignIn = false;
             this.ifOneDay = false;
         }
-        clone() {
-            return JSON.parse(JSON.stringify(this));
-        }
     }
 
     class GameSignDataProxy extends RootLocalStorageProxy {
@@ -7035,7 +7115,7 @@
             return this._instance;
         }
         get _saveName() {
-            return "->GameSignData<-";
+            return "GameSign";
         }
         static get signData() {
             return this._instance._saveData.clone();
@@ -7070,9 +7150,6 @@
     })(EBGMs || (EBGMs = {}));
 
     class GameNewHandData extends RootLocalStorageData {
-        clone() {
-            return JSON.parse(JSON.stringify(this));
-        }
     }
 
     class GameNewHandDataProxy extends RootLocalStorageProxy {
@@ -7086,7 +7163,7 @@
             return this._instance;
         }
         get _saveName() {
-            return "->GameNewHandData<-";
+            return "GameNewHand";
         }
         static get rootData() {
             return this._instance._saveData;
@@ -7114,9 +7191,6 @@
                 c: 0,
             };
         }
-        clone() {
-            return JSON.parse(JSON.stringify(this));
-        }
     }
 
     class GameTestDataProxy extends RootLocalStorageProxy {
@@ -7131,7 +7205,7 @@
             return this._instance;
         }
         get _saveName() {
-            return "->GameTestData<-";
+            return "GameTest";
         }
         static get testData() {
             return this._instance._saveData.clone();
@@ -7310,6 +7384,7 @@
         _startDebug() {
             console.log('开启主调试');
             EnvironmentDebug.instance.startDebug();
+            DataDebug.instance.startDebug();
         }
     }
 
@@ -7349,6 +7424,9 @@
             if (MainGameConfig.ifDebug) {
                 new MainDebug().startDebug();
                 new MyMainDebug().startDebug();
+                if (MainGameConfig.ifOpenWindowDebug) {
+                    RootDebug.openWindowDebug();
+                }
             }
         }
         gameLoad() {
@@ -7407,7 +7485,7 @@
         }
     }
     let _LayaMiniGameConfig = new LayaMiniGameConfig();
-    window[_LayaMiniGameConfig.name] = _LayaMiniGameConfig;
+    window['$' + _LayaMiniGameConfig.name] = _LayaMiniGameConfig;
     new Main();
 
 }());

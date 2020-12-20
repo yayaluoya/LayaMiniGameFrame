@@ -19,7 +19,7 @@ class Test {
 }
 
 //框架自定义脚本入口
-window.LayaMiniGame = {
+window.LayaMiniGameEx = {
     Main: Main,
     Test: Test,
 };

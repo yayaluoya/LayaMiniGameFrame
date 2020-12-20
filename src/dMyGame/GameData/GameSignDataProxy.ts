@@ -23,7 +23,7 @@ export default class GameSignDataProxy extends RootLocalStorageProxy<GameSignDat
 
     /** 获取保存名称 */
     protected get _saveName(): string {
-        return "->GameSignData<-";
+        return "GameSign";
     }
 
     /**
@@ -31,7 +31,7 @@ export default class GameSignDataProxy extends RootLocalStorageProxy<GameSignDat
      */
     public static get signData(): GameSignData {
         //
-        return this._instance._saveData.clone();
+        return this._instance._saveData.clone() as GameSignData;
     }
 
     // ** -------------------------------------------------------------------------------------- ** //

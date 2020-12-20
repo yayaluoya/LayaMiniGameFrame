@@ -24,7 +24,7 @@ export default class GameSkinDataProxy extends RootLocalStorageProxy<GameSkinDat
 
     /** 获取保存名称 */
     protected get _saveName(): string {
-        return "->GameSkinData<-";
+        return "GameSkin";
     }
 
     /**
@@ -32,7 +32,7 @@ export default class GameSkinDataProxy extends RootLocalStorageProxy<GameSkinDat
      */
     public static get skinData(): GameSkinData {
         //
-        return this._instance._saveData.clone();
+        return this._instance._saveData.clone() as GameSkinData;
     }
 
     // ** -------------------------------------------------------------------------------------- ** //

@@ -23,7 +23,7 @@ export default class GameNewHandDataProxy extends RootLocalStorageProxy<GameNewH
 
     /** 获取保存名称 */
     protected get _saveName(): string {
-        return "->GameNewHandData<-";
+        return "GameNewHand";
     }
 
     /** 获取原始数据 */
@@ -36,7 +36,7 @@ export default class GameNewHandDataProxy extends RootLocalStorageProxy<GameNewH
      * 获取数据的副本
      */
     public static get newHandData(): GameNewHandData {
-        return this._instance._saveData.clone();
+        return this._instance._saveData.clone() as GameNewHandData;
     }
 
     // ** -------------------------------------------------------------------------------------- ** //

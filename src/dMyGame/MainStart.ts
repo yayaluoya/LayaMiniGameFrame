@@ -7,6 +7,7 @@ import ConsoleEx from '../aTGame/Console/ConsoleEx';
 import MyMainTest from '../eTest/MyMainTest';
 import MainDebug from '../aTGame/Debug/MainDebug';
 import MyMainDebug from '../fDebug/MyMainDebug';
+import RootDebug from '../aTGame/Debug/RootDebug';
 /**
  * 游戏开始类
  */
@@ -32,6 +33,11 @@ export default class MainStart {
             //激活调试类
             new MainDebug().startDebug();//主调试
             new MyMainDebug().startDebug();//项目调试
+            //判断是否打开新窗口调试
+            if (MainGameConfig.ifOpenWindowDebug) {
+                //打开新窗口进行调试
+                RootDebug.openWindowDebug();
+            }
         }
     }
 

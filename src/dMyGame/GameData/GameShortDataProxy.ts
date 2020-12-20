@@ -35,7 +35,7 @@ export default class GameShortDataProxy extends RootShortProxy<GameShortData>{
      */
     public static get shortData(): GameShortData {
         //
-        return this._instance._shortData.clone();
+        return this._instance._shortData.clone() as GameShortData;
     }
 
     // ** -------------------------------------------------------------------------------------- ** //

@@ -3,7 +3,11 @@ const { exec } = require("child_process");
 const { server, reload } = require("gulp-connect");
 const rev = require("gulp-rev-append");
 const os = require('os');
+var rf = require("fs");
+var path = require("path");
+
 const gulpfileConst = require("./gulpfileConst");
+
 //是否正在编译
 let _ifCompile = false;
 //主页地址
@@ -155,5 +159,22 @@ task("httpServer", function () {
     let process = exec("http-server -p 3000 --cors");
     process.stdout.on("data", (data) => {
         console.log(data);
+    });
+});
+
+//创建一个获取本地调式首页内容的任务
+task("setDebugIndexHtml", function (b) {
+    rf.readFile(path.join(__dirname, '/src/aTGame/Debug/html/debugHTML_.ts'), 'utf8', function (err, debugHTML) {
+        rf.readFile(path.join(__dirname, '/DebugWindow/dist/index.html'), 'utf8', function (err, index) {
+            if (err) throw err;
+            debugHTML = debugHTML.replace('{html}', index);
+            // console.log(debugHTML);
+            rf.writeFile(path.join(__dirname, '/src/aTGame/Debug/html/debugHTML.ts'), debugHTML, 'utf8', (err) => {
+                if (err) throw err;
+                //
+                console.log('设置调试首页完成，请重新编译项目');
+                b();
+            });
+        });
     });
 });

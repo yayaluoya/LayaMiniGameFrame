@@ -25,7 +25,7 @@ export default abstract class BaseAnimationCon<Name> extends BaseAnimation {
             //给该动画状态添加脚本
             if (state) {
                 this.m_canPlayNames.push(_o);
-                var asst: BaseAnimatorState = state.addScript(BaseAnimatorState) as BaseAnimatorState;
+                let asst: BaseAnimatorState = state.addScript(BaseAnimatorState) as BaseAnimatorState;
                 asst.setAnimationCom(this, _o, this.getAniStateParam(_o));
             }
             // console.log('可播放动画状态', this.m_canPlayNames);

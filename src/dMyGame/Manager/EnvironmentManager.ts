@@ -9,6 +9,9 @@ import { EOtherLevelName } from '../Enum/EOtherLevelName';
 import { OtherEnvironmentConfig } from '../_config/OtherEnvironmentConfig';
 import EnvironmentConfigProxy from '../ConfigProxy/EnvironmentConfigProxy';
 import OtherEnvironmentConfigProxy from '../ConfigProxy/OtherEnvironmentProxy';
+import MainGameConfig from '../../bTGameConfig/MainGameConfig';
+import RootDebug from '../../aTGame/Debug/RootDebug';
+import { EDebugWindowEvent } from '../../aTGame/Debug/mes/EDebugWindowEvent';
 /**
  * 环境管理器，负责场景的环境管理
  */
@@ -58,6 +61,11 @@ export default class EnvironmentManager implements IRootManager {
         this.addAmbient(this.s3d, this.m_enviromentConfig.ambient_color);
         //监听事件
         MesManager.instance.on3D(EEventScene.GameLevelsDelete, this, this.gameLevelsDelete);
+        //
+        if (MainGameConfig.ifDebug && MainGameConfig.ifOpenWindowDebug) {
+            //发送环境改变事件
+            RootDebug.fendDebugWindow(EDebugWindowEvent.SetEnvironment);
+        }
     }
 
     /**

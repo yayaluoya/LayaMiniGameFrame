@@ -26,7 +26,7 @@ export default class CommonDataProxy extends RootLocalStorageProxy<ComData> {
 
     /** 获取保存名称 */
     protected get _saveName(): string {
-        return "->CommonData<-";
+        return "Common";
     }
 
     // ** -------------------------------------------------------------------------------------- ** //

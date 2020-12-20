@@ -1,4 +1,4 @@
-declare module LayaMiniGame {
+declare module LayaMiniGameEx {
     /**
      * 主类
      */

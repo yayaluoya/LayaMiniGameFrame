@@ -23,14 +23,14 @@ export default class GamePropDataProxy extends RootLocalStorageProxy<GamePropDat
 
     /** 获取保存名称 */
     protected get _saveName(): string {
-        return "->GamePropData<-";
+        return "GameProp";
     }
 
     /** 
      * 获取数据的副本
      */
     public static get propData(): GamePropData {
-        return this._instance._saveData.clone();
+        return this._instance._saveData.clone() as GamePropData;
     }
 
     // ** -------------------------------------------------------------------------------------- ** //

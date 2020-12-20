@@ -7,8 +7,8 @@
  */
 window.screenOrientation = "sensor_landscape";
 
-//自定义脚本
-loadLib("libs/LayaMiniGame.js");
+//自定义扩展脚本
+loadLib("libs/LayaMiniGameEx.js");
 //-----libs-begin-----
 loadLib("libs/laya.core.js");
 loadLib("libs/laya.d3.js");

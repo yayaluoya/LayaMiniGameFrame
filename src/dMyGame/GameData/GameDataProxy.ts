@@ -24,7 +24,7 @@ export default class GameDataProxy extends RootLocalStorageProxy<GameData>{
 
     /** 获取保存名称 */
     protected get _saveName(): string {
-        return "->GameData<-";
+        return "Game";
     }
 
     /** 获取原始数据 */
@@ -38,7 +38,7 @@ export default class GameDataProxy extends RootLocalStorageProxy<GameData>{
      */
     public static get gameData(): GameData {
         //返回一个副本防止被修改
-        return this._instance._saveData.clone();
+        return this._instance._saveData.clone() as GameData;
     }
 
     // ** -------------------------------------------------------------------------------------- ** //
