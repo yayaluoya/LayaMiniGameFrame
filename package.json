@@ -18,9 +18,9 @@
     "打包到-VIVO-Game": "layaair2-cmd publish -c vivogame",
     "打包到-QQ Game": "layaair2-cmd publish -c qqgame",
     "安装-layaair2-cmd": "npm i layaair2-cmd -g --ignore-scripts",
+    "更新调试页面首页": "gulp setDebugIndexHtml",
     "安装-gulp": "npm i gulp -g --ignore-scripts",
-    "安装-http-server": "npm i http-server -g --ignore-scripts",
-    "更新调试页面首页": "gulp setDebugIndexHtml"
+    "安装-http-server": "npm i http-server -g --ignore-scripts"
   },
   "repository": {
     "type": "git",
