@@ -1,4 +1,5 @@
 import RootDataProxyShell from "../../../aTGame/Data/RootDataProxyShell";
+import NumberUtils from "../../../aTGame/Utils/NumberUtils";
 import { EEventUI } from "../../EventEnum/EEventUI";
 import GamePropData from "../../GameData/GamePropData";
 import GamePropDataProxy from "../../GameData/GamePropDataProxy";
@@ -37,10 +38,7 @@ export default class GamePropDataProxyShell extends RootDataProxyShell {
         //化整
         num = Math.floor(num);
         //增加临时数据
-        this.m_propData.coinCount += num;
-        if (this.m_propData.coinCount < 0) {
-            this.m_propData.coinCount = 0;
-        }
+        this.m_propData.coinCount = NumberUtils.getNumberAtScope(this.m_propData.coinCount + num, 0);
         //传出事件
         MesManager.instance.eventUI(EEventUI.GameCoinChange);
     }

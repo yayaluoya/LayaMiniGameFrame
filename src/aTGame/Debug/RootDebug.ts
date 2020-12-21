@@ -65,7 +65,7 @@ export default class RootDebug {
      * 打开一个新窗口调试
      */
     public static openWindowDebug() {
-        let _win: Window = window.open('', MainConfig.GameName, `fullscreen=yes,width=414,height=736`);
+        let _win: Window = window.open('', MainConfig.GameName, `fullscreen=yes,top=100,left=100,width=414,height=736`);
         //把新窗口注入到当前win
         window[EDebugWindow.DebugWindow] = _win;
         //写入首页

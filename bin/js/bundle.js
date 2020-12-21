@@ -1460,7 +1460,7 @@
         }
         _startDebug() { }
         static openWindowDebug() {
-            let _win = window.open('', MainConfig.GameName, `fullscreen=yes,width=414,height=736`);
+            let _win = window.open('', MainConfig.GameName, `fullscreen=yes,top=100,left=100,width=414,height=736`);
             window[EDebugWindow.DebugWindow] = _win;
             let _url = window.location.href.replace('bin/index.html', 'DebugWindow/dist/');
             _win.document.getElementsByTagName('html')[0].innerHTML = html.replace(/"\//g, '"' + _url);

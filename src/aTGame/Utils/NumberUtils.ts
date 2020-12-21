@@ -31,4 +31,23 @@ export default class NumberUtils {
             return 0;
         }
     }
+
+    /**
+     * 根据一个范围获取数值
+     * @param _number 该数值
+     * @param _min 最小值
+     * @param _max 最大值
+     */
+    public static getNumberAtScope(_number: number, _min?: number, _max?: number): number {
+        //
+        let _n: number = _number;
+        if (typeof _min != "undefined") {
+            _n = Math.max(_min, _n);
+        }
+        if (typeof _max != "undefined") {
+            _n = Math.min(_max, _n);
+        }
+        //
+        return _n;
+    }
 }
