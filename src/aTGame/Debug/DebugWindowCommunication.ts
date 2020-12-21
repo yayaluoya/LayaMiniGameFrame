@@ -9,7 +9,12 @@ export default class DebugWindowCommunication {
         f: (_data: any) => void,
     }[] = [];
 
-    //添加一个消息
+    /**
+     * 添加一个消息
+     * @param _this 执行域 
+     * @param _key 关键字
+     * @param _f 回调方法
+     */
     public onMes(_this: any, _key: string, _f: (_data: any) => void) {
         this.m_mesList.push({
             this: _this,
