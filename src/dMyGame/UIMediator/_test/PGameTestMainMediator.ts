@@ -2,6 +2,7 @@ import BaseUIMediator from "../../../aTGame/UI/FGUI/BaseUIMediator";
 import FGUI_PGameTestMain from "../../../FGUI/GameMain/FGUI_PGameTestMain";
 import { EUI } from "../../Enum/EUI";
 import UIManagerProxy from "../../Manager/Proxy/UIManagerProxy";
+import GameTestDataProxyShell from "../../Proxy/data/GameTestDataProxyShell";
 
 /**
  * 游戏开始页面调度者
@@ -31,6 +32,8 @@ export default class PGameTestMainMediator extends BaseUIMediator<FGUI_PGameTest
         UIManagerProxy.instance.setUIState([
             { typeIndex: EUI.TestPlatform },
         ], false);
+        //
+        GameTestDataProxyShell.instance.data.testNumber++;
     }
 
     //隐藏时的生命周期函数

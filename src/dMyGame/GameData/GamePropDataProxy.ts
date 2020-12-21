@@ -26,41 +26,8 @@ export default class GamePropDataProxy extends RootLocalStorageProxy<GamePropDat
         return "GameProp";
     }
 
-    /** 
-     * 获取数据的副本
-     */
-    public static get propData(): GamePropData {
-        return this._instance._saveData.clone() as GamePropData;
-    }
-
-    // ** -------------------------------------------------------------------------------------- ** //
-
-    /**
-     * 加金币
-     * @param num 金币数量
-     */
-    public static addCoin(num: number) {
-        //化整
-        num = Math.floor(num);
-        //增加临时数据
-        this._instance._saveData.coinCount += num;
-        if (this._instance._saveData.coinCount < 0) {
-            this._instance._saveData.coinCount = 0;
-        }
-        this.SaveToDisk();
-    }
-
-    // ** -------------------------------------------------------------------------------------- ** //
-
     //获取一个新的数据
     protected getNewData(): GamePropData {
         return new GamePropData();
-    }
-
-    /**
-     * 保存到本地 （改变本地数据时调用）
-     */
-    public static SaveToDisk() {
-        this._instance._SaveToDisk(this._instance._saveData);
     }
 }

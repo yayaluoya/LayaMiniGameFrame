@@ -51,7 +51,7 @@ export default class EnvironmentManager implements IRootManager {
      */
     public setEnvironment(_scene: Laya.Sprite3D) {
         this.m_scene = _scene;
-        let _lv: number = GameDataProxy.gameData.onCustoms;
+        let _lv: number = GameDataProxy.instance.saveData.onCustoms;
         this.m_enviromentConfig = EnvironmentConfigProxy.instance.byLevelIdGetData(_lv);
         console.log('关卡环境配置参数->' + _lv + '->', this.m_enviromentConfig);
         //根据配置数据设置相关状态

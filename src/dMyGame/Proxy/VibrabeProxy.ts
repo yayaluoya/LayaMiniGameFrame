@@ -21,7 +21,7 @@ export default class VibrabeProxy {
      * @param _modle 振动模式
      */
     public vibrate(isLong: boolean) {
-        if (!GameDataProxy.gameData.ifOpenVibrate) return;
+        if (!GameDataProxy.instance.saveData.ifOpenVibrate) return;
         //
         PlatformManager.PlatformInstance.device.Vibrate(isLong);
     }
@@ -31,7 +31,7 @@ export default class VibrabeProxy {
      * @param pattern 震动时间
      */
     public originalVibration(pattern: number | number[]) {
-        if (!GameDataProxy.gameData.ifOpenVibrate) return;
+        if (!GameDataProxy.instance.saveData.ifOpenVibrate) return;
         //
     }
 }

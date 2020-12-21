@@ -1,5 +1,4 @@
 import RootShortProxy from '../../aTGame/Data/RootShortProxy';
-import GameOnCustomData from './shortData/GameOnCustomData';
 import GameShortData from './GameShortData';
 
 /**
@@ -30,34 +29,12 @@ export default class GameShortDataProxy extends RootShortProxy<GameShortData>{
         this._shortData = new GameShortData();
     }
 
-    /**
-     * 获取当前游戏临时数据的副本
-     */
-    public static get shortData(): GameShortData {
-        //
-        return this._instance._shortData.clone() as GameShortData;
+    /** 临时数据 */
+    public get shortData(): GameShortData {
+        return this._shortData;
     }
 
     // ** -------------------------------------------------------------------------------------- ** //
-
-    /**
-     * 获取当前关卡数据的可编辑版本
-     */
-    public static get getEditableOnCustomData(): GameOnCustomData {
-        return this._instance._shortData.onCustomsData;
-    }
-
-    /**
-     * 初始化临时数据
-     */
-    public static initShortData() {
-        //
-    }
-
-    /**
-     * 同步临时数据
-     */
-    public static syncShortData() { }
 
     /**
      * 清空临时数据

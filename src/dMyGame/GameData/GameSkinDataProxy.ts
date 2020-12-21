@@ -27,27 +27,8 @@ export default class GameSkinDataProxy extends RootLocalStorageProxy<GameSkinDat
         return "GameSkin";
     }
 
-    /**
-     * 获取当前游戏临时数据的副本
-     */
-    public static get skinData(): GameSkinData {
-        //
-        return this._instance._saveData.clone() as GameSkinData;
-    }
-
-    // ** -------------------------------------------------------------------------------------- ** //
-
-    // ** -------------------------------------------------------------------------------------- ** //
-
     //获取一个新的数据
     protected getNewData(): GameSkinData {
         return new GameSkinData();
-    }
-
-    /**
-     * 保存到本地 （改变本地数据时调用）
-     */
-    public static SaveToDisk() {
-        this._instance._SaveToDisk(this._instance._saveData);
     }
 }

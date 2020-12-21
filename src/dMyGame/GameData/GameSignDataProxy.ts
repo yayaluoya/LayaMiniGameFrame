@@ -26,27 +26,8 @@ export default class GameSignDataProxy extends RootLocalStorageProxy<GameSignDat
         return "GameSign";
     }
 
-    /**
-     * 获取当前游戏临时数据的副本
-     */
-    public static get signData(): GameSignData {
-        //
-        return this._instance._saveData.clone() as GameSignData;
-    }
-
-    // ** -------------------------------------------------------------------------------------- ** //
-
-    // ** -------------------------------------------------------------------------------------- ** //
-
     //获取一个新的数据
     protected getNewData(): GameSignData {
         return new GameSignData();
-    }
-
-    /**
-     * 保存到本地 （改变本地数据时调用）
-     */
-    public static SaveToDisk() {
-        this._instance._SaveToDisk(this._instance._saveData);
     }
 }

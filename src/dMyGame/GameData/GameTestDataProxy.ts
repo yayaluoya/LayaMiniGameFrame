@@ -22,25 +22,10 @@ export default class GameTestDataProxy extends RootLocalStorageProxy<GameTestDat
         super();
     }
 
-    /** 设置数据代理 */
-    protected _ifSetDataProxy: boolean = true;
-
     /** 获取保存名称 */
     protected get _saveName(): string {
         return "GameTest";
     }
-
-    /**
-     * 获取当前游戏临时数据的副本
-     */
-    public static get testData(): GameTestData {
-        //
-        return this._instance._saveData.clone() as GameTestData;
-    }
-
-    // ** -------------------------------------------------------------------------------------- ** //
-
-    // ** -------------------------------------------------------------------------------------- ** //
 
     //获取一个新的数据
     protected getNewData(): GameTestData {

@@ -26,32 +26,8 @@ export default class GameNewHandDataProxy extends RootLocalStorageProxy<GameNewH
         return "GameNewHand";
     }
 
-    /** 获取原始数据 */
-    public static get rootData(): GameNewHandData {
-        //
-        return this._instance._saveData;
-    }
-
-    /** 
-     * 获取数据的副本
-     */
-    public static get newHandData(): GameNewHandData {
-        return this._instance._saveData.clone() as GameNewHandData;
-    }
-
-    // ** -------------------------------------------------------------------------------------- ** //
-
-    // ** -------------------------------------------------------------------------------------- ** //
-
     //获取一个新的数据
     protected getNewData(): GameNewHandData {
         return new GameNewHandData();
-    }
-
-    /**
-     * 保存到本地 （改变本地数据时调用）
-     */
-    public static SaveToDisk() {
-        this._instance._SaveToDisk(this._instance._saveData);
     }
 }

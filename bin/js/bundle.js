@@ -1613,14 +1613,6 @@
         }
     }
 
-    var ECommonLeve;
-    (function (ECommonLeve) {
-        ECommonLeve[ECommonLeve["MinLeveNumber"] = 3] = "MinLeveNumber";
-        ECommonLeve[ECommonLeve["DefaultLeveId"] = 1] = "DefaultLeveId";
-        ECommonLeve[ECommonLeve["DebugLeveId"] = 0] = "DebugLeveId";
-        ECommonLeve[ECommonLeve["NewHandLeveId"] = 1] = "NewHandLeveId";
-    })(ECommonLeve || (ECommonLeve = {}));
-
     class StringUtils {
         static SplitToIntArray(str, splitStr) {
             var splits = str.split(splitStr);
@@ -2109,7 +2101,7 @@
     class RootLocalStorageProxy extends RootDataManger {
         constructor() {
             super(...arguments);
-            this._ifSetDataProxy = false;
+            this._ifSetDataProxy = true;
             this._dataSetMonitor = [];
             this._ifDifferData = true;
         }
@@ -2287,12 +2279,20 @@
     RootLocalStorageProxy.$RootDataCruxKey = Symbol('$RootDataCruxKey');
     RootLocalStorageProxy.$RootParentDataKey = Symbol('$RootParentDataKey');
 
+    var ECommonLeve;
+    (function (ECommonLeve) {
+        ECommonLeve[ECommonLeve["MinLeveNumber"] = 3] = "MinLeveNumber";
+        ECommonLeve[ECommonLeve["DefaultLeveId"] = 1] = "DefaultLeveId";
+        ECommonLeve[ECommonLeve["DebugLeveId"] = 0] = "DebugLeveId";
+        ECommonLeve[ECommonLeve["NewHandLeveId"] = 1] = "NewHandLeveId";
+    })(ECommonLeve || (ECommonLeve = {}));
+
     class RootGameData {
     }
 
     class RootLocalStorageData extends RootGameData {
-        clone() {
-            return JSON.parse(JSON.stringify(this));
+        static clone(_data) {
+            return JSON.parse(JSON.stringify(_data));
         }
     }
 
@@ -2321,88 +2321,8 @@
         get _saveName() {
             return "Game";
         }
-        static get rootData() {
-            return this._instance._saveData;
-        }
-        static get gameData() {
-            return this._instance._saveData.clone();
-        }
-        static initCustoms(_maxCustoms) {
-            _maxCustoms = Math.floor(_maxCustoms);
-            if (this._instance._saveData.maxCustoms == _maxCustoms) {
-                return;
-            }
-            this._instance._saveData.maxCustoms = _maxCustoms;
-            if (this._instance._saveData.onCustoms > _maxCustoms) {
-                this._instance._saveData.onCustoms = _maxCustoms;
-            }
-            if (this._instance._saveData.maxCustomsRecord > _maxCustoms) {
-                this._instance._saveData.maxCustomsRecord = _maxCustoms;
-            }
-            this.SaveToDisk();
-        }
-        static ifNewHandCustoms() {
-            return this._instance._saveData.onCustoms == ECommonLeve.NewHandLeveId && this._instance._saveData.maxCustomsRecord <= ECommonLeve.NewHandLeveId;
-        }
-        static setIfOpenBGM(_b) {
-            this._instance._saveData.ifOpenBgm = _b;
-            this.SaveToDisk();
-        }
-        static setIfOpenSound(_b) {
-            this._instance._saveData.ifOpenSound = _b;
-            this.SaveToDisk();
-        }
-        static setIfOpenVibrate(_b) {
-            this._instance._saveData.ifOpenVibrate = _b;
-            this.SaveToDisk();
-        }
-        static setCustoms(_n) {
-            _n = Math.floor(_n);
-            if (_n > this._instance._saveData.maxCustoms) {
-                return;
-            }
-            this._instance._saveData.onCustoms = _n;
-        }
-        static addCustoms(_number = 1) {
-            _number = Math.floor(_number);
-            let _sum = this._instance._saveData.onCustoms + _number;
-            let _win = false;
-            if (_sum <= this._instance._saveData.maxCustoms) {
-                this._instance._saveData.onCustoms = _sum;
-                if (_sum > this._instance._saveData.maxCustomsRecord) {
-                    this._instance._saveData.maxCustomsRecord = _sum;
-                }
-                _win = true;
-            }
-            else {
-                this._instance._saveData.onCustoms = ECommonLeve.DefaultLeveId;
-                _win = true;
-            }
-            this.SaveToDisk();
-            return _win;
-        }
-        static getDefaultCustoms() {
-            if (this._instance._saveData.onCustoms > this._instance._saveData.maxCustoms) {
-                this._instance._saveData.onCustoms = ECommonLeve.DefaultLeveId;
-                this.SaveToDisk();
-            }
-            return this._instance._saveData.onCustoms;
-        }
-        static getPreloadCustoms() {
-            return this.getNextCustoms();
-        }
-        static getNextCustoms() {
-            let _customs = this._instance._saveData.onCustoms + 1;
-            if (_customs > this._instance._saveData.maxCustoms) {
-                _customs = ECommonLeve.DefaultLeveId;
-            }
-            return _customs;
-        }
         getNewData() {
             return new GameData();
-        }
-        static SaveToDisk() {
-            this._instance._SaveToDisk(this._instance._saveData);
         }
     }
 
@@ -2487,7 +2407,7 @@
         }
         setEnvironment(_scene) {
             this.m_scene = _scene;
-            let _lv = GameDataProxy.gameData.onCustoms;
+            let _lv = GameDataProxy.instance.saveData.onCustoms;
             this.m_enviromentConfig = EnvironmentConfigProxy.instance.byLevelIdGetData(_lv);
             console.log('关卡环境配置参数->' + _lv + '->', this.m_enviromentConfig);
             this.setS3D(this.m_s3d);
@@ -2682,6 +2602,95 @@
         EEventUI["SceneGameCustomDelete"] = "_EEventUI_SceneGameCustomDelete";
     })(EEventUI || (EEventUI = {}));
 
+    class RootDataProxyShell {
+        constructor() {
+            this.initData();
+        }
+        initData() { }
+    }
+
+    class GameDataProxyShell extends RootDataProxyShell {
+        constructor() { super(); }
+        static get instance() {
+            if (!this.m_instance) {
+                this.m_instance = new GameDataProxyShell();
+            }
+            return this.m_instance;
+        }
+        get gameData() {
+            return this.m_gameData;
+        }
+        initData() {
+            this.m_gameData = GameDataProxy.instance.saveData;
+        }
+        initCustoms(_maxCustoms) {
+            _maxCustoms = Math.floor(_maxCustoms);
+            if (this.m_gameData.maxCustoms == _maxCustoms) {
+                return;
+            }
+            this.m_gameData.maxCustoms = _maxCustoms;
+            if (this.m_gameData.onCustoms > _maxCustoms) {
+                this.m_gameData.onCustoms = _maxCustoms;
+            }
+            if (this.m_gameData.maxCustomsRecord > _maxCustoms) {
+                this.m_gameData.maxCustomsRecord = _maxCustoms;
+            }
+        }
+        ifNewHandCustoms() {
+            return this.m_gameData.onCustoms == ECommonLeve.NewHandLeveId && this.m_gameData.maxCustomsRecord <= ECommonLeve.NewHandLeveId;
+        }
+        setIfOpenBGM(_b) {
+            this.m_gameData.ifOpenBgm = _b;
+        }
+        setIfOpenSound(_b) {
+            this.m_gameData.ifOpenSound = _b;
+        }
+        setIfOpenVibrate(_b) {
+            this.m_gameData.ifOpenVibrate = _b;
+        }
+        setCustoms(_n) {
+            _n = Math.floor(_n);
+            if (_n > this.m_gameData.maxCustoms) {
+                return;
+            }
+            this.m_gameData.onCustoms = _n;
+        }
+        addCustoms(_number = 1) {
+            _number = Math.floor(_number);
+            let _sum = this.m_gameData.onCustoms + _number;
+            let _win = false;
+            if (_sum <= this.m_gameData.maxCustoms) {
+                this.m_gameData.onCustoms = _sum;
+                if (_sum > this.m_gameData.maxCustomsRecord) {
+                    this.m_gameData.maxCustomsRecord = _sum;
+                }
+                _win = true;
+            }
+            else {
+                this.m_gameData.onCustoms = ECommonLeve.DefaultLeveId;
+                _win = true;
+            }
+            MesManager.instance.eventUI(EEventUI.CustomsChange);
+            return _win;
+        }
+        getDefaultCustoms() {
+            if (this.m_gameData.onCustoms > this.m_gameData.maxCustoms) {
+                this.m_gameData.onCustoms = ECommonLeve.DefaultLeveId;
+            }
+            return this.m_gameData.onCustoms;
+        }
+        getPreloadCustoms() {
+            return this.getNextCustoms();
+        }
+        getNextCustoms() {
+            let _customs = this.m_gameData.onCustoms + 1;
+            if (_customs > this.m_gameData.maxCustoms) {
+                _customs = ECommonLeve.DefaultLeveId;
+            }
+            return _customs;
+        }
+    }
+
     class CustomsManager {
         constructor() {
             this.m_ifInit = false;
@@ -2698,7 +2707,7 @@
         }
         init() {
             this.m_ifSceneBuild = false;
-            GameDataProxy.initCustoms(LevelConfigProxy.instance.getLevelNumber());
+            GameDataProxyShell.instance.initCustoms(LevelConfigProxy.instance.getLevelNumber());
             MesManager.instance.on3D(EEventScene.GameLevelsBuild, this, this.gameLevelsBuild);
             MesManager.instance.on3D(EEventScene.GameLevelsDelete, this, this.gameLevelsDelete);
             MesManager.instance.on3D(EEventScene.GameOtherLevelsBuild, this, this.gameOtherLevelsBuild);
@@ -2714,11 +2723,11 @@
             }
             let lvId;
             if (this.m_ifInit) {
-                lvId = GameDataProxy.gameData.onCustoms;
+                lvId = GameDataProxy.instance.saveData.onCustoms;
             }
             else {
                 this.m_ifInit = true;
-                lvId = GameDataProxy.getDefaultCustoms();
+                lvId = GameDataProxyShell.instance.getDefaultCustoms();
             }
             let scene = SceneManager.instance.getSceneByLv(lvId);
             this.m_scene = scene;
@@ -2732,7 +2741,7 @@
                 ConManager.addScrCon(scene.scene);
                 ConManager.addCommonCon();
                 if (Const.ifPreloadCustoms) {
-                    let _preloadCustoms = GameDataProxy.getPreloadCustoms();
+                    let _preloadCustoms = GameDataProxyShell.instance.getPreloadCustoms();
                     SceneManager.instance.preloadSceneRes(_preloadCustoms);
                 }
                 this.onCustomsInit(lvId);
@@ -3550,6 +3559,63 @@
     }
     FGUI_PGameTestMain.URL = "ui://kk7g5mmmo9js9x";
 
+    class GameTestData extends RootLocalStorageData {
+        constructor() {
+            super(...arguments);
+            this.testNumber = 0;
+            this.testBoolean = false;
+            this.testArray = [];
+            this.testObject = {
+                a: 0,
+                b: 0,
+                c: 0,
+            };
+        }
+    }
+
+    class GameTestDataProxy extends RootLocalStorageProxy {
+        constructor() {
+            super();
+        }
+        static get instance() {
+            if (this._instance == null) {
+                this._instance = new GameTestDataProxy();
+            }
+            return this._instance;
+        }
+        get _saveName() {
+            return "GameTest";
+        }
+        getNewData() {
+            return new GameTestData();
+        }
+    }
+
+    class GameTestDataProxyShell extends RootDataProxyShell {
+        constructor() { super(); }
+        static get instance() {
+            if (!this.m_instance) {
+                this.m_instance = new GameTestDataProxyShell();
+            }
+            return this.m_instance;
+        }
+        get data() {
+            return this.m_data;
+        }
+        initData() {
+            this.m_data = GameTestDataProxy.instance.saveData;
+            GameTestDataProxy.instance.addDataSetMonitor(this, () => {
+                console.log('根属性testNumber改变');
+            }, GameTestDataProxy.instance.rootData, GameTestDataProxy.instance.rootData.testNumber);
+            GameTestDataProxy.instance.addDataSetMonitor(this, () => {
+                console.log('对象属性a改变');
+            }, GameTestDataProxy.instance.rootData.testObject, GameTestDataProxy.instance.rootData.testObject['a']);
+            GameTestDataProxy.instance.addDataSetMonitor(this, () => {
+                console.log('数组属性改变');
+            }, GameTestDataProxy.instance.rootData.testArray);
+        }
+    }
+
     class PGameTestMainMediator extends BaseUIMediator {
         constructor() { super(); }
         static get instance() {
@@ -3566,6 +3632,7 @@
             UIManagerProxy.instance.setUIState([
                 { typeIndex: EUI.TestPlatform },
             ], false);
+            GameTestDataProxyShell.instance.data.testNumber++;
         }
         _OnHide() { }
     }
@@ -6318,9 +6385,6 @@
             super(...arguments);
             this.onCustomsData = new GameOnCustomData();
         }
-        clone() {
-            return JSON.parse(JSON.stringify(this));
-        }
     }
 
     class GameShortDataProxy extends RootShortProxy {
@@ -6336,15 +6400,9 @@
         InitData() {
             this._shortData = new GameShortData();
         }
-        static get shortData() {
-            return this._instance._shortData.clone();
+        get shortData() {
+            return this._shortData;
         }
-        static get getEditableOnCustomData() {
-            return this._instance._shortData.onCustomsData;
-        }
-        static initShortData() {
-        }
-        static syncShortData() { }
         static emptyGameOnCustomData() {
             this._instance._shortData = new GameShortData();
         }
@@ -6541,13 +6599,13 @@
             }
         }
         playBGM(_name, loops, complete, startTime) {
-            if (!GameDataProxy.gameData.ifOpenBgm || this.m_stop)
+            if (!GameDataProxy.instance.saveData.ifOpenBgm || this.m_stop)
                 return;
             AudioUtils.instance.playBGM(_name, loops, complete, startTime);
             this.m_onBGM = _name;
         }
         playSound(_eSoundName, loops, complete, soundClass, startTime) {
-            if (!GameDataProxy.gameData.ifOpenSound || this.m_stop)
+            if (!GameDataProxy.instance.saveData.ifOpenSound || this.m_stop)
                 return;
             if (loops == 0) {
                 this.m_onLoopSoundList.add(_eSoundName);
@@ -6741,9 +6799,6 @@
         }
         getNewData() {
             return new ComData();
-        }
-        static SaveToDisk() {
-            this._instance._SaveToDisk(this._instance._saveData);
         }
     }
 
@@ -7049,22 +7104,8 @@
         get _saveName() {
             return "GameProp";
         }
-        static get propData() {
-            return this._instance._saveData.clone();
-        }
-        static addCoin(num) {
-            num = Math.floor(num);
-            this._instance._saveData.coinCount += num;
-            if (this._instance._saveData.coinCount < 0) {
-                this._instance._saveData.coinCount = 0;
-            }
-            this.SaveToDisk();
-        }
         getNewData() {
             return new GamePropData();
-        }
-        static SaveToDisk() {
-            this._instance._SaveToDisk(this._instance._saveData);
         }
     }
 
@@ -7084,14 +7125,8 @@
         get _saveName() {
             return "GameSkin";
         }
-        static get skinData() {
-            return this._instance._saveData.clone();
-        }
         getNewData() {
             return new GameSkinData();
-        }
-        static SaveToDisk() {
-            this._instance._SaveToDisk(this._instance._saveData);
         }
     }
 
@@ -7116,14 +7151,8 @@
         get _saveName() {
             return "GameSign";
         }
-        static get signData() {
-            return this._instance._saveData.clone();
-        }
         getNewData() {
             return new GameSignData();
-        }
-        static SaveToDisk() {
-            this._instance._SaveToDisk(this._instance._saveData);
         }
     }
 
@@ -7164,53 +7193,8 @@
         get _saveName() {
             return "GameNewHand";
         }
-        static get rootData() {
-            return this._instance._saveData;
-        }
-        static get newHandData() {
-            return this._instance._saveData.clone();
-        }
         getNewData() {
             return new GameNewHandData();
-        }
-        static SaveToDisk() {
-            this._instance._SaveToDisk(this._instance._saveData);
-        }
-    }
-
-    class GameTestData extends RootLocalStorageData {
-        constructor() {
-            super(...arguments);
-            this.testNumber = 0;
-            this.testBoolean = false;
-            this.testArray = [];
-            this.testObject = {
-                a: 0,
-                b: 0,
-                c: 0,
-            };
-        }
-    }
-
-    class GameTestDataProxy extends RootLocalStorageProxy {
-        constructor() {
-            super();
-            this._ifSetDataProxy = true;
-        }
-        static get instance() {
-            if (this._instance == null) {
-                this._instance = new GameTestDataProxy();
-            }
-            return this._instance;
-        }
-        get _saveName() {
-            return "GameTest";
-        }
-        static get testData() {
-            return this._instance._saveData.clone();
-        }
-        getNewData() {
-            return new GameTestData();
         }
     }
 

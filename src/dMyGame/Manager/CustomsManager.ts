@@ -8,9 +8,10 @@ import IRootManager from '../../aTGame/Manager/IRootManager';
 import MesManager from './MesManager';
 import { EEventScene } from '../EventEnum/EEventScene';
 import { EEventUI } from '../EventEnum/EEventUI';
-import GameDataProxy from '../GameData/GameDataProxy';
 import LevelConfigProxy from '../ConfigProxy/LevelConfigProxy';
 import { EOtherLevelName } from '../Enum/EOtherLevelName';
+import GameDataProxyShell from '../Proxy/data/GameDataProxyShell';
+import GameDataProxy from '../GameData/GameDataProxy';
 /**
  * 关卡管理器
  * 3D游戏实际从这里开始，沟通外界创建和销毁场景
@@ -49,7 +50,7 @@ export default class CustomsManager implements IRootManager {
         //
         this.m_ifSceneBuild = false;
         //初始化关卡数据
-        GameDataProxy.initCustoms(LevelConfigProxy.instance.getLevelNumber());
+        GameDataProxyShell.instance.initCustoms(LevelConfigProxy.instance.getLevelNumber());
         //监听事件
         MesManager.instance.on3D(EEventScene.GameLevelsBuild, this, this.gameLevelsBuild);
         MesManager.instance.on3D(EEventScene.GameLevelsDelete, this, this.gameLevelsDelete);
@@ -78,11 +79,11 @@ export default class CustomsManager implements IRootManager {
         let lvId: number;
         //判断游戏是否已经初始化
         if (this.m_ifInit) {
-            lvId = GameDataProxy.gameData.onCustoms;
+            lvId = GameDataProxy.instance.saveData.onCustoms;
         } else {
             this.m_ifInit = true;
             // 获取默认关卡
-            lvId = GameDataProxy.getDefaultCustoms();
+            lvId = GameDataProxyShell.instance.getDefaultCustoms();
         }
         //
         let scene = SceneManager.instance.getSceneByLv(lvId);
@@ -104,7 +105,7 @@ export default class CustomsManager implements IRootManager {
             ConManager.addCommonCon();//没有任何依赖的控制器
             //预加载场景
             if (Const.ifPreloadCustoms) {
-                let _preloadCustoms: number = GameDataProxy.getPreloadCustoms();
+                let _preloadCustoms: number = GameDataProxyShell.instance.getPreloadCustoms();
                 SceneManager.instance.preloadSceneRes(_preloadCustoms);
             }
             this.onCustomsInit(lvId);

@@ -29,19 +29,8 @@ export default class CommonDataProxy extends RootLocalStorageProxy<ComData> {
         return "Common";
     }
 
-    // ** -------------------------------------------------------------------------------------- ** //
-
-    // ** -------------------------------------------------------------------------------------- ** //
-
     //获取一个新的数据
     protected getNewData(): ComData {
         return new ComData();
-    }
-
-    /**
-     * 保存数据到本地
-     */
-    public static SaveToDisk() {
-        this._instance._SaveToDisk(this._instance._saveData);
     }
 }

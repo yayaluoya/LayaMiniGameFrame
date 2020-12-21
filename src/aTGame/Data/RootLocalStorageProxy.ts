@@ -30,11 +30,11 @@ export default abstract class RootLocalStorageProxy<T extends RootLocalStorageDa
     protected _rootData: T;
 
     /** 
-     * 是否设置数据代理
+     * 是否设置数据代理,默认为true
      * 监听数据变化并且自动保存
      * 最低监听数组变化，当数组内容是对象时不会监听该对象。
      */
-    protected _ifSetDataProxy: boolean = false;
+    protected _ifSetDataProxy: boolean = true;
 
     /** 数据设置监听，当数据设置时会执行的监听 */
     private _dataSetMonitor: {
@@ -64,7 +64,7 @@ export default abstract class RootLocalStorageProxy<T extends RootLocalStorageDa
         return this.encrypt(this.saveName + '__verify');
     }
 
-    /** 获取保存数据，非副本，谨慎更改 */
+    /** 获取保存数据 */
     public get saveData(): T {
         return this._saveData;
     }
