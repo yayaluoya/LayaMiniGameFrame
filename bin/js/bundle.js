@@ -2303,7 +2303,6 @@
             this.ifOpenBgm = true;
             this.ifOpenSound = true;
             this.ifOpenVibrate = true;
-            this.coinCount = 0;
             this.onCustoms = ECommonLeve.DebugLeveId;
             this.maxCustomsRecord = 1;
         }

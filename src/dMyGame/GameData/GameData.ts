@@ -17,9 +17,6 @@ export default class GameData extends RootLocalStorageData {
     /** 是否打开振动 */
     public ifOpenVibrate: boolean = true;
 
-    /** 金币数量 */
-    public coinCount: number = 0;
-
     /** 当前关卡 默认为调试关卡 */
     public onCustoms: number = ECommonLeve.DebugLeveId;
 
