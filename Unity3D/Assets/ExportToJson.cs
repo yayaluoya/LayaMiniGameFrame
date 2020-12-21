@@ -278,7 +278,7 @@ namespace JsonEditor
         {
             if (scale.x == 1 && scale.y == 1 && scale.z == 1)
             {
-                this.euler = null;
+                this.scale = null;
             }
             else
             {
