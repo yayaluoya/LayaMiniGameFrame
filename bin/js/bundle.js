@@ -2826,6 +2826,7 @@
 
     class FGuiData {
         constructor() {
+            this.ifUpdate = true;
             this.top = 0;
             this.bottom = 0;
             this.tweenTime = 0;
@@ -2887,7 +2888,9 @@
                 for (let _i = 0, _length = ui.numChildren; _i < _length; _i++) {
                     _ui = ui.getChildAt(_i);
                     let getData = this._cacheFguiData[_ui[this.m_uiDataKey]];
-                    this.setUIData(_ui, getData);
+                    if (getData.ifUpdate) {
+                        this.setUIData(_ui, getData);
+                    }
                 }
             }
         }

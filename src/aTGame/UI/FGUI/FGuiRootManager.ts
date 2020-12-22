@@ -111,9 +111,12 @@ export default class FGuiRootManager {
             for (let _i = 0, _length = ui.numChildren; _i < _length; _i++) {
                 _ui = ui.getChildAt(_i) as fgui.GComponent;
                 //获取键入的数据
-                let getData = this._cacheFguiData[_ui[this.m_uiDataKey]];
-                //设置数据
-                this.setUIData(_ui, getData);
+                let getData = this._cacheFguiData[_ui[this.m_uiDataKey]] as FGuiData;
+                //判断是否更新数据
+                if (getData.ifUpdate) {
+                    //设置数据
+                    this.setUIData(_ui, getData);
+                }
             }
         }
     }
