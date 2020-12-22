@@ -2804,7 +2804,6 @@
 
     var ESpecialUIIndex;
     (function (ESpecialUIIndex) {
-        ESpecialUIIndex["bottom_group"] = "m_bottom_group";
         ESpecialUIIndex["anim_enter"] = "m_anim_enter";
         ESpecialUIIndex["anim_exit"] = "m_anim_exit";
     })(ESpecialUIIndex || (ESpecialUIIndex = {}));
@@ -2822,14 +2821,14 @@
         EUILayer["Set"] = "EUILayer_Set";
         EUILayer["Top"] = "EUILayer_Top";
         EUILayer["Loading"] = "EUILayer_Loading";
+        EUILayer["Native"] = "EUILayer_Native";
     })(EUILayer || (EUILayer = {}));
 
-    class RootUIConst {
-        static get top() {
-            return 0;
-        }
-        static get bottom() {
-            return 0;
+    class FGuiData {
+        constructor() {
+            this.top = 0;
+            this.bottom = 0;
+            this.tweenTime = 0;
         }
     }
 
@@ -2847,7 +2846,7 @@
             this.UpdateAllUI();
             Laya.stage.on(Laya.Event.RESIZE, this, this.UpdateAllUI);
         }
-        static AddUI(uiType, layer) {
+        static AddUI(uiType, fguiData, layer) {
             let ui = uiType.createInstance();
             if (layer == EUILayer.OneUI) {
                 let oneUIs = FGuiRootManager.oneUIs;
@@ -2859,8 +2858,10 @@
                 FGuiRootManager.oneUIs = [];
             }
             this.getLayer(layer).addChild(ui);
-            window[ui.constructor.name] = ui;
-            ui.setSize(fgui.GRoot.inst.width, fgui.GRoot.inst.height - RootUIConst.top - RootUIConst.bottom);
+            let _key = Symbol('fguiData');
+            this._cacheFguiData[_key] = fguiData;
+            ui[this.m_uiDataKey] = _key;
+            this.setUIData(ui, fguiData);
             return ui;
         }
         static setUIToTopShow(_ui, _layer) {
@@ -2877,16 +2878,22 @@
             let setWidth = Laya.stage.width;
             let setHeight = Laya.stage.height;
             fgui.GRoot.inst.setSize(setWidth, setHeight);
-            let childCount = fgui.GRoot.inst.numChildren;
-            let _width = 0;
-            let _height = 0;
-            for (let i = 0; i < childCount; ++i) {
-                let ui = fgui.GRoot.inst.getChildAt(i);
-                _width = fgui.GRoot.inst.width;
-                _height = fgui.GRoot.inst.height - RootUIConst.top - RootUIConst.bottom;
-                ui.setSize(_width, _height);
-                ui.y = RootUIConst.top;
+            let ui;
+            let _ui;
+            for (let i = 0, length = fgui.GRoot.inst.numChildren; i < length; ++i) {
+                ui = fgui.GRoot.inst.getChildAt(i);
+                ui.setSize(setWidth, setHeight);
+                ui.y = 0;
+                for (let _i = 0, _length = ui.numChildren; _i < _length; _i++) {
+                    _ui = ui.getChildAt(_i);
+                    let getData = this._cacheFguiData[_ui[this.m_uiDataKey]];
+                    this.setUIData(_ui, getData);
+                }
             }
+        }
+        static setUIData(_ui, _uiData = new FGuiData()) {
+            _ui.setSize(fgui.GRoot.inst.width, fgui.GRoot.inst.height - _uiData.top - _uiData.bottom);
+            _ui.y = _uiData.top;
         }
         static CheckIn(ui, x, y) {
             if (x > ui.x && x < ui.x + ui.width && y > ui.y && y < ui.y + ui.height) {
@@ -2895,20 +2902,18 @@
             return false;
         }
     }
+    FGuiRootManager.m_uiDataKey = Symbol('$UIData');
+    FGuiRootManager._cacheFguiData = {};
     FGuiRootManager.oneUIs = [];
 
     class BaseUIMediator {
         constructor() {
-            this.top = 0;
-            this.bottom = 0;
-            this._ifUpdateUISize = true;
             this._layer = EUILayer.Panel;
             this._ifBelongUIMediator = false;
             this._belongDownUIMediator = [];
             this._belongUpUIMediator = [];
             this._isShow = false;
             this.m_serialNumber = BaseUIMediatorGlobalSerialNumber.GlobalSerialNumber;
-            Laya.stage.on(Laya.Event.RESIZE, this, this.UpdateUI);
         }
         get ui() {
             return this._ui;
@@ -2918,6 +2923,9 @@
         }
         get layer() {
             return this._layer;
+        }
+        get _fguiData() {
+            return new FGuiData;
         }
         get ifBelongUIMediator() {
             return this._ifBelongUIMediator;
@@ -2940,21 +2948,6 @@
         get keyId() {
             return this.m_keyId;
         }
-        _InitBottom() {
-            let bottomGroup = this._ui[ESpecialUIIndex.bottom_group];
-            if (bottomGroup == null) {
-                this._defaultBottomHeight = 0;
-            }
-            else {
-                this._defaultBottomHeight = bottomGroup.y;
-            }
-        }
-        _SetBottomDown(downDistance = 0) {
-            let bottomGroup = this._ui[ESpecialUIIndex.bottom_group];
-            if (bottomGroup == null)
-                return;
-            bottomGroup.y = this._defaultBottomHeight + downDistance;
-        }
         setUIToTopShow() {
             if (this._ui) {
                 FGuiRootManager.setUIToTopShow(this._ui, this._layer);
@@ -2968,7 +2961,7 @@
             this.OnshowBefore();
             this._isShow = true;
             if (!this._ui || (this._ui && this._ui.isDisposed)) {
-                this._ui = FGuiRootManager.AddUI(this._classDefine, this._layer);
+                this._ui = FGuiRootManager.AddUI(this._classDefine, this._fguiData, this._layer);
                 if (this._layer == EUILayer.OneUI) {
                     FGuiRootManager.oneUIs.push(this);
                 }
@@ -2978,7 +2971,6 @@
             }
             this.setUIToTopShow();
             this._OnShow();
-            this.UpdateUI();
             if (this._ui[ESpecialUIIndex.anim_enter]) {
                 let anim = this._ui[ESpecialUIIndex.anim_enter];
                 anim.play(Laya.Handler.create(this, this._CallEnterAnimEnd));
@@ -2989,24 +2981,6 @@
         }
         _CallEnterAnimEnd() {
             this.OnEnterAnimEnd();
-        }
-        UpdateUI() {
-            if (!this._ifUpdateUISize) {
-                return;
-            }
-            if (!this._isShow) {
-                return;
-            }
-            if (!this._ui) {
-                return;
-            }
-            if (this._ui.isDisposed) {
-                return;
-            }
-            let _width = fgui.GRoot.inst.width;
-            let _height = fgui.GRoot.inst.height - this.top - this.bottom - RootUIConst.top - RootUIConst.bottom;
-            this._ui.setSize(_width, _height);
-            this._ui.y = this.top;
         }
         OnEnterAnimEnd() { }
         OnshowBefore() { }

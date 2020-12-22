@@ -2,17 +2,21 @@ import BaseUIMediator from "./BaseUIMediator";
 import { EUILayer } from "./EUILayer";
 import IUIClass from './UITool';
 import ConsoleEx from "../../Console/ConsoleEx";
-import RootUIConst from "./RootUIConst";
+import FGuiData from "./FGuiData";
 /**
  * FGUI根管理器
  */
 export default class FGuiRootManager {
+    //
+    private static m_uiDataKey: symbol = Symbol('$UIData');
+
+    //缓存fgui数据，通过它找fgui数据
+    private static _cacheFguiData: object = {};
+
     //UI根节点列表
     public static LayerList: { [index: string]: fgui.GComponent };
     //单UI列表
     public static oneUIs: BaseUIMediator<any>[] = [];
-
-    public static: fgui.GObject;
 
     // 获取某一层UI根节点
     private static getLayer(layerType: EUILayer): fgui.GComponent {
@@ -40,10 +44,12 @@ export default class FGuiRootManager {
     /**
      * 创建一个UI并添加到对应层级
      * @param uiType UI类型，必须包含一个初始化实例的方法
+     * @param fguiData fgui数据
      * @param layer 层级类型
      */
     public static AddUI(
         uiType: IUIClass,
+        fguiData: FGuiData,
         layer: EUILayer,
     ): fgui.GObject {
         let ui = uiType.createInstance() as fgui.GObject;
@@ -60,10 +66,12 @@ export default class FGuiRootManager {
         }
         //添加到目标层级
         this.getLayer(layer).addChild(ui);
-        //
-        window[ui.constructor.name] = ui;
-        //设置尺寸
-        ui.setSize(fgui.GRoot.inst.width, fgui.GRoot.inst.height - RootUIConst.top - RootUIConst.bottom);
+        //设置数据
+        let _key: symbol = Symbol('fguiData');
+        this._cacheFguiData[_key] = fguiData;
+        //注入数据
+        ui[this.m_uiDataKey] = _key;
+        this.setUIData(ui, fguiData);
         //
         return ui;
     }
@@ -94,16 +102,30 @@ export default class FGuiRootManager {
         let setWidth = Laya.stage.width;
         let setHeight = Laya.stage.height;
         fgui.GRoot.inst.setSize(setWidth, setHeight);
-        let childCount = fgui.GRoot.inst.numChildren;
-        let _width: number = 0;
-        let _height: number = 0;
-        for (let i = 0; i < childCount; ++i) {
-            let ui = fgui.GRoot.inst.getChildAt(i);
-            _width = fgui.GRoot.inst.width;
-            _height = fgui.GRoot.inst.height - RootUIConst.top - RootUIConst.bottom;
-            ui.setSize(_width, _height);
-            ui.y = RootUIConst.top;
+        let ui: fgui.GComponent;
+        let _ui: fgui.GComponent;
+        for (let i = 0, length = fgui.GRoot.inst.numChildren; i < length; ++i) {
+            ui = fgui.GRoot.inst.getChildAt(i) as fgui.GComponent;
+            ui.setSize(setWidth, setHeight);
+            ui.y = 0;
+            for (let _i = 0, _length = ui.numChildren; _i < _length; _i++) {
+                _ui = ui.getChildAt(_i) as fgui.GComponent;
+                //获取键入的数据
+                let getData = this._cacheFguiData[_ui[this.m_uiDataKey]];
+                //设置数据
+                this.setUIData(_ui, getData);
+            }
         }
+    }
+
+    /**
+     * 设置UI数据
+     * @param _ui UI
+     * @param _uiData UI数据
+     */
+    private static setUIData(_ui: fgui.GObject, _uiData: FGuiData = new FGuiData()) {
+        _ui.setSize(fgui.GRoot.inst.width, fgui.GRoot.inst.height - _uiData.top - _uiData.bottom);
+        _ui.y = _uiData.top;
     }
 
     /**

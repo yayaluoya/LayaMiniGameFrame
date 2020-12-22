@@ -24,4 +24,6 @@ export enum EUILayer {
     Top = 'EUILayer_Top',
     /** 加载页面 */
     Loading = 'EUILayer_Loading',
+    /** 原生 */
+    Native = 'EUILayer_Native',
 }
