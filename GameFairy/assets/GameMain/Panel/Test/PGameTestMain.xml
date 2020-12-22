@@ -1,15 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
 <component size="750,1334" opaque="false">
   <displayList>
-    <component id="n32_t1pw" name="test" src="g7a1z" fileName="Panel/com/PButton.xml" xy="375,1153" size="549,80" group="n34_t1pw">
+    <component id="n35_h66e" name="UIButton" src="g7a1z" fileName="Panel/com/PButton.xml" xy="375,465" size="549,80" group="n37_h66e">
       <relation target="" sidePair=""/>
       <Button icon="ui://kk7g5mmmq3ng9v" selectedIcon="ui://kk7g5mmmq3ng9v"/>
     </component>
-    <text id="n33_t1pw" name="testText" xy="131,1117" size="489,68" group="n34_t1pw" fontSize="50" color="#f6f6f6" align="center" vAlign="middle" autoSize="none" bold="true" text="打开平台测试页面">
+    <text id="n36_h66e" name="UI" xy="131,429" size="489,68" group="n37_h66e" fontSize="50" color="#f6f6f6" align="center" vAlign="middle" autoSize="none" bold="true" text="UI测试">
       <relation target="" sidePair=""/>
     </text>
-    <group id="n34_t1pw" name="_test" xy="100,1113" size="549,80" advanced="true">
-      <relation target="" sidePair="center-center,bottom-bottom"/>
+    <group id="n37_h66e" name="n37" xy="100,425" size="549,80" group="n34_t1pw" advanced="true">
+      <relation target="" sidePair=""/>
+    </group>
+    <component id="n32_t1pw" name="test" src="g7a1z" fileName="Panel/com/PButton.xml" xy="375,869" size="549,80" group="n38_h66e">
+      <relation target="" sidePair=""/>
+      <Button icon="ui://kk7g5mmmq3ng9v" selectedIcon="ui://kk7g5mmmq3ng9v"/>
+    </component>
+    <text id="n33_t1pw" name="testText" xy="131,833" size="489,68" group="n38_h66e" fontSize="50" color="#f6f6f6" align="center" vAlign="middle" autoSize="none" bold="true" text="打开平台测试页面">
+      <relation target="" sidePair=""/>
+    </text>
+    <group id="n38_h66e" name="n38" xy="100,829" size="549,80" group="n34_t1pw" advanced="true">
+      <relation target="" sidePair=""/>
+    </group>
+    <group id="n34_t1pw" name="_test" xy="100,425" size="549,484" advanced="true">
+      <relation target="" sidePair="center-center,middle-middle"/>
     </group>
   </displayList>
 </component>

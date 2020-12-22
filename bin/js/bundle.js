@@ -3529,68 +3529,50 @@
             return (fairygui.UIPackage.createObject("GameMain", "PGameTestMain"));
         }
         onConstruct() {
-            this.m_test = (this.getChildAt(0));
-            this.m_testText = (this.getChildAt(1));
-            this.m__test = (this.getChildAt(2));
+            this.m_UIButton = (this.getChildAt(0));
+            this.m_UI = (this.getChildAt(1));
+            this.m_test = (this.getChildAt(3));
+            this.m_testText = (this.getChildAt(4));
+            this.m__test = (this.getChildAt(6));
         }
     }
     FGUI_PGameTestMain.URL = "ui://kk7g5mmmo9js9x";
 
-    class GameTestData extends RootLocalStorageData {
-        constructor() {
-            super(...arguments);
-            this.testNumber = 0;
-            this.testBoolean = false;
-            this.testArray = [];
-            this.testObject = {
-                a: 0,
-                b: 0,
-                c: 0,
-            };
-        }
-    }
-
-    class GameTestDataProxy extends RootLocalStorageProxy {
+    class FGUI_PGameTestUI extends fairygui.GComponent {
         constructor() {
             super();
         }
-        static get instance() {
-            if (this._instance == null) {
-                this._instance = new GameTestDataProxy();
-            }
-            return this._instance;
+        static createInstance() {
+            return (fairygui.UIPackage.createObject("GameMain", "PGameTestUI"));
         }
-        get _saveName() {
-            return "GameTest";
-        }
-        getNewData() {
-            return new GameTestData();
+        onConstruct() {
+            this.m_bg = (this.getChildAt(0));
         }
     }
+    FGUI_PGameTestUI.URL = "ui://kk7g5mmmh66e9z";
 
-    class GameTestDataProxyShell extends RootDataProxyShell {
+    class PGameUITestMediator extends BaseUIMediator {
         constructor() { super(); }
         static get instance() {
             if (!this.m_instance) {
-                this.m_instance = new GameTestDataProxyShell();
+                this.m_instance = new PGameUITestMediator();
+                this.m_instance._classDefine = FGUI_PGameTestUI;
             }
             return this.m_instance;
         }
-        get data() {
-            return this.m_data;
+        get _fguiData() {
+            let _fguiData = new FGuiData();
+            _fguiData.top = 100;
+            _fguiData.bottom = 50;
+            return _fguiData;
         }
-        initData() {
-            this.m_data = GameTestDataProxy.instance.saveData;
-            GameTestDataProxy.instance.addDataSetMonitor(this, () => {
-                console.log('根属性testNumber改变');
-            }, GameTestDataProxy.instance.rootData, GameTestDataProxy.instance.rootData.testNumber);
-            GameTestDataProxy.instance.addDataSetMonitor(this, () => {
-                console.log('对象属性a改变');
-            }, GameTestDataProxy.instance.rootData.testObject, GameTestDataProxy.instance.rootData.testObject['a']);
-            GameTestDataProxy.instance.addDataSetMonitor(this, () => {
-                console.log('数组属性改变');
-            }, GameTestDataProxy.instance.rootData.testArray);
+        _OnShow() {
+            this.ui.m_bg.onClick(this, this.close);
         }
+        close() {
+            this.Hide();
+        }
+        _OnHide() { }
     }
 
     class PGameTestMainMediator extends BaseUIMediator {
@@ -3604,12 +3586,15 @@
         }
         _OnShow() {
             this.ui.m_test.onClick(this, this.Test);
+            this.ui.m_UIButton.onClick(this, this.UITest);
         }
         Test() {
             UIManagerProxy.instance.setUIState([
                 { typeIndex: EUI.TestPlatform },
             ], false);
-            GameTestDataProxyShell.instance.data.testNumber++;
+        }
+        UITest() {
+            PGameUITestMediator.instance.Show();
         }
         _OnHide() { }
     }
@@ -7025,6 +7010,7 @@
             fairygui.UIObjectFactory.setPackageItemExtension(FGUI_PGameLoading.URL, FGUI_PGameLoading);
             fairygui.UIObjectFactory.setPackageItemExtension(FGUI_PGamePlay.URL, FGUI_PGamePlay);
             fairygui.UIObjectFactory.setPackageItemExtension(FGUI_PGameStart.URL, FGUI_PGameStart);
+            fairygui.UIObjectFactory.setPackageItemExtension(FGUI_PGameTestUI.URL, FGUI_PGameTestUI);
             fairygui.UIObjectFactory.setPackageItemExtension(FGUI_PGameEnd.URL, FGUI_PGameEnd);
             fairygui.UIObjectFactory.setPackageItemExtension(FGUI_PGameTestMain.URL, FGUI_PGameTestMain);
             fairygui.UIObjectFactory.setPackageItemExtension(FGUI_PGameCom.URL, FGUI_PGameCom);
@@ -7193,6 +7179,38 @@
         }
     }
 
+    class GameTestData extends RootLocalStorageData {
+        constructor() {
+            super(...arguments);
+            this.testNumber = 0;
+            this.testBoolean = false;
+            this.testArray = [];
+            this.testObject = {
+                a: 0,
+                b: 0,
+                c: 0,
+            };
+        }
+    }
+
+    class GameTestDataProxy extends RootLocalStorageProxy {
+        constructor() {
+            super();
+        }
+        static get instance() {
+            if (this._instance == null) {
+                this._instance = new GameTestDataProxy();
+            }
+            return this._instance;
+        }
+        get _saveName() {
+            return "GameTest";
+        }
+        getNewData() {
+            return new GameTestData();
+        }
+    }
+
     class GameLoad extends RootGameLoad {
         _Init() {
             GlobalStateManager.instance.GameInit();
@@ -7204,11 +7222,11 @@
             ];
         }
         _OnInitEmptyScreen() {
-            this._emptyScreenShowUI = FGuiRootManager.AddUI(FGUI_EmptyScreen, EUILayer.Main);
+            this._emptyScreenShowUI = FGuiRootManager.AddUI(FGUI_EmptyScreen, new FGuiData(), EUILayer.Main);
         }
         _OnInitUILoaded() {
             this._emptyScreenShowUI.dispose();
-            this._loadShowUI = FGuiRootManager.AddUI(FGUI_splash, EUILayer.Loading);
+            this._loadShowUI = FGuiRootManager.AddUI(FGUI_splash, new FGuiData(), EUILayer.Loading);
             this._loadShowUI.sortingOrder = Number.MAX_SAFE_INTEGER;
             this._loadShowUI.m_text_explain.text = MainConfig.GameWhatTeam;
             this._loadShowUI.m_text_logo.text = MainConfig.GameName_;
@@ -7432,7 +7450,7 @@
         constructor() {
             this.name = "LayaMiniGame";
             this.ZHName = "LayaBox小游戏";
-            this.versions = "1.2.1";
+            this.versions = "1.2.2";
         }
     }
 

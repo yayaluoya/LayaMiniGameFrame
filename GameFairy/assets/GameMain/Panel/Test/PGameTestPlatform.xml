@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <component size="750,1334" opaque="false">
   <displayList>
-    <graph id="n25_o9js" name="bg" xy="0,0" size="750,1334" type="rect" lineSize="0" fillColor="#e6222831"/>
+    <graph id="n25_o9js" name="bg" xy="0,0" size="750,1334" type="rect" lineSize="0" fillColor="#e6222831">
+      <relation target="" sidePair="width-width,height-height"/>
+    </graph>
     <component id="n22_o9js" name="lookVAd" src="g7a1z" fileName="Panel/com/PButton.xml" xy="375,418" size="574,80" group="n24_o9js">
       <relation target="" sidePair=""/>
       <Button icon="ui://kk7g5mmmq3ng9v" selectedIcon="ui://kk7g5mmmq3ng9v"/>

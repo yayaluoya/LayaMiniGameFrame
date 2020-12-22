@@ -18,6 +18,7 @@
     <component id="q3ng9w" name="PGameCom.xml" path="/Panel/" exported="true"/>
     <component id="o9js9x" name="PGameTestMain.xml" path="/Panel/Test/" exported="true"/>
     <component id="t1pw9y" name="PGameTestPlatform.xml" path="/Panel/Test/" exported="true"/>
+    <component id="h66e9z" name="PGameTestUI.xml" path="/Panel/Test/" exported="true"/>
   </resources>
   <publish name="GameMain" genCode="true"/>
 </packageDescription>

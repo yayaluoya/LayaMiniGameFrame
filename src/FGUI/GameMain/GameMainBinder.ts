@@ -7,6 +7,7 @@ import FGUI_PGameCustomsLoading from "./FGUI_PGameCustomsLoading";
 import FGUI_PGameLoading from "./FGUI_PGameLoading";
 import FGUI_PGamePlay from "./FGUI_PGamePlay";
 import FGUI_PGameStart from "./FGUI_PGameStart";
+import FGUI_PGameTestUI from "./FGUI_PGameTestUI";
 import FGUI_PGameEnd from "./FGUI_PGameEnd";
 import FGUI_PGameTestMain from "./FGUI_PGameTestMain";
 import FGUI_PGameCom from "./FGUI_PGameCom";
@@ -22,6 +23,7 @@ export default class GameMainBinder{
 		fairygui.UIObjectFactory.setPackageItemExtension(FGUI_PGameLoading.URL, FGUI_PGameLoading);
 		fairygui.UIObjectFactory.setPackageItemExtension(FGUI_PGamePlay.URL, FGUI_PGamePlay);
 		fairygui.UIObjectFactory.setPackageItemExtension(FGUI_PGameStart.URL, FGUI_PGameStart);
+		fairygui.UIObjectFactory.setPackageItemExtension(FGUI_PGameTestUI.URL, FGUI_PGameTestUI);
 		fairygui.UIObjectFactory.setPackageItemExtension(FGUI_PGameEnd.URL, FGUI_PGameEnd);
 		fairygui.UIObjectFactory.setPackageItemExtension(FGUI_PGameTestMain.URL, FGUI_PGameTestMain);
 		fairygui.UIObjectFactory.setPackageItemExtension(FGUI_PGameCom.URL, FGUI_PGameCom);

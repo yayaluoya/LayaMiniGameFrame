@@ -2,7 +2,7 @@ import BaseUIMediator from "../../../aTGame/UI/FGUI/BaseUIMediator";
 import FGUI_PGameTestMain from "../../../FGUI/GameMain/FGUI_PGameTestMain";
 import { EUI } from "../../Enum/EUI";
 import UIManagerProxy from "../../Manager/Proxy/UIManagerProxy";
-import GameTestDataProxyShell from "../../Proxy/data/GameTestDataProxyShell";
+import PGameUITestMediator from "./PGameUITestMediator";
 
 /**
  * 游戏开始页面调度者
@@ -25,6 +25,7 @@ export default class PGameTestMainMediator extends BaseUIMediator<FGUI_PGameTest
     protected _OnShow() {
         //
         this.ui.m_test.onClick(this, this.Test);
+        this.ui.m_UIButton.onClick(this, this.UITest);
     }
 
     //打开测试页面
@@ -32,8 +33,11 @@ export default class PGameTestMainMediator extends BaseUIMediator<FGUI_PGameTest
         UIManagerProxy.instance.setUIState([
             { typeIndex: EUI.TestPlatform },
         ], false);
-        //
-        GameTestDataProxyShell.instance.data.testNumber++;
+    }
+
+    //打开测试页面
+    private UITest() {
+        PGameUITestMediator.instance.Show();
     }
 
     //隐藏时的生命周期函数

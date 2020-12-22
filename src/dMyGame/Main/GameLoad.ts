@@ -34,6 +34,7 @@ import GameNewHandDataProxy from '../GameData/GameNewHandDataProxy';
 import { OtherLevelConfig } from '../_config/OtherLevelConfig';
 import { OtherEnvironmentConfig } from '../_config/OtherEnvironmentConfig';
 import GameTestDataProxy from '../GameData/GameTestDataProxy';
+import FGuiData from '../../aTGame/UI/FGUI/FGuiData';
 /**
  * 游戏进入之前的加载操作类
  */
@@ -64,7 +65,7 @@ export default class GameLoad extends RootGameLoad {
     //初始化
     protected _OnInitEmptyScreen() {
         //打开白屏UI
-        this._emptyScreenShowUI = FGuiRootManager.AddUI(FGUI_EmptyScreen, EUILayer.Main) as FGUI_EmptyScreen;
+        this._emptyScreenShowUI = FGuiRootManager.AddUI(FGUI_EmptyScreen, new FGuiData(), EUILayer.Main) as FGUI_EmptyScreen;
     }
 
     //初始化UI加载完成 (在这里设置进度条)
@@ -72,7 +73,7 @@ export default class GameLoad extends RootGameLoad {
         //隐藏白屏U
         this._emptyScreenShowUI.dispose();
         //添加UI
-        this._loadShowUI = FGuiRootManager.AddUI(FGUI_splash, EUILayer.Loading) as FGUI_splash;
+        this._loadShowUI = FGuiRootManager.AddUI(FGUI_splash, new FGuiData(), EUILayer.Loading) as FGUI_splash;
         this._loadShowUI.sortingOrder = Number.MAX_SAFE_INTEGER;
         //设置所属团队
         this._loadShowUI.m_text_explain.text = MainConfig.GameWhatTeam;

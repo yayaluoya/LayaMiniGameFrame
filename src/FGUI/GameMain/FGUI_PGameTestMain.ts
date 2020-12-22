@@ -7,6 +7,8 @@
 
 export default class FGUI_PGameTestMain extends fairygui.GComponent {
 
+	public m_UIButton:fairygui.GButton;
+	public m_UI:fairygui.GTextField;
 	public m_test:fairygui.GButton;
 	public m_testText:fairygui.GTextField;
 	public m__test:fairygui.GGroup;
@@ -22,8 +24,10 @@ export default class FGUI_PGameTestMain extends fairygui.GComponent {
 	}
 
 	protected onConstruct(): void {
-		this.m_test = <fairygui.GButton><any>(this.getChildAt(0));
-		this.m_testText = <fairygui.GTextField><any>(this.getChildAt(1));
-		this.m__test = <fairygui.GGroup><any>(this.getChildAt(2));
+		this.m_UIButton = <fairygui.GButton><any>(this.getChildAt(0));
+		this.m_UI = <fairygui.GTextField><any>(this.getChildAt(1));
+		this.m_test = <fairygui.GButton><any>(this.getChildAt(3));
+		this.m_testText = <fairygui.GTextField><any>(this.getChildAt(4));
+		this.m__test = <fairygui.GGroup><any>(this.getChildAt(6));
 	}
 }

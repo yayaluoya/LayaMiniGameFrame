@@ -76,8 +76,6 @@ export default class BaseUIMediator<T extends fgui.GComponent> {
 
     //
 
-    public owner: any;
-
     /** 是否显示 */
     protected _isShow: boolean = false;
 
