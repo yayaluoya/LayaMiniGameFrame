@@ -47,23 +47,27 @@ export default class MainStart {
         //
         console.log(...ConsoleEx.comLog('开始加载游戏'));
         //开始加载处理
-        _gameLoad.Enter(Laya.Handler.create(this, this.OnGameLoad));
+        _gameLoad.Enter(this, undefined, this.OnGameLoad);
     }
 
     /** 游戏进入之前的操作之前之后 */
-    private OnGameLoad() {
-        console.log(...ConsoleEx.comLog('游戏加载完成'));
-        //判断游戏类型
-        if (MainGameConfig.support3D) {
-            //进入3D游戏
-            Game3D.instance.enterGame();
-        }
-        if (MainGameConfig.support2D) {
-            //进入2D游戏
-            Game2D.instance.enterGame();
-        }
-        //
-        this.OnGameEnter();
+    private OnGameLoad(): Promise<void> {
+        return new Promise<void>((_r) => {
+            _r();
+            //
+            console.log(...ConsoleEx.comLog('游戏加载完成'));
+            //判断游戏类型
+            if (MainGameConfig.support3D) {
+                //进入3D游戏
+                Game3D.instance.enterGame();
+            }
+            if (MainGameConfig.support2D) {
+                //进入2D游戏
+                Game2D.instance.enterGame();
+            }
+            //
+            this.OnGameEnter();
+        });
     }
 
     /** 进入游戏之后 */

@@ -118,3 +118,6 @@
 
 # Color Highlight
     在编辑器中突出显示web颜色
+
+# Todo Tree
+    在树状视图中显示TODO、FIXME等注释标签

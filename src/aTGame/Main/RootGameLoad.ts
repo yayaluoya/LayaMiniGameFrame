@@ -29,8 +29,12 @@ export default class RootGameLoad {
     /** 需要加载的其他UI包 */
     protected _needLoadOtherUIPack: LoadUIPack[] = [];
 
-    /** 加载完成处理 */
-    private m_backHandler: Laya.Handler;
+    /** 外部处理函数执行域 */
+    private m_handlerThis: any;
+    /** 加载页面之前，白屏之后处理 */
+    private m_beforeHandler: () => Promise<void>;
+    /** 加载完成后，加载进度消失前处理 */
+    private m_backHandler: () => Promise<void>;
 
     /**
      * 资源加载权重
@@ -120,8 +124,10 @@ export default class RootGameLoad {
     /**
      * 开始
      */
-    public Enter(_backHandler: Laya.Handler) {
+    public Enter(_this: any, _beforeHandler?: () => Promise<void>, _backHandler?: () => Promise<void>) {
         //保存回调
+        this.m_handlerThis = _this;
+        this.m_beforeHandler = _beforeHandler;
         this.m_backHandler = _backHandler;
         //
         this.__Init().then(() => {
@@ -166,15 +172,25 @@ export default class RootGameLoad {
         //回调，打开空白页面
         this._OnInitEmptyScreen();
         //获取需要加载的初始化UI路径列表
-        let loadUrl = [];
-        this._initUiPack.PushUrl(loadUrl);
-        //判断是否有资源
-        if (loadUrl.length == 0) {
-            this.OnInitUILoaded();
-            return;
+        let _f: Function = () => {
+            let loadUrl = [];
+            this._initUiPack.PushUrl(loadUrl);
+            //判断是否有资源
+            if (loadUrl.length == 0) {
+                this.OnInitUILoaded();
+                return;
+            }
+            //加载初始化UI包
+            Laya.loader.load(loadUrl, Laya.Handler.create(this, this.OnInitUILoaded));
         }
-        //加载初始化UI包
-        Laya.loader.load(loadUrl, Laya.Handler.create(this, this.OnInitUILoaded));
+        //判断是否有加载之前处理函数
+        if (this.m_beforeHandler) {
+            this.m_beforeHandler.call(this.m_handlerThis).then(() => {
+                _f();
+            });
+        } else {
+            _f();
+        }
     }
 
     //初始化UI包加载完成
@@ -291,10 +307,16 @@ export default class RootGameLoad {
         //注册数据
         this.loginCommonData();
         this.loginData();
-        //游戏加载完毕
-        this.OnComplete();
         //处理回调
-        this.m_backHandler.run();
+        if (this.m_backHandler) {
+            this.m_backHandler.call(this.m_handlerThis).then(() => {
+                //游戏加载完毕
+                this.OnComplete();
+            });
+        } else {
+            //游戏加载完毕
+            this.OnComplete();
+        }
     }
 
     //注册公共数据

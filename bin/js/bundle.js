@@ -6863,7 +6863,9 @@
                 });
             });
         }
-        Enter(_backHandler) {
+        Enter(_this, _beforeHandler, _backHandler) {
+            this.m_handlerThis = _this;
+            this.m_beforeHandler = _beforeHandler;
             this.m_backHandler = _backHandler;
             this.__Init().then(() => {
                 this.Init();
@@ -6888,13 +6890,23 @@
         InitUI() {
             this._initEmptyScreen.AddPackage();
             this._OnInitEmptyScreen();
-            let loadUrl = [];
-            this._initUiPack.PushUrl(loadUrl);
-            if (loadUrl.length == 0) {
-                this.OnInitUILoaded();
-                return;
+            let _f = () => {
+                let loadUrl = [];
+                this._initUiPack.PushUrl(loadUrl);
+                if (loadUrl.length == 0) {
+                    this.OnInitUILoaded();
+                    return;
+                }
+                Laya.loader.load(loadUrl, Laya.Handler.create(this, this.OnInitUILoaded));
+            };
+            if (this.m_beforeHandler) {
+                this.m_beforeHandler.call(this.m_handlerThis).then(() => {
+                    _f();
+                });
             }
-            Laya.loader.load(loadUrl, Laya.Handler.create(this, this.OnInitUILoaded));
+            else {
+                _f();
+            }
         }
         OnInitUILoaded() {
             this._initUiPack.AddPackage();
@@ -6963,8 +6975,14 @@
             Global3D.InitAll();
             this.loginCommonData();
             this.loginData();
-            this.OnComplete();
-            this.m_backHandler.run();
+            if (this.m_backHandler) {
+                this.m_backHandler.call(this.m_handlerThis).then(() => {
+                    this.OnComplete();
+                });
+            }
+            else {
+                this.OnComplete();
+            }
         }
         loginCommonData() {
             CommonDataProxy.instance.InitData();
@@ -7415,17 +7433,20 @@
         gameLoad() {
             let _gameLoad = new GameLoad();
             console.log(...ConsoleEx.comLog('开始加载游戏'));
-            _gameLoad.Enter(Laya.Handler.create(this, this.OnGameLoad));
+            _gameLoad.Enter(this, undefined, this.OnGameLoad);
         }
         OnGameLoad() {
-            console.log(...ConsoleEx.comLog('游戏加载完成'));
-            if (MainGameConfig.support3D) {
-                Game3D.instance.enterGame();
-            }
-            if (MainGameConfig.support2D) {
-                Game2D.instance.enterGame();
-            }
-            this.OnGameEnter();
+            return new Promise((_r) => {
+                _r();
+                console.log(...ConsoleEx.comLog('游戏加载完成'));
+                if (MainGameConfig.support3D) {
+                    Game3D.instance.enterGame();
+                }
+                if (MainGameConfig.support2D) {
+                    Game2D.instance.enterGame();
+                }
+                this.OnGameEnter();
+            });
         }
         OnGameEnter() { }
     }
