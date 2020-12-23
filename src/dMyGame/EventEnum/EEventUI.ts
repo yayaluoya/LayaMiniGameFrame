@@ -4,42 +4,42 @@
  */
 export enum EEventUI {
     /** 看广告 */
-    LookAd = '_EEventUI_LookAd',
+    LookAd = 'LookAd',
     /** 看完广告 */
-    UnLookAd = '_EEventUI_UnLookAd',
+    UnLookAd = 'UnLookAd',
     /** 关卡改变 */
-    CustomsChange = '_EEventUI_CustomsChange',
+    CustomsChange = 'CustomsChange',
     /** 游戏开始 */
-    GameStart = '_EEventUI_Start',
+    GameStart = 'Start',
     /** 游戏结束 */
-    GameEnd = '_EEventUI_GameEnd',
+    GameEnd = 'GameEnd',
     /** 游戏暂停 */
-    GamePasue = '_EEventUI_GamePause',
+    GamePasue = 'GamePause',
     /** 游戏继续 */
-    GameResume = '_EEventUI_GameResume',
+    GameResume = 'GameResume',
     /** 游戏完成 */
-    GameCom = '_EEventUI_GameCom',
+    GameCom = 'GameCom',
     /** 游戏胜利 */
-    GameWin = "_EEventUI_GameWin",
+    GameWin = "GameWin",
     /** 游戏失败 */
-    GameFail = "_EEventUI_GameFail",
+    GameFail = "GameFail",
     /** 角色死亡 */
-    RoleDie = '_EEventUI_RoleDie',
+    RoleDie = 'RoleDie',
     /** 角色复活 */
-    RoleRevive = '_EEventUI_RoleRevive',
+    RoleRevive = 'RoleRevive',
     /** 金币改变 */
-    GameCoinChange = "_EEventUI_GameCoinChange",
+    GameCoinChange = "GameCoinChange",
     /** 音效状态改变 */
-    SoundStateChange = '_EEventUI_SoundStateChange',
+    SoundStateChange = 'SoundStateChange',
     /** 振动状态改变 */
-    VibrateStateChange = '_EEventUI_VibrateStateChange',
+    VibrateStateChange = 'VibrateStateChange',
 
     //场景相关
 
     /** 初始化关卡 */
-    SceneGameCustomsInit = '_EEventUI_SceneGameCustomsInit',
+    SceneGameCustomsInit = 'SceneGameCustomsInit',
     /** 关卡加载事件 */
-    SceneGameCustomsLoading = '_EEventUI_SceneGameCustomsLoading',
+    SceneGameCustomsLoading = 'SceneGameCustomsLoading',
     /** 场景关卡销毁 */
-    SceneGameCustomDelete = '_EEventUI_SceneGameCustomDelete',
+    SceneGameCustomDelete = 'SceneGameCustomDelete',
 }

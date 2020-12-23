@@ -40,6 +40,6 @@ export default class GamePropDataProxyShell extends RootDataProxyShell {
         //增加临时数据
         this.m_propData.coinCount = NumberUtils.getNumberAtScope(this.m_propData.coinCount + num, 0);
         //传出事件
-        MesManager.instance.eventUI(EEventUI.GameCoinChange);
+        MesManager.instance.sendEvent(EEventUI.GameCoinChange);
     }
 }

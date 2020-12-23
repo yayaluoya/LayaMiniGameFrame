@@ -20,12 +20,12 @@ export default class AudioManager implements IRootManager {
 
     //初始化
     public init() {
-        MesManager.instance.onAudio(EEventAudio.BGMSuspend, this, this.BGMsuSpend);
-        MesManager.instance.onAudio(EEventAudio.BGMGoOn, this, this.BGMGoOn);
-        MesManager.instance.onAudio(EEventAudio.SoundSuspend, this, this.soundSuspend);
-        MesManager.instance.onAudio(EEventAudio.SoundGoOn, this, this.soundGoOn);
-        MesManager.instance.onAudio(EEventAudio.BGMVolumeChange, this, this.bgmVolumeChange);
-        MesManager.instance.onAudio(EEventAudio.SoundVolumeChange, this, this.soundVolumeChange);
+        MesManager.instance.onEvent(EEventAudio.BGMSuspend, this, this.BGMsuSpend);
+        MesManager.instance.onEvent(EEventAudio.BGMGoOn, this, this.BGMGoOn);
+        MesManager.instance.onEvent(EEventAudio.SoundSuspend, this, this.soundSuspend);
+        MesManager.instance.onEvent(EEventAudio.SoundGoOn, this, this.soundGoOn);
+        MesManager.instance.onEvent(EEventAudio.BGMVolumeChange, this, this.bgmVolumeChange);
+        MesManager.instance.onEvent(EEventAudio.SoundVolumeChange, this, this.soundVolumeChange);
     }
 
     //BGM暂停

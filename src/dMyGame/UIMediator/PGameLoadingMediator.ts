@@ -25,7 +25,7 @@ export default class PGameLoadingMediator extends BaseUIMediator<FGUI_PGameLoadi
 
     //显示时的生命周期函数
     protected _OnShow() {
-        MesManager.instance.onGlobal(EEventGlobal.GameLoading, this, this.gameLoading);//游戏加载中
+        MesManager.instance.onEvent(EEventGlobal.GameLoading, this, this.gameLoading);//游戏加载中
     }
 
     /**
@@ -40,6 +40,6 @@ export default class PGameLoadingMediator extends BaseUIMediator<FGUI_PGameLoadi
     //隐藏时的生命周期函数
     protected _OnHide() {
         //取消监听
-        MesManager.instance.offGlobal(EEventGlobal.GameLoading, this, this.gameLoading);
+        MesManager.instance.offEnent(EEventGlobal.GameLoading, this, this.gameLoading);
     }
 }

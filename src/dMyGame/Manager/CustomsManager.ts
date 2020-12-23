@@ -52,10 +52,10 @@ export default class CustomsManager implements IRootManager {
         //初始化关卡数据
         GameDataProxyShell.instance.initCustoms(LevelConfigProxy.instance.getLevelNumber());
         //监听事件
-        MesManager.instance.on3D(EEventScene.GameLevelsBuild, this, this.gameLevelsBuild);
-        MesManager.instance.on3D(EEventScene.GameLevelsDelete, this, this.gameLevelsDelete);
-        MesManager.instance.on3D(EEventScene.GameOtherLevelsBuild, this, this.gameOtherLevelsBuild);
-        MesManager.instance.on3D(EEventScene.GameOtherLevelsDelete, this, this.gameOtherLevelsDelete);
+        MesManager.instance.onEvent(EEventScene.GameLevelsBuild, this, this.gameLevelsBuild);
+        MesManager.instance.onEvent(EEventScene.GameLevelsDelete, this, this.gameLevelsDelete);
+        MesManager.instance.onEvent(EEventScene.GameOtherLevelsBuild, this, this.gameOtherLevelsBuild);
+        MesManager.instance.onEvent(EEventScene.GameOtherLevelsDelete, this, this.gameOtherLevelsDelete);
     }
 
     /**
@@ -91,8 +91,8 @@ export default class CustomsManager implements IRootManager {
         //构建场景
         this.m_ifSceneBuild = true;//开始加载
         //显示loading页面
-        MesManager.instance.event3D(EEventScene.GameLevelsBuildBefore);
-        MesManager.instance.eventUI(EEventUI.SceneGameCustomsLoading, [-1]);
+        MesManager.instance.sendEvent(EEventScene.GameLevelsBuildBefore);
+        MesManager.instance.sendEvent(EEventUI.SceneGameCustomsLoading, [-1]);
         scene.buildScene(Laya.Handler.create(this, this.customsProgress, null, false)).then((_sceneSpr: Laya.Sprite3D) => {
             //
             this.m_ifSceneBuild = false;//加载结束
@@ -114,9 +114,9 @@ export default class CustomsManager implements IRootManager {
                 _handler.run();
             }
             //抛出事件场景初始化完成
-            MesManager.instance.event3D(EEventScene.GameLevelsOnBuild);
+            MesManager.instance.sendEvent(EEventScene.GameLevelsOnBuild);
             //显示隐藏页面
-            MesManager.instance.eventUI(EEventUI.SceneGameCustomsInit);
+            MesManager.instance.sendEvent(EEventUI.SceneGameCustomsInit);
         });
     }
 
@@ -136,13 +136,13 @@ export default class CustomsManager implements IRootManager {
             _number = 1;
         }
         //发送关卡加载事件
-        MesManager.instance.eventUI(EEventUI.SceneGameCustomsLoading, [_number * 100]);
+        MesManager.instance.sendEvent(EEventUI.SceneGameCustomsLoading, [_number * 100]);
     }
 
     //游戏结束销毁关卡
     private gameLevelsDelete() {
         //关卡删除前事件
-        MesManager.instance.event3D(EEventScene.GameLevelsDeleteBefore);
+        MesManager.instance.sendEvent(EEventScene.GameLevelsDeleteBefore);
         //销毁上一个场景
         if (this.m_scene && this.m_scene.scene) {
             this.m_scene.clearScene();
@@ -150,8 +150,8 @@ export default class CustomsManager implements IRootManager {
         //
         this.m_scene = null;
         //抛出事件
-        MesManager.instance.event3D(EEventScene.GameLevelsOnDelete);
-        MesManager.instance.eventUI(EEventUI.SceneGameCustomDelete);
+        MesManager.instance.sendEvent(EEventScene.GameLevelsOnDelete);
+        MesManager.instance.sendEvent(EEventUI.SceneGameCustomDelete);
     }
 
     /**
@@ -168,8 +168,8 @@ export default class CustomsManager implements IRootManager {
         //构建场景
         this.m_ifSceneBuild = true;//开始加载
         //显示loading页面
-        MesManager.instance.event3D(EEventScene.GameLevelsBuildBefore);
-        MesManager.instance.eventUI(EEventUI.SceneGameCustomsLoading, [-1]);
+        MesManager.instance.sendEvent(EEventScene.GameLevelsBuildBefore);
+        MesManager.instance.sendEvent(EEventUI.SceneGameCustomsLoading, [-1]);
         _scene.buildScene(Laya.Handler.create(this, this.customsProgress, null, false)).then((_sceneSpr: Laya.Sprite3D) => {
             //
             this.m_ifSceneBuild = false;//加载结束

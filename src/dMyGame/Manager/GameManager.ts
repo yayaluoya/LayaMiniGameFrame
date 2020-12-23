@@ -22,10 +22,10 @@ export default class GameManager implements IRootManager {
      * 初始化
      */
     public init() {
-        MesManager.instance.on3D(EEventScene.GameLevelsBuildBefore, this, this.gameLevelsBuildBefore);
-        MesManager.instance.on3D(EEventScene.GameLevelsOnBuild, this, this.gameLevelsOnBuild);
-        MesManager.instance.on3D(EEventScene.GameLevelsDelete, this, this.gameLevelsDelete);
-        MesManager.instance.on3D(EEventScene.GameStart, this, this.gameStart);
+        MesManager.instance.onEvent(EEventScene.GameLevelsBuildBefore, this, this.gameLevelsBuildBefore);
+        MesManager.instance.onEvent(EEventScene.GameLevelsOnBuild, this, this.gameLevelsOnBuild);
+        MesManager.instance.onEvent(EEventScene.GameLevelsDelete, this, this.gameLevelsDelete);
+        MesManager.instance.onEvent(EEventScene.GameStart, this, this.gameStart);
     }
 
     //游戏关卡构建之前调用

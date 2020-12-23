@@ -1541,77 +1541,111 @@
 
     var EEventScene;
     (function (EEventScene) {
-        EEventScene["LookAd"] = "_EEventScene_LookAd";
-        EEventScene["UnLookAd"] = "_EEventScene_UnLookAd";
-        EEventScene["GameLevelsBuild"] = "_EEventScene_GameLevelsBuild";
-        EEventScene["GameOtherLevelsBuild"] = "_EEventScene_GameOtherLevelsBuild";
-        EEventScene["GameLevelsBuildBefore"] = "_EEventScene_GameLevelsBuildBefore";
-        EEventScene["GameLevelsOnBuild"] = "_EEventScene_GameLevelsOnBuild";
-        EEventScene["GameLevelsDelete"] = "_EEventScene_GameLevelsDelete";
-        EEventScene["GameOtherLevelsDelete"] = "_EEventScene_GameOtherLevelsDelete";
-        EEventScene["GameLevelsDeleteBefore"] = "_EEventScene_GameLevelsDeleteBefore";
-        EEventScene["GameLevelsOnDelete"] = "_EEventScene_GameLevelsOnDelete";
-        EEventScene["GameStart"] = "_EEventScene_Start";
-        EEventScene["GameSuspend"] = "_EEventScene_GameSuspend";
-        EEventScene["GameGoOn"] = "_EEventScene_GameGoOn";
-        EEventScene["GameRestart"] = "_EEventScene_GameRestart";
-        EEventScene["GameEnd"] = "_EEventScene_GameEnd";
-        EEventScene["GameCom"] = "_EEventScene_GameCom";
-        EEventScene["GameWin"] = "_EEventScene_gameWin";
-        EEventScene["GameFail"] = "_EEventScene_gameFail";
-        EEventScene["RoleDie"] = "_EEventScene_RoleDie";
-        EEventScene["RoleRevive"] = "_EEventScene_Revive";
-        EEventScene["MouseClick"] = "_EEventScene_MouseClick";
-        EEventScene["MouseMove"] = "_EEventScene_MouseMove";
-        EEventScene["MouseUp"] = "_EEventScene_MouseUp";
+        EEventScene["LookAd"] = "LookAd";
+        EEventScene["UnLookAd"] = "UnLookAd";
+        EEventScene["GameLevelsBuild"] = "GameLevelsBuild";
+        EEventScene["GameOtherLevelsBuild"] = "GameOtherLevelsBuild";
+        EEventScene["GameLevelsBuildBefore"] = "GameLevelsBuildBefore";
+        EEventScene["GameLevelsOnBuild"] = "GameLevelsOnBuild";
+        EEventScene["GameLevelsDelete"] = "GameLevelsDelete";
+        EEventScene["GameOtherLevelsDelete"] = "GameOtherLevelsDelete";
+        EEventScene["GameLevelsDeleteBefore"] = "GameLevelsDeleteBefore";
+        EEventScene["GameLevelsOnDelete"] = "GameLevelsOnDelete";
+        EEventScene["GameStart"] = "Start";
+        EEventScene["GameSuspend"] = "GameSuspend";
+        EEventScene["GameGoOn"] = "GameGoOn";
+        EEventScene["GameRestart"] = "GameRestart";
+        EEventScene["GameEnd"] = "GameEnd";
+        EEventScene["GameCom"] = "GameCom";
+        EEventScene["GameWin"] = "gameWin";
+        EEventScene["GameFail"] = "gameFail";
+        EEventScene["RoleDie"] = "RoleDie";
+        EEventScene["RoleRevive"] = "Revive";
+        EEventScene["MouseClick"] = "MouseClick";
+        EEventScene["MouseMove"] = "MouseMove";
+        EEventScene["MouseUp"] = "MouseUp";
     })(EEventScene || (EEventScene = {}));
 
+    var EEventAudio;
+    (function (EEventAudio) {
+        EEventAudio["BGMSuspend"] = "BGMSuspend";
+        EEventAudio["BGMGoOn"] = "BGMGoOn";
+        EEventAudio["SoundSuspend"] = "SoundSuspend";
+        EEventAudio["SoundGoOn"] = "SoundGoOn";
+        EEventAudio["BGMVolumeChange"] = "BGMVolumeChange";
+        EEventAudio["SoundVolumeChange"] = "BGMVolumeChange";
+    })(EEventAudio || (EEventAudio = {}));
+
+    var EEventGlobal;
+    (function (EEventGlobal) {
+        EEventGlobal["GameInit"] = "GameInit";
+        EEventGlobal["GameOnInit"] = "GameOnInit";
+        EEventGlobal["GameLoading"] = "GameLoading";
+        EEventGlobal["GameResLoading"] = "GameResLoading";
+    })(EEventGlobal || (EEventGlobal = {}));
+
+    var EEventUI;
+    (function (EEventUI) {
+        EEventUI["LookAd"] = "LookAd";
+        EEventUI["UnLookAd"] = "UnLookAd";
+        EEventUI["CustomsChange"] = "CustomsChange";
+        EEventUI["GameStart"] = "Start";
+        EEventUI["GameEnd"] = "GameEnd";
+        EEventUI["GamePasue"] = "GamePause";
+        EEventUI["GameResume"] = "GameResume";
+        EEventUI["GameCom"] = "GameCom";
+        EEventUI["GameWin"] = "GameWin";
+        EEventUI["GameFail"] = "GameFail";
+        EEventUI["RoleDie"] = "RoleDie";
+        EEventUI["RoleRevive"] = "RoleRevive";
+        EEventUI["GameCoinChange"] = "GameCoinChange";
+        EEventUI["SoundStateChange"] = "SoundStateChange";
+        EEventUI["VibrateStateChange"] = "VibrateStateChange";
+        EEventUI["SceneGameCustomsInit"] = "SceneGameCustomsInit";
+        EEventUI["SceneGameCustomsLoading"] = "SceneGameCustomsLoading";
+        EEventUI["SceneGameCustomDelete"] = "SceneGameCustomDelete";
+    })(EEventUI || (EEventUI = {}));
+
     class MesManager extends Laya.EventDispatcher {
-        constructor() { super(); }
+        constructor() {
+            super();
+        }
+        static get onlyKey() {
+            MesManager._onlyKey++;
+            return '$key' + MesManager._onlyKey;
+        }
         static get instance() {
             if (this._instance == null) {
                 this._instance = new MesManager();
             }
             return this._instance;
         }
-        init() { }
-        eventGlobal(event, data) {
-            MesManager.instance.event(event, data);
+        init() {
+            this.enumerationEegistrationMes(EEventGlobal);
+            this.enumerationEegistrationMes(EEventUI);
+            this.enumerationEegistrationMes(EEventScene);
+            this.enumerationEegistrationMes(EEventAudio);
         }
-        eventAudio(event, data) {
-            MesManager.instance.event(event, data);
+        enumerationEegistrationMes(_mes) {
+            for (let _i in _mes) {
+                _mes[_i] = {
+                    value: _mes[_i],
+                    [MesManager._mesKey]: MesManager.onlyKey,
+                };
+            }
         }
-        eventUI(event, data) {
-            MesManager.instance.event(event, data);
+        sendEvent(event, data) {
+            MesManager.instance.event(event[MesManager._mesKey], data);
         }
-        event3D(event, data) {
-            MesManager.instance.event(event, data);
+        onEvent(type, caller, listener, args) {
+            MesManager.instance.on(type[MesManager._mesKey], caller, listener, args);
         }
-        onGlobal(type, caller, listener, args) {
-            MesManager.instance.on(type, caller, listener, args);
-        }
-        onAudio(type, caller, listener, args) {
-            MesManager.instance.on(type, caller, listener, args);
-        }
-        onUI(type, caller, listener, args) {
-            MesManager.instance.on(type, caller, listener, args);
-        }
-        on3D(type, caller, listener, args) {
-            MesManager.instance.on(type, caller, listener, args);
-        }
-        offGlobal(type, caller, listener) {
-            MesManager.instance.off(type, caller, listener);
-        }
-        offAudio(type, caller, listener) {
-            MesManager.instance.off(type, caller, listener);
-        }
-        offUI(type, caller, listener) {
-            MesManager.instance.off(type, caller, listener);
-        }
-        off3D(type, caller, listener) {
-            MesManager.instance.off(type, caller, listener);
+        offEnent(type, caller, listener) {
+            MesManager.instance.off(type[MesManager._mesKey], caller, listener);
         }
     }
+    MesManager._mesKey = Symbol('$MesKey');
+    MesManager._onlyKey = 0;
 
     class StringUtils {
         static SplitToIntArray(str, splitStr) {
@@ -2414,7 +2448,7 @@
             this.setCamera(this.m_camera, this.m_enviromentConfig.clear_color);
             this.setLight(this.light, this.m_enviromentConfig.light_color, this.m_enviromentConfig.light_intensity);
             this.addAmbient(this.s3d, this.m_enviromentConfig.ambient_color);
-            MesManager.instance.on3D(EEventScene.GameLevelsDelete, this, this.gameLevelsDelete);
+            MesManager.instance.onEvent(EEventScene.GameLevelsDelete, this, this.gameLevelsDelete);
             if (MainGameConfig.ifDebug && MainGameConfig.ifOpenWindowDebug) {
                 RootDebug.fendDebugWindow(EDebugWindowEvent.SetEnvironment);
             }
@@ -2580,28 +2614,6 @@
         }
     }
 
-    var EEventUI;
-    (function (EEventUI) {
-        EEventUI["LookAd"] = "_EEventUI_LookAd";
-        EEventUI["UnLookAd"] = "_EEventUI_UnLookAd";
-        EEventUI["CustomsChange"] = "_EEventUI_CustomsChange";
-        EEventUI["GameStart"] = "_EEventUI_Start";
-        EEventUI["GameEnd"] = "_EEventUI_GameEnd";
-        EEventUI["GamePasue"] = "_EEventUI_GamePause";
-        EEventUI["GameResume"] = "_EEventUI_GameResume";
-        EEventUI["GameCom"] = "_EEventUI_GameCom";
-        EEventUI["GameWin"] = "_EEventUI_GameWin";
-        EEventUI["GameFail"] = "_EEventUI_GameFail";
-        EEventUI["RoleDie"] = "_EEventUI_RoleDie";
-        EEventUI["RoleRevive"] = "_EEventUI_RoleRevive";
-        EEventUI["GameCoinChange"] = "_EEventUI_GameCoinChange";
-        EEventUI["SoundStateChange"] = "_EEventUI_SoundStateChange";
-        EEventUI["VibrateStateChange"] = "_EEventUI_VibrateStateChange";
-        EEventUI["SceneGameCustomsInit"] = "_EEventUI_SceneGameCustomsInit";
-        EEventUI["SceneGameCustomsLoading"] = "_EEventUI_SceneGameCustomsLoading";
-        EEventUI["SceneGameCustomDelete"] = "_EEventUI_SceneGameCustomDelete";
-    })(EEventUI || (EEventUI = {}));
-
     class RootDataProxyShell {
         constructor() {
             this.initData();
@@ -2670,7 +2682,7 @@
                 this.m_gameData.onCustoms = ECommonLeve.DefaultLeveId;
                 _win = true;
             }
-            MesManager.instance.eventUI(EEventUI.CustomsChange);
+            MesManager.instance.sendEvent(EEventUI.CustomsChange);
             return _win;
         }
         getDefaultCustoms() {
@@ -2708,10 +2720,10 @@
         init() {
             this.m_ifSceneBuild = false;
             GameDataProxyShell.instance.initCustoms(LevelConfigProxy.instance.getLevelNumber());
-            MesManager.instance.on3D(EEventScene.GameLevelsBuild, this, this.gameLevelsBuild);
-            MesManager.instance.on3D(EEventScene.GameLevelsDelete, this, this.gameLevelsDelete);
-            MesManager.instance.on3D(EEventScene.GameOtherLevelsBuild, this, this.gameOtherLevelsBuild);
-            MesManager.instance.on3D(EEventScene.GameOtherLevelsDelete, this, this.gameOtherLevelsDelete);
+            MesManager.instance.onEvent(EEventScene.GameLevelsBuild, this, this.gameLevelsBuild);
+            MesManager.instance.onEvent(EEventScene.GameLevelsDelete, this, this.gameLevelsDelete);
+            MesManager.instance.onEvent(EEventScene.GameOtherLevelsBuild, this, this.gameOtherLevelsBuild);
+            MesManager.instance.onEvent(EEventScene.GameOtherLevelsDelete, this, this.gameOtherLevelsDelete);
         }
         initLevelBuild() {
             this.gameLevelsBuild();
@@ -2732,8 +2744,8 @@
             let scene = SceneManager.instance.getSceneByLv(lvId);
             this.m_scene = scene;
             this.m_ifSceneBuild = true;
-            MesManager.instance.event3D(EEventScene.GameLevelsBuildBefore);
-            MesManager.instance.eventUI(EEventUI.SceneGameCustomsLoading, [-1]);
+            MesManager.instance.sendEvent(EEventScene.GameLevelsBuildBefore);
+            MesManager.instance.sendEvent(EEventUI.SceneGameCustomsLoading, [-1]);
             scene.buildScene(Laya.Handler.create(this, this.customsProgress, null, false)).then((_sceneSpr) => {
                 this.m_ifSceneBuild = false;
                 EnvironmentManager.instance.setEnvironment(this.m_scene.scene);
@@ -2748,8 +2760,8 @@
                 if (_handler) {
                     _handler.run();
                 }
-                MesManager.instance.event3D(EEventScene.GameLevelsOnBuild);
-                MesManager.instance.eventUI(EEventUI.SceneGameCustomsInit);
+                MesManager.instance.sendEvent(EEventScene.GameLevelsOnBuild);
+                MesManager.instance.sendEvent(EEventUI.SceneGameCustomsInit);
             });
         }
         onCustomsInit(_lvId) {
@@ -2760,16 +2772,16 @@
             if (typeof _number == 'undefined') {
                 _number = 1;
             }
-            MesManager.instance.eventUI(EEventUI.SceneGameCustomsLoading, [_number * 100]);
+            MesManager.instance.sendEvent(EEventUI.SceneGameCustomsLoading, [_number * 100]);
         }
         gameLevelsDelete() {
-            MesManager.instance.event3D(EEventScene.GameLevelsDeleteBefore);
+            MesManager.instance.sendEvent(EEventScene.GameLevelsDeleteBefore);
             if (this.m_scene && this.m_scene.scene) {
                 this.m_scene.clearScene();
             }
             this.m_scene = null;
-            MesManager.instance.event3D(EEventScene.GameLevelsOnDelete);
-            MesManager.instance.eventUI(EEventUI.SceneGameCustomDelete);
+            MesManager.instance.sendEvent(EEventScene.GameLevelsOnDelete);
+            MesManager.instance.sendEvent(EEventUI.SceneGameCustomDelete);
         }
         gameOtherLevelsBuild(_name, _handler) {
             if (this.m_ifSceneBuild) {
@@ -2779,8 +2791,8 @@
             let _scene = SceneManager.instance.getOtherSceneByName(_name);
             this.m_otherScene[_name] = _scene;
             this.m_ifSceneBuild = true;
-            MesManager.instance.event3D(EEventScene.GameLevelsBuildBefore);
-            MesManager.instance.eventUI(EEventUI.SceneGameCustomsLoading, [-1]);
+            MesManager.instance.sendEvent(EEventScene.GameLevelsBuildBefore);
+            MesManager.instance.sendEvent(EEventUI.SceneGameCustomsLoading, [-1]);
             _scene.buildScene(Laya.Handler.create(this, this.customsProgress, null, false)).then((_sceneSpr) => {
                 this.m_ifSceneBuild = false;
                 EnvironmentManager.instance.setOtherEnvironment(_name, _sceneSpr);
@@ -3025,14 +3037,6 @@
     }
     BaseUIMediatorGlobalSerialNumber.m_GlobalSerialNumber = 0;
 
-    var EEventGlobal;
-    (function (EEventGlobal) {
-        EEventGlobal["GameInit"] = "_EEventGlobal_GameInit";
-        EEventGlobal["GameOnInit"] = "_EEventGlobal_GameOnInit";
-        EEventGlobal["GameLoading"] = "_EEventGlobal_GameLoading";
-        EEventGlobal["GameResLoading"] = "_EEventGlobal_GameResLoading";
-    })(EEventGlobal || (EEventGlobal = {}));
-
     class FGUI_PGameLoading extends fairygui.GComponent {
         constructor() {
             super();
@@ -3061,13 +3065,13 @@
             return this.m_instance;
         }
         _OnShow() {
-            MesManager.instance.onGlobal(EEventGlobal.GameLoading, this, this.gameLoading);
+            MesManager.instance.onEvent(EEventGlobal.GameLoading, this, this.gameLoading);
         }
         gameLoading(_number) {
             this.ui.m_progress.value = _number;
         }
         _OnHide() {
-            MesManager.instance.offGlobal(EEventGlobal.GameLoading, this, this.gameLoading);
+            MesManager.instance.offEnent(EEventGlobal.GameLoading, this, this.gameLoading);
         }
     }
 
@@ -3342,9 +3346,9 @@
             return this.getUIMeiatro(EUI.Main);
         }
         Init() {
-            MesManager.instance.onGlobal(EEventGlobal.GameLoading, this, this.gameLoading);
-            MesManager.instance.onGlobal(EEventGlobal.GameResLoading, this, this.gameResLoading);
-            MesManager.instance.onUI(EEventUI.SceneGameCustomsLoading, this, this.gameCustomsLoading);
+            MesManager.instance.onEvent(EEventGlobal.GameLoading, this, this.gameLoading);
+            MesManager.instance.onEvent(EEventGlobal.GameResLoading, this, this.gameResLoading);
+            MesManager.instance.onEvent(EEventUI.SceneGameCustomsLoading, this, this.gameCustomsLoading);
         }
         Start() {
             this.setUIState([
@@ -3392,7 +3396,7 @@
             return this.m_instance;
         }
         _OnShow() {
-            MesManager.instance.onUI(EEventUI.SceneGameCustomsLoading, this, this.CustomsLoading);
+            MesManager.instance.onEvent(EEventUI.SceneGameCustomsLoading, this, this.CustomsLoading);
         }
         CustomsLoading(_number) {
             this.ui.m_progress.value = _number;
@@ -3403,7 +3407,7 @@
             }
         }
         _OnHide() {
-            MesManager.instance.offUI(EEventUI.SceneGameCustomsLoading, this, this.CustomsLoading);
+            MesManager.instance.offEnent(EEventUI.SceneGameCustomsLoading, this, this.CustomsLoading);
         }
     }
 
@@ -6325,11 +6329,11 @@
         }
         GameInit() {
             this.m_GameIfInit = false;
-            MesManager.instance.eventGlobal(EEventGlobal.GameInit);
+            MesManager.instance.sendEvent(EEventGlobal.GameInit);
         }
         GameOnInit() {
             this.m_GameIfInit = true;
-            MesManager.instance.eventGlobal(EEventGlobal.GameOnInit);
+            MesManager.instance.sendEvent(EEventGlobal.GameOnInit);
         }
     }
 
@@ -6379,10 +6383,10 @@
             return this.m_instance;
         }
         init() {
-            MesManager.instance.on3D(EEventScene.GameLevelsBuildBefore, this, this.gameLevelsBuildBefore);
-            MesManager.instance.on3D(EEventScene.GameLevelsOnBuild, this, this.gameLevelsOnBuild);
-            MesManager.instance.on3D(EEventScene.GameLevelsDelete, this, this.gameLevelsDelete);
-            MesManager.instance.on3D(EEventScene.GameStart, this, this.gameStart);
+            MesManager.instance.onEvent(EEventScene.GameLevelsBuildBefore, this, this.gameLevelsBuildBefore);
+            MesManager.instance.onEvent(EEventScene.GameLevelsOnBuild, this, this.gameLevelsOnBuild);
+            MesManager.instance.onEvent(EEventScene.GameLevelsDelete, this, this.gameLevelsDelete);
+            MesManager.instance.onEvent(EEventScene.GameStart, this, this.gameStart);
         }
         gameLevelsBuildBefore() {
             GameShortDataProxy.emptyGameOnCustomData();
@@ -6431,16 +6435,6 @@
             return this.m_data.oimo_mesh_diaphaneity;
         }
     }
-
-    var EEventAudio;
-    (function (EEventAudio) {
-        EEventAudio["BGMSuspend"] = "_EEventAudio_BGMSuspend";
-        EEventAudio["BGMGoOn"] = "_EEventAudio_BGMGoOn";
-        EEventAudio["SoundSuspend"] = "_EEventAudio_SoundSuspend";
-        EEventAudio["SoundGoOn"] = "_EEventAudio_SoundGoOn";
-        EEventAudio["BGMVolumeChange"] = "_EEventAudio_BGMVolumeChange";
-        EEventAudio["SoundVolumeChange"] = "_EEventAudio_BGMVolumeChange";
-    })(EEventAudio || (EEventAudio = {}));
 
     class ResUrl {
         static music_url(name) {
@@ -6591,12 +6585,12 @@
             return this._instance;
         }
         init() {
-            MesManager.instance.onAudio(EEventAudio.BGMSuspend, this, this.BGMsuSpend);
-            MesManager.instance.onAudio(EEventAudio.BGMGoOn, this, this.BGMGoOn);
-            MesManager.instance.onAudio(EEventAudio.SoundSuspend, this, this.soundSuspend);
-            MesManager.instance.onAudio(EEventAudio.SoundGoOn, this, this.soundGoOn);
-            MesManager.instance.onAudio(EEventAudio.BGMVolumeChange, this, this.bgmVolumeChange);
-            MesManager.instance.onAudio(EEventAudio.SoundVolumeChange, this, this.soundVolumeChange);
+            MesManager.instance.onEvent(EEventAudio.BGMSuspend, this, this.BGMsuSpend);
+            MesManager.instance.onEvent(EEventAudio.BGMGoOn, this, this.BGMGoOn);
+            MesManager.instance.onEvent(EEventAudio.SoundSuspend, this, this.soundSuspend);
+            MesManager.instance.onEvent(EEventAudio.SoundGoOn, this, this.soundGoOn);
+            MesManager.instance.onEvent(EEventAudio.BGMVolumeChange, this, this.bgmVolumeChange);
+            MesManager.instance.onEvent(EEventAudio.SoundVolumeChange, this, this.soundVolumeChange);
         }
         BGMsuSpend() {
             AudioProxy.instance.stopBGM();

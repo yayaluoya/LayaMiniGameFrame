@@ -7,6 +7,16 @@ import { EEventUI } from '../EventEnum/EEventUI';
  * 简易信息处理类
  */
 export default class MesManager extends Laya.EventDispatcher implements IRootManager {
+    //消息键值
+    private static _mesKey: symbol = Symbol('$MesKey');
+
+    //消息唯一标识符
+    private static _onlyKey: number = 0;
+    private static get onlyKey(): string {
+        MesManager._onlyKey++;
+        return '$key' + MesManager._onlyKey;
+    }
+
     private static _instance: MesManager;
     /** 单例 */
     public static get instance(): MesManager {
@@ -16,132 +26,58 @@ export default class MesManager extends Laya.EventDispatcher implements IRootMan
         return this._instance;
     }
     //
-    private constructor() { super(); }
+    private constructor() {
+        super();
+    }
 
     //初始化
-    public init() { }
+    public init() {
+        //注册消息类型，没注册的话就不能用本消息类发送该类型消息
+        this.enumerationEegistrationMes(EEventGlobal);//全局事件
+        this.enumerationEegistrationMes(EEventUI);//UI事件
+        this.enumerationEegistrationMes(EEventScene);//场景事件
+        this.enumerationEegistrationMes(EEventAudio);//音效事件
+    }
+
+    //注册消息枚举
+    private enumerationEegistrationMes(_mes: object) {
+        for (let _i in _mes) {
+            _mes[_i] = {
+                value: _mes[_i],
+                [MesManager._mesKey]: MesManager.onlyKey,
+            };
+        }
+        // console.log(_mes);
+    }
 
     /**
-     * 发送全局事件
-     * @param event 全局事件枚举 
+     * 发送事件
+     * @param event 事件枚举 
      * @param data 数据
      */
-    public eventGlobal(event: EEventGlobal, data?: any) {
+    public sendEvent(event: string, data?: any) {
         // console.log('Global ' + event);
-        MesManager.instance.event(event, data);
+        MesManager.instance.event(event[MesManager._mesKey], data);
     }
 
     /**
-     * 发送音效事件
-     * @param event 全局事件枚举 
-     * @param data 数据
-     */
-    public eventAudio(event: EEventAudio, data?: any) {
-        // console.log('Global ' + event);
-        MesManager.instance.event(event, data);
-    }
-
-    /**
-     * 发送UI事件
-     * @param event UI事件枚举 
-     * @param data 数据
-     */
-    public eventUI(event: EEventUI, data?: any) {
-        // console.log("UI " + event);
-        MesManager.instance.event(event, data);
-    }
-
-    /**
-     * 发送3D事件
-     * @param event 3D事件枚举
-     * @param data 数据
-     */
-    public event3D(event: EEventScene, data?: any) {
-        // console.log("Scene " + event);
-        MesManager.instance.event(event, data);
-    }
-
-    /**
-     * 监听Global事件
+     * 监听事件
      * @param type Global事件枚举
      * @param caller 执行域
      * @param listener 事件
      * @param args 携带的数据
      */
-    public onGlobal(type: EEventGlobal, caller: any, listener: Function, args?: any[]) {
-        MesManager.instance.on(type, caller, listener, args);
+    public onEvent(type: string, caller: any, listener: Function, args?: any[]) {
+        MesManager.instance.on(type[MesManager._mesKey], caller, listener, args);
     }
 
     /**
-     * 监听音效事件
-     * @param type UI事件枚举
-     * @param caller 执行域
-     * @param listener 事件
-     * @param args 携带的数据
-     */
-    public onAudio(type: EEventAudio, caller: any, listener: Function, args?: any[]) {
-        MesManager.instance.on(type, caller, listener, args);
-    }
-
-    /**
-     * 监听UI事件
-     * @param type UI事件枚举
-     * @param caller 执行域
-     * @param listener 事件
-     * @param args 携带的数据
-     */
-    public onUI(type: EEventUI, caller: any, listener: Function, args?: any[]) {
-        MesManager.instance.on(type, caller, listener, args);
-    }
-
-    /**
-     * 监听3D事件
-     * @param type 3D事件枚举 
-     * @param caller 执行域
-     * @param listener 事件
-     * @param args 数据
-     */
-    public on3D(type: EEventScene, caller: any, listener: Function, args?: any[]) {
-        MesManager.instance.on(type, caller, listener, args);
-    }
-
-    /**
-     * 删除Global侦听器
-     * @param type Global侦听器枚举 
+     * 删除事件侦听器
+     * @param type 事件枚举 
      * @param caller 执行域
      * @param listener 回调函数
      */
-    public offGlobal(type: EEventGlobal, caller: any, listener: Function) {
-        MesManager.instance.off(type, caller, listener);
-    }
-
-    /**
-     * 删除音效侦听器
-     * @param type UI侦听器枚举 
-     * @param caller 执行域
-     * @param listener 回调函数
-     */
-    public offAudio(type: EEventAudio, caller: any, listener: Function) {
-        MesManager.instance.off(type, caller, listener);
-    }
-
-    /**
-     * 删除UI侦听器
-     * @param type UI侦听器枚举 
-     * @param caller 执行域
-     * @param listener 回调函数
-     */
-    public offUI(type: EEventUI, caller: any, listener: Function) {
-        MesManager.instance.off(type, caller, listener);
-    }
-
-    /**
-     * 删除3D侦听器
-     * @param type 3D侦听器枚举
-     * @param caller 执行域
-     * @param listener 回调函数
-     */
-    public off3D(type: EEventScene, caller: any, listener: Function) {
-        MesManager.instance.off(type, caller, listener);
+    public offEnent(type: string, caller: any, listener: Function) {
+        MesManager.instance.off(type[MesManager._mesKey], caller, listener);
     }
 }

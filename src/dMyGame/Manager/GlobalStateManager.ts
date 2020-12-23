@@ -33,7 +33,7 @@ export class GlobalStateManager implements IRootManager {
      */
     public GameInit() {
         this.m_GameIfInit = false;
-        MesManager.instance.eventGlobal(EEventGlobal.GameInit);
+        MesManager.instance.sendEvent(EEventGlobal.GameInit);
     }
 
     /**
@@ -41,6 +41,6 @@ export class GlobalStateManager implements IRootManager {
      */
     public GameOnInit() {
         this.m_GameIfInit = true;
-        MesManager.instance.eventGlobal(EEventGlobal.GameOnInit);
+        MesManager.instance.sendEvent(EEventGlobal.GameOnInit);
     }
 }

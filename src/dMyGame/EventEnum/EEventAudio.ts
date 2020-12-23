@@ -4,17 +4,17 @@
  */
 export enum EEventAudio {
     /** BGM暂停 */
-    BGMSuspend = '_EEventAudio_BGMSuspend',
+    BGMSuspend = 'BGMSuspend',
     /** BGM继续 */
-    BGMGoOn = '_EEventAudio_BGMGoOn',
+    BGMGoOn = 'BGMGoOn',
     /** 音效暂停 */
-    SoundSuspend = '_EEventAudio_SoundSuspend',
+    SoundSuspend = 'SoundSuspend',
     /** 音效继续 */
-    SoundGoOn = '_EEventAudio_SoundGoOn',
+    SoundGoOn = 'SoundGoOn',
     /** BGM音量改变 */
-    BGMVolumeChange = '_EEventAudio_BGMVolumeChange',
+    BGMVolumeChange = 'BGMVolumeChange',
     /** Sound音量改变 */
-    SoundVolumeChange = '_EEventAudio_BGMVolumeChange',
+    SoundVolumeChange = 'BGMVolumeChange',
 }
 
 /**

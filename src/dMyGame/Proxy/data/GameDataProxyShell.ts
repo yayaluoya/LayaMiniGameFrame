@@ -120,7 +120,7 @@ export default class GameDataProxyShell extends RootDataProxyShell {
             _win = true;
         }
         //传出事件
-        MesManager.instance.eventUI(EEventUI.CustomsChange);
+        MesManager.instance.sendEvent(EEventUI.CustomsChange);
         //
         return _win;
     }

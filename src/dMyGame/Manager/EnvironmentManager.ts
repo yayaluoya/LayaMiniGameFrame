@@ -60,7 +60,7 @@ export default class EnvironmentManager implements IRootManager {
         this.setLight(this.light, this.m_enviromentConfig.light_color, this.m_enviromentConfig.light_intensity);
         this.addAmbient(this.s3d, this.m_enviromentConfig.ambient_color);
         //监听事件
-        MesManager.instance.on3D(EEventScene.GameLevelsDelete, this, this.gameLevelsDelete);
+        MesManager.instance.onEvent(EEventScene.GameLevelsDelete, this, this.gameLevelsDelete);
         //
         if (MainGameConfig.ifDebug && MainGameConfig.ifOpenWindowDebug) {
             //发送环境改变事件

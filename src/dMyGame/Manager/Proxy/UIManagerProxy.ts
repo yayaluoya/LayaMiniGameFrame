@@ -27,10 +27,10 @@ export default class UIManagerProxy extends RootUIStateManagerProxy {
     //初始化
     protected Init() {
         //监听全局事件
-        MesManager.instance.onGlobal(EEventGlobal.GameLoading, this, this.gameLoading);//游戏加载
-        MesManager.instance.onGlobal(EEventGlobal.GameResLoading, this, this.gameResLoading);//游戏资源加载
+        MesManager.instance.onEvent(EEventGlobal.GameLoading, this, this.gameLoading);//游戏加载
+        MesManager.instance.onEvent(EEventGlobal.GameResLoading, this, this.gameResLoading);//游戏资源加载
         //监听UI事件
-        MesManager.instance.onUI(EEventUI.SceneGameCustomsLoading, this, this.gameCustomsLoading);//关卡加载
+        MesManager.instance.onEvent(EEventUI.SceneGameCustomsLoading, this, this.gameCustomsLoading);//关卡加载
     }
 
     /**

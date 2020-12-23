@@ -4,13 +4,13 @@
  */
 export enum EEventGlobal {
     /** 游戏初始化 */
-    GameInit = '_EEventGlobal_GameInit',
+    GameInit = 'GameInit',
     /** 游戏初始化完成 */
-    GameOnInit = '_EEventGlobal_GameOnInit',
+    GameOnInit = 'GameOnInit',
     /** 游戏加载 */
-    GameLoading = '_EEventGlobal_GameLoading',
+    GameLoading = 'GameLoading',
     /** 游戏资源加载 */
-    GameResLoading = '_EEventGlobal_GameResLoading',
+    GameResLoading = 'GameResLoading',
 }
 
 /**

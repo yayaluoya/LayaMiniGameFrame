@@ -28,7 +28,7 @@ export default class PGameCustomsLoadingMediator extends BaseUIMediator<FGUI_PGa
     //显示时的生命周期函数
     protected _OnShow() {
         //关卡加载中
-        MesManager.instance.onUI(EEventUI.SceneGameCustomsLoading, this, this.CustomsLoading);
+        MesManager.instance.onEvent(EEventUI.SceneGameCustomsLoading, this, this.CustomsLoading);
     }
 
     /**
@@ -49,6 +49,6 @@ export default class PGameCustomsLoadingMediator extends BaseUIMediator<FGUI_PGa
     //隐藏时的生命周期函数
     protected _OnHide() {
         //取消监听
-        MesManager.instance.offUI(EEventUI.SceneGameCustomsLoading, this, this.CustomsLoading);
+        MesManager.instance.offEnent(EEventUI.SceneGameCustomsLoading, this, this.CustomsLoading);
     }
 }
