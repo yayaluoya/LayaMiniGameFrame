@@ -49,6 +49,7 @@ export default class EssentialResUrls {
      * @param prefab 预制体名字
      */
     public static prefab_url(prefab: string): string {
+        //判断该预制体在那个场景中被导出的
         return KeyResManager.instance.getResURL(EKeyResName.Prefab) + 'Conventional/' + prefab + '.lh';
     }
 }

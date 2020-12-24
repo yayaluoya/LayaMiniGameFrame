@@ -23,7 +23,7 @@
     <OtherSetting>True</OtherSetting>
     <CoverOriginalFile>True</CoverOriginalFile>
     <CustomizeDirectory>True</CustomizeDirectory>
-    <CustomizeDirectoryName>Prefab</CustomizeDirectoryName>
+    <CustomizeDirectoryName>prefabs2</CustomizeDirectoryName>
     <Ios>False</Ios>
     <Android>False</Android>
     <Conventional>True</Conventional>

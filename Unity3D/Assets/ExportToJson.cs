@@ -24,6 +24,7 @@ namespace JsonEditor
             createFile(filepath);
             //
             string prefabsNames = "";
+            List<string> names = new List<string>();
             Object[] objAll = UnityEngine.SceneManagement.SceneManager.GetActiveScene().GetRootGameObjects();
             GameObject[] gos = (GameObject[])FindObjectsOfType(typeof(GameObject));
             string classText = "";
@@ -80,9 +81,14 @@ namespace JsonEditor
                 {
                     classList.Add(name);
                 }
+                //
+                names.Add(name);
+                //
                 string _name = ExportToJson.capitalizeFirstSetter(name.Replace(" ", ""));
                 prefabsNames += ("    public static readonly " + _name + ": string = '" + name + "';" + "\n");
             }
+            //读取缓存
+            TextAsset _AllPrefabsNameCache = (TextAsset)Resources.Load("cache/AllPrefabsNameCache");
             //读取模板
             TextAsset textAsset = (TextAsset)Resources.Load("template/PrefabsName");
             string template = textAsset.text;

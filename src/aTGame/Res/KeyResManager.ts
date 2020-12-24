@@ -29,7 +29,6 @@ export default class KeyResManager {
             [EKeyResName.Config]: EKeyResName.RootRes + '/' + EKeyResName.Config + '/',
             [EKeyResName.FGUI]: EKeyResName.RootRes + '/' + EKeyResName.FGUI + '/',
             [EKeyResName.LvConfig]: EKeyResName.RootRes + '/' + EKeyResName.LvConfig + '/',
-            [EKeyResName.Prefab]: EKeyResName.RootRes + '/' + EKeyResName.Prefab + '/',
             [EKeyResName.Other]: EKeyResName.RootRes + '/' + EKeyResName.Other + '/',
             [EKeyResName.icon]: EKeyResName.RootRes + '/' + EKeyResName.Other + '/' + EKeyResName.icon + '/',
             [EKeyResName.img]: EKeyResName.RootRes + '/' + EKeyResName.Other + '/' + EKeyResName.img + '/',
@@ -37,6 +36,8 @@ export default class KeyResManager {
             [EKeyResName.sound]: EKeyResName.RootRes + '/' + EKeyResName.Other + '/' + EKeyResName.sound + '/',
             [EKeyResName.skin]: EKeyResName.RootRes + '/' + EKeyResName.Other + '/' + EKeyResName.skin + '/',
         };
+        //注入预制体目录
+        for () { }
         //复制一个副本
         for (let _i in this.m_KeyResList) {
             this.m_KeyResList_[_i] = this.m_KeyResList[_i];

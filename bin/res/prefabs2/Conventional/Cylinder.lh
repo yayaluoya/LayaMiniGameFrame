@@ -2,7 +2,7 @@
 	"version":"LAYAHIERARCHY:02",
 	"data":{
 		"type":"MeshSprite3D",
-		"instanceID":4,
+		"instanceID":2,
 		"props":{
 			"name":"Cylinder",
 			"active":true,

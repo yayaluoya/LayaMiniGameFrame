@@ -10,8 +10,6 @@ export enum EKeyResName {
     FGUI = 'FGUI',
     /** 关卡配置表目录 */
     LvConfig = 'LvConfig',
-    /** 预制体目录 */
-    Prefab = 'Prefab',
     /** 其它目录 */
     Other = 'Other',
     /** icon目录 */
