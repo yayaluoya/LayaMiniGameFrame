@@ -1,3 +1,5 @@
+import { AllPrefabsNames } from '../../cFrameBridge/Config/ELevelSceneName';
+import ConsoleEx from '../Console/ConsoleEx';
 import { EKeyResName } from './EKeyResName';
 import KeyResManager from './KeyResManager';
 /**
@@ -44,12 +46,19 @@ export default class EssentialResUrls {
         return KeyResManager.instance.getResURL(EKeyResName.FGUI) + _name;
     }
 
+    private static _AllPrefabsNames: AllPrefabsNames = new AllPrefabsNames();
     /**
      * 预制体资源路径
      * @param prefab 预制体名字
      */
     public static prefab_url(prefab: string): string {
         //判断该预制体在那个场景中被导出的
-        return KeyResManager.instance.getResURL(EKeyResName.Prefab) + 'Conventional/' + prefab + '.lh';
+        for (let _i in this._AllPrefabsNames) {
+            if (this._AllPrefabsNames[_i]['prefabs'].indexOf(prefab) != -1) {
+                return KeyResManager.instance.getResURL(EKeyResName[this._AllPrefabsNames[_i]['scene']]) + 'Conventional/' + prefab + '.lh';
+            }
+        }
+        //
+        console.log(...ConsoleEx.packError('没有在场景找到预制体', prefab, '可能是没有导出场景预制体列表导致的。'));
     }
 }

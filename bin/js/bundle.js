@@ -229,13 +229,31 @@
     class GlobalUnitClassProxy extends RootClassProxy {
     }
 
+    class _AllPrefabNames {
+        constructor() {
+            this.Prefabs = { scene: 'Prefabs', prefabs: 'Camera,DirectionalLight,' };
+            this.Prefabs2 = { scene: 'Prefabs2', prefabs: 'Cube,Sphere,Cylinder,' };
+        }
+    }
+
+    var ELevelSceneName;
+    (function (ELevelSceneName) {
+        ELevelSceneName["Export"] = "export";
+    })(ELevelSceneName || (ELevelSceneName = {}));
+    class AllPrefabsNames extends _AllPrefabNames {
+    }
+    class LevelSceneNameConst {
+        static get defaultLevelSceneName() {
+            return ELevelSceneName.Export;
+        }
+    }
+
     var EKeyResName;
     (function (EKeyResName) {
         EKeyResName["RootRes"] = "res";
         EKeyResName["Config"] = "Config";
         EKeyResName["FGUI"] = "FGUI";
         EKeyResName["LvConfig"] = "LvConfig";
-        EKeyResName["Prefab"] = "Prefab";
         EKeyResName["Other"] = "Other";
         EKeyResName["icon"] = "icon";
         EKeyResName["img"] = "img";
@@ -253,7 +271,6 @@
                 [EKeyResName.Config]: EKeyResName.RootRes + '/' + EKeyResName.Config + '/',
                 [EKeyResName.FGUI]: EKeyResName.RootRes + '/' + EKeyResName.FGUI + '/',
                 [EKeyResName.LvConfig]: EKeyResName.RootRes + '/' + EKeyResName.LvConfig + '/',
-                [EKeyResName.Prefab]: EKeyResName.RootRes + '/' + EKeyResName.Prefab + '/',
                 [EKeyResName.Other]: EKeyResName.RootRes + '/' + EKeyResName.Other + '/',
                 [EKeyResName.icon]: EKeyResName.RootRes + '/' + EKeyResName.Other + '/' + EKeyResName.icon + '/',
                 [EKeyResName.img]: EKeyResName.RootRes + '/' + EKeyResName.Other + '/' + EKeyResName.img + '/',
@@ -261,6 +278,14 @@
                 [EKeyResName.sound]: EKeyResName.RootRes + '/' + EKeyResName.Other + '/' + EKeyResName.sound + '/',
                 [EKeyResName.skin]: EKeyResName.RootRes + '/' + EKeyResName.Other + '/' + EKeyResName.skin + '/',
             };
+            let _AllPrefabNames = new AllPrefabsNames();
+            let _scennName;
+            for (let _i in _AllPrefabNames) {
+                _scennName = _AllPrefabNames[_i]['scene'];
+                EKeyResName[_scennName] = _scennName;
+                this.m_KeyResList[EKeyResName[_scennName]] = EKeyResName.RootRes + '/' + EKeyResName[_scennName] + '/';
+            }
+            console.log(this.m_KeyResList);
             for (let _i in this.m_KeyResList) {
                 this.m_KeyResList_[_i] = this.m_KeyResList[_i];
             }
@@ -316,9 +341,15 @@
             return KeyResManager.instance.getResURL(EKeyResName.FGUI) + _name;
         }
         static prefab_url(prefab) {
-            return KeyResManager.instance.getResURL(EKeyResName.Prefab) + 'Conventional/' + prefab + '.lh';
+            for (let _i in this._AllPrefabsNames) {
+                if (this._AllPrefabsNames[_i]['prefabs'].indexOf(prefab) != -1) {
+                    return KeyResManager.instance.getResURL(EKeyResName[this._AllPrefabsNames[_i]['scene']]) + 'Conventional/' + prefab + '.lh';
+                }
+            }
+            console.log(...ConsoleEx.packError('没有在场景找到预制体', prefab, '可能是没有导出场景预制体列表导致的。'));
         }
     }
+    EssentialResUrls._AllPrefabsNames = new AllPrefabsNames();
 
     class ArrayUtils {
         static Unique(arr) {
@@ -582,16 +613,6 @@
                     });
                 }
             }
-        }
-    }
-
-    var ELevelSceneName;
-    (function (ELevelSceneName) {
-        ELevelSceneName["Export"] = "export";
-    })(ELevelSceneName || (ELevelSceneName = {}));
-    class LevelSceneNameConst {
-        static get defaultLevelSceneName() {
-            return ELevelSceneName.Export;
         }
     }
 
@@ -2563,17 +2584,7 @@
     }
     _PrefabsPrefabName.Camera = 'Camera';
     _PrefabsPrefabName.DirectionalLight = 'DirectionalLight';
-    _PrefabsPrefabName.Cube = 'Cube';
-    _PrefabsPrefabName.Sphere = 'Sphere';
-    _PrefabsPrefabName.Cylinder = 'Cylinder';
     class _PrefabsPrefabClass {
-        static get GetDebugClass() {
-            return [
-                'Cube',
-                'Sphere',
-                'Cylinder',
-            ];
-        }
     }
 
     class PrefabNames extends _PrefabsPrefabName {

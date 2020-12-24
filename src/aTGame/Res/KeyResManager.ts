@@ -1,3 +1,4 @@
+import { AllPrefabsNames } from "../../cFrameBridge/Config/ELevelSceneName";
 import ConsoleEx from "../Console/ConsoleEx";
 import { EKeyResName } from "./EKeyResName";
 
@@ -37,7 +38,14 @@ export default class KeyResManager {
             [EKeyResName.skin]: EKeyResName.RootRes + '/' + EKeyResName.Other + '/' + EKeyResName.skin + '/',
         };
         //注入预制体目录
-        for () { }
+        let _AllPrefabNames: AllPrefabsNames = new AllPrefabsNames();
+        let _scennName: string;
+        for (let _i in _AllPrefabNames) {
+            _scennName = _AllPrefabNames[_i]['scene'];
+            EKeyResName[_scennName] = _scennName;
+            this.m_KeyResList[EKeyResName[_scennName]] = EKeyResName.RootRes + '/' + EKeyResName[_scennName] + '/';
+        }
+        // console.log(this.m_KeyResList);
         //复制一个副本
         for (let _i in this.m_KeyResList) {
             this.m_KeyResList_[_i] = this.m_KeyResList[_i];

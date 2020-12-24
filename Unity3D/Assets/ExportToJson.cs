@@ -87,8 +87,50 @@ namespace JsonEditor
                 string _name = ExportToJson.capitalizeFirstSetter(name.Replace(" ", ""));
                 prefabsNames += ("    public static readonly " + _name + ": string = '" + name + "';" + "\n");
             }
-            //读取缓存
-            TextAsset _AllPrefabsNameCache = (TextAsset)Resources.Load("cache/AllPrefabsNameCache");
+            //
+            string _prefabeNameTest = "";
+            for (int i = 0; i < names.Count; i++)
+            {
+                _prefabeNameTest=_prefabeNameTest+names[i]+",";
+            }
+            string _AllPrefabsNameCacheURL = @"./Assets/Cache/AllPrefabsNameCache.txt";
+            string _AllPrefabsNameCacheText = "";
+            try{
+                string[] _AllPrefabsNameCache = File.ReadAllLines(_AllPrefabsNameCacheURL);
+                for (int i = 0; i < _AllPrefabsNameCache.Length; i++)
+                {
+                    _AllPrefabsNameCacheText += _AllPrefabsNameCache[i];
+                }
+            }catch{}
+            // Debug.Log(_AllPrefabsNameCacheText);
+            Regex _AllPrefabsNameCacheSceneRegex = new Regex("@"+sceneName+":{.*?}");
+            string _cacheSceneText = "@"+sceneName+":{"+_prefabeNameTest+"}";
+            //替换场景预制体列表
+            if(_AllPrefabsNameCacheSceneRegex.IsMatch(_AllPrefabsNameCacheText)){
+                _AllPrefabsNameCacheSceneRegex.Replace(_AllPrefabsNameCacheText, _cacheSceneText);
+            }
+            else{
+                _AllPrefabsNameCacheText+=_cacheSceneText;
+            }
+            // Debug.Log(_AllPrefabsNameCacheText);
+            //存储缓存
+            createFile(_AllPrefabsNameCacheURL);
+            File.WriteAllText(_AllPrefabsNameCacheURL, _AllPrefabsNameCacheText);
+            //根据缓存设置一个全局的ts脚本
+            TextAsset AllPrefabsAsset = (TextAsset)Resources.Load("template/AllPrefabsNames"); 
+            string AllPrefabsTxt = AllPrefabsAsset.text;
+            string _AllPrefabsNameSceneText = "";
+            //读取所有预制体名字
+            MatchCollection _allPrefabeMatch = (new Regex("@(?<scene>.*?):{(?<prefabs>.*?)}")).Matches(_AllPrefabsNameCacheText);
+            for (int i = 0; i < _allPrefabeMatch.Count;i++ )
+            {
+                _AllPrefabsNameSceneText = _AllPrefabsNameSceneText+ "    " + _allPrefabeMatch[i].Groups["scene"]+": {scene: string,prefabs: string} = {scene: '"+_allPrefabeMatch[i].Groups["scene"]+"',prefabs: '"+_allPrefabeMatch[i].Groups["prefabs"]+"'};\n";
+            }
+            //
+            AllPrefabsTxt = (new Regex("{{AllPrefab}}")).Replace(AllPrefabsTxt, _AllPrefabsNameSceneText);
+            string _AllPrefabsNameSceneURL = @".\..\src\dMyGame\_prefabsName\_AllPrefabNames.ts";
+            //写入全部预制体名字
+            File.WriteAllText(_AllPrefabsNameSceneURL, AllPrefabsTxt);
             //读取模板
             TextAsset textAsset = (TextAsset)Resources.Load("template/PrefabsName");
             string template = textAsset.text;
