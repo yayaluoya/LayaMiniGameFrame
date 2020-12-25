@@ -82,7 +82,7 @@ export default class PlatformManager implements IRootManager {
             this.m_platformData = new OPPOData();
         }
         else {
-            console.log(...ConsoleEx.packWarn("未识别平台,默认创建为web", Laya.Browser.userAgent));
+            console.log(...ConsoleEx.packWarn("未识别平台,默认创建为web"));
             result = new DefaultPlatform();
         }
         this.m_platformInstance = result;

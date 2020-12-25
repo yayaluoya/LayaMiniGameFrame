@@ -28,19 +28,23 @@ export default class MesManager extends Laya.EventDispatcher implements IRootMan
     //
     private constructor() {
         super();
+        //
+        this.enumerationEegistrationMes();
     }
 
     //初始化
-    public init() {
-        //注册消息类型，没注册的话就不能用本消息类发送该类型消息
-        this.enumerationEegistrationMes(EEventGlobal);//全局事件
-        this.enumerationEegistrationMes(EEventUI);//UI事件
-        this.enumerationEegistrationMes(EEventScene);//场景事件
-        this.enumerationEegistrationMes(EEventAudio);//音效事件
-    }
+    public init() { }
 
     //注册消息枚举
-    private enumerationEegistrationMes(_mes: object) {
+    private enumerationEegistrationMes() {
+        //注册消息类型，没注册的话就不能用本消息类发送该类型消息
+        this.enumerationEegistrationMes_(EEventGlobal);//全局事件
+        this.enumerationEegistrationMes_(EEventUI);//UI事件
+        this.enumerationEegistrationMes_(EEventScene);//场景事件
+        this.enumerationEegistrationMes_(EEventAudio);//音效事件
+    }
+    //配合注册消息枚举
+    private enumerationEegistrationMes_(_mes: object) {
         for (let _i in _mes) {
             _mes[_i] = {
                 value: _mes[_i],

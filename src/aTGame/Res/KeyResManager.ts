@@ -1,4 +1,6 @@
 import { AllPrefabsNames } from "../../cFrameBridge/Config/ELevelSceneName";
+import FrameCDNURL from "../../cFrameBridge/FrameCDNURL";
+import FrameSubpackages from "../../cFrameBridge/FrameSubpackages";
 import ConsoleEx from "../Console/ConsoleEx";
 import { EKeyResName } from "./EKeyResName";
 
@@ -43,14 +45,28 @@ export default class KeyResManager {
             EKeyResName[_i] = _i;
             this.m_KeyResList[EKeyResName[_i]] = EKeyResName.RootRes + '/' + EKeyResName[_i] + '/';
             //
-            console.log('注入预制体资源路径', this.m_KeyResList[EKeyResName[_i]]);
+            console.log(...ConsoleEx.packLogLight('注入预制体资源路径', this.m_KeyResList[EKeyResName[_i]]));
         }
         // console.log(this.m_KeyResList);
         //复制一个副本
         for (let _i in this.m_KeyResList) {
             this.m_KeyResList_[_i] = this.m_KeyResList[_i];
         }
+        //
+        this.setRes();
     };
+
+    //重置资源路径
+    private setRes() {
+        //重置分包资源路径
+        for (let _o of FrameSubpackages.subpackages) {
+            this.editKeyResList(_o.name, _o.root);
+        }
+        //重置cdn资源路径
+        for (let _o of FrameCDNURL.CDNURLs) {
+            this.editKeyResList(_o.name, _o.root);
+        }
+    }
 
     /**
      * 判断是否存在某个关键点key

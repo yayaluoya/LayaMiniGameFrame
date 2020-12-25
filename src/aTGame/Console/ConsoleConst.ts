@@ -11,6 +11,14 @@ export default class ConsoleConst {
         `;
 
     /** 打印台Log样式 */
+    public static logLightStyle: string = `
+        color: #52575d;
+        background-color: #EBEBEB;
+        border-radius: 3px;
+        line-height: 15px;
+        `;
+
+    /** 打印台Log样式 */
     public static comStyle: string = `
         color: #fff;
         background-color: #ade498;

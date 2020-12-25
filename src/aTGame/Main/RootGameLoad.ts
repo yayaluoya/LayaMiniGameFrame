@@ -5,7 +5,6 @@ import FGuiRootManager from '../UI/FGUI/FGuiRootManager';
 import Global3D from '../3D/Global3D';
 import EssentialResUrls from '../Res/EssentialResUrls';
 import CommonDataProxy from '../Commom/CommonDataProxy';
-import KeyResManager from '../Res/KeyResManager';
 import FrameSubpackages from '../../cFrameBridge/FrameSubpackages';
 import PlatformManager from '../Platform/PlatformManager';
 import { ELevelSceneName } from '../../cFrameBridge/Config/ELevelSceneName';
@@ -79,8 +78,6 @@ export default class RootGameLoad {
                 //加载所有分包
                 let _promiseList: Promise<void>[] = [];
                 for (let _o of FrameSubpackages.subpackages) {
-                    //重置分包资源路径
-                    KeyResManager.instance.editKeyResList(_o.name, _o.root);
                     //
                     if (_o.name) {
                         _promiseList.push(new Promise<void>((r) => {

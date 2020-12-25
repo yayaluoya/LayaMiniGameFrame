@@ -36,6 +36,12 @@
         border-radius: 3px;
         line-height: 15px;
         `;
+    ConsoleConst.logLightStyle = `
+        color: #52575d;
+        background-color: #EBEBEB;
+        border-radius: 3px;
+        line-height: 15px;
+        `;
     ConsoleConst.comStyle = `
         color: #fff;
         background-color: #ade498;
@@ -73,6 +79,9 @@
         }
         static packLog(...any) {
             return [`%c ${any} `, ConsoleConst.logStyle];
+        }
+        static packLogLight(...any) {
+            return [`%c ${any} `, ConsoleConst.logLightStyle];
         }
         static comLog(...any) {
             return [`%c ${any} `, ConsoleConst.comStyle];
@@ -262,6 +271,14 @@
         EKeyResName["skin"] = "skin";
     })(EKeyResName || (EKeyResName = {}));
 
+    class FrameCDNURL {
+    }
+    FrameCDNURL.CDNURLs = [];
+
+    class FrameSubpackages {
+    }
+    FrameSubpackages.subpackages = [];
+
     class KeyResManager {
         constructor() {
             this.m_KeyResList = {};
@@ -282,11 +299,12 @@
             for (let _i in _AllPrefabNames) {
                 EKeyResName[_i] = _i;
                 this.m_KeyResList[EKeyResName[_i]] = EKeyResName.RootRes + '/' + EKeyResName[_i] + '/';
-                console.log('注入预制体资源路径', this.m_KeyResList[EKeyResName[_i]]);
+                console.log(...ConsoleEx.packLogLight('注入预制体资源路径', this.m_KeyResList[EKeyResName[_i]]));
             }
             for (let _i in this.m_KeyResList) {
                 this.m_KeyResList_[_i] = this.m_KeyResList[_i];
             }
+            this.setRes();
         }
         static get instance() {
             if (this._instance == null) {
@@ -295,6 +313,14 @@
             return this._instance;
         }
         ;
+        setRes() {
+            for (let _o of FrameSubpackages.subpackages) {
+                this.editKeyResList(_o.name, _o.root);
+            }
+            for (let _o of FrameCDNURL.CDNURLs) {
+                this.editKeyResList(_o.name, _o.root);
+            }
+        }
         ifKeyRes(_key) {
             let _if = false;
             for (let _i in EKeyResName) {
@@ -1628,6 +1654,7 @@
     class MesManager extends Laya.EventDispatcher {
         constructor() {
             super();
+            this.enumerationEegistrationMes();
         }
         static get onlyKey() {
             MesManager._onlyKey++;
@@ -1639,13 +1666,14 @@
             }
             return this._instance;
         }
-        init() {
-            this.enumerationEegistrationMes(EEventGlobal);
-            this.enumerationEegistrationMes(EEventUI);
-            this.enumerationEegistrationMes(EEventScene);
-            this.enumerationEegistrationMes(EEventAudio);
+        init() { }
+        enumerationEegistrationMes() {
+            this.enumerationEegistrationMes_(EEventGlobal);
+            this.enumerationEegistrationMes_(EEventUI);
+            this.enumerationEegistrationMes_(EEventScene);
+            this.enumerationEegistrationMes_(EEventAudio);
         }
-        enumerationEegistrationMes(_mes) {
+        enumerationEegistrationMes_(_mes) {
             for (let _i in _mes) {
                 _mes[_i] = {
                     value: _mes[_i],
@@ -6170,7 +6198,7 @@
                 this.m_platformData = new OPPOData();
             }
             else {
-                console.log(...ConsoleEx.packWarn("未识别平台,默认创建为web", Laya.Browser.userAgent));
+                console.log(...ConsoleEx.packWarn("未识别平台,默认创建为web"));
                 result = new DefaultPlatform();
             }
             this.m_platformInstance = result;
@@ -6779,10 +6807,6 @@
         }
     }
 
-    class FrameSubpackages {
-    }
-    FrameSubpackages.subpackages = [];
-
     class RootGameLoad {
         constructor() {
             this._needLoadOtherUIPack = [];
@@ -6810,7 +6834,6 @@
                 if (FrameSubpackages.subpackages.length > 0) {
                     let _promiseList = [];
                     for (let _o of FrameSubpackages.subpackages) {
-                        KeyResManager.instance.editKeyResList(_o.name, _o.root);
                         if (_o.name) {
                             _promiseList.push(new Promise((r) => {
                                 PlatformManager.PlatformInstance.LoadSubpackage(_o.name, Laya.Handler.create(this, () => {

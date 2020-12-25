@@ -39,6 +39,14 @@ export default class ConsoleEx {
     }
 
     /**
+     * 包装普通轻消息
+     * @param any 内容
+     */
+    public static packLogLight(...any) {
+        return [`%c ${any} `, ConsoleConst.logLightStyle];
+    }
+
+    /**
      * 包装成功消息
      * @param any 内容
      */
