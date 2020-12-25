@@ -56,6 +56,10 @@ export default class MesManager extends Laya.EventDispatcher implements IRootMan
      * @param data 数据
      */
     public sendEvent(event: string, data?: any) {
+        if (typeof event[MesManager._mesKey] == 'undefined') {
+            console.log('事件', event, '没有被注册。');
+            return;
+        }
         // console.log('Global ' + event);
         MesManager.instance.event(event[MesManager._mesKey], data);
     }
@@ -68,6 +72,10 @@ export default class MesManager extends Laya.EventDispatcher implements IRootMan
      * @param args 携带的数据
      */
     public onEvent(type: string, caller: any, listener: Function, args?: any[]) {
+        if (typeof type[MesManager._mesKey] == 'undefined') {
+            console.log('事件', type, '没有被注册。');
+            return;
+        }
         MesManager.instance.on(type[MesManager._mesKey], caller, listener, args);
     }
 
@@ -78,6 +86,10 @@ export default class MesManager extends Laya.EventDispatcher implements IRootMan
      * @param listener 回调函数
      */
     public offEnent(type: string, caller: any, listener: Function) {
+        if (typeof type[MesManager._mesKey] == 'undefined') {
+            console.log('事件', type, '没有被注册。');
+            return;
+        }
         MesManager.instance.off(type[MesManager._mesKey], caller, listener);
     }
 }

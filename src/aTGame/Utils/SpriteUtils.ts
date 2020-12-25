@@ -70,6 +70,23 @@ export default class SpriteUtils {
     }
 
     /**
+     * 遍历精灵并通过回调函数处理每一个精灵
+     * @param _spr 该精灵
+     * @param _handler 遍历回调，注意是否只执行一次的参数要为false
+     */
+    public static foreachSpr(_spr: Laya.Sprite3D, _handler?: Laya.Handler) {
+        //判断是否有遍历回调
+        if (_handler) {
+            _handler.args = [_spr];
+            _handler.run();
+        }
+        //循环遍历子节点
+        for (let i = 0, length = _spr.numChildren; i < length; i++) {
+            this.foreachSpr(_spr.getChildAt(i) as Laya.Sprite3D, _handler);
+        }
+    }
+
+    /**
      * 在子节点中获取组件
      * @param obj 
      * @param cmp 
