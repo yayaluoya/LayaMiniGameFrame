@@ -39,11 +39,11 @@ export default class KeyResManager {
         };
         //注入预制体目录
         let _AllPrefabNames: AllPrefabsNames = new AllPrefabsNames();
-        let _scennName: string;
         for (let _i in _AllPrefabNames) {
-            _scennName = _AllPrefabNames[_i]['scene'];
-            EKeyResName[_scennName] = _scennName;
-            this.m_KeyResList[EKeyResName[_scennName]] = EKeyResName.RootRes + '/' + EKeyResName[_scennName] + '/';
+            EKeyResName[_i] = _i;
+            this.m_KeyResList[EKeyResName[_i]] = EKeyResName.RootRes + '/' + EKeyResName[_i] + '/';
+            //
+            console.log('注入预制体资源路径', this.m_KeyResList[EKeyResName[_i]]);
         }
         // console.log(this.m_KeyResList);
         //复制一个副本

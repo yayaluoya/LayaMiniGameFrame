@@ -8,7 +8,7 @@ export default class _Prefabs2PrefabName {
     public static readonly Cube: string = 'Cube';
     public static readonly Sphere: string = 'Sphere';
     public static readonly Cylinder: string = 'Cylinder';
-    //所有隐藏的节点都会当成注释，分类除外
+    //所有不是预制体的物体都会当成注释，分类除外
 
 }
 

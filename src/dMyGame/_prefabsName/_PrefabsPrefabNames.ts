@@ -7,7 +7,7 @@ export default class _PrefabsPrefabName {
     //---->
     public static readonly Camera: string = 'Camera';
     public static readonly DirectionalLight: string = 'DirectionalLight';
-    //所有隐藏的节点都会当成注释，分类除外
+    //所有不是预制体的物体都会当成注释，分类除外
 
 }
 

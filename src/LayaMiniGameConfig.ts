@@ -9,5 +9,5 @@ export default class LayaMiniGameConfig {
     ZHName: string = "LayaBox小游戏";
 
     /** 版本 */
-    versions: string = "1.2.3";
+    versions: string = "1.2.4";
 }

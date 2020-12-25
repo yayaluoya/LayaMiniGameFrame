@@ -124,6 +124,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: Cylinder
       objectReference: {fileID: 0}
+    - target: {fileID: 6229685888788931418, guid: 5bb67b4759e1bdd49b71ff0841bf7670,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 7079838437566349487, guid: 5bb67b4759e1bdd49b71ff0841bf7670,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -192,6 +197,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: Cube
+      objectReference: {fileID: 0}
+    - target: {fileID: 128094115696823744, guid: cccb2bb2597eff643bcf2a6c549eb1ca,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 29200831928073195, guid: cccb2bb2597eff643bcf2a6c549eb1ca,
         type: 3}
@@ -382,6 +392,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: Sphere
       objectReference: {fileID: 0}
+    - target: {fileID: 4744207374533036137, guid: 44534db0c39e16047aabef39c8c1f350,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 5805493884975686737, guid: 44534db0c39e16047aabef39c8c1f350,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -449,7 +464,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2128568341}
   m_Layer: 0
-  m_Name: "\u6240\u6709\u9690\u85CF\u7684\u8282\u70B9\u90FD\u4F1A\u5F53\u6210\u6CE8\u91CA\uFF0C\u5206\u7C7B\u9664\u5916"
+  m_Name: "\u6240\u6709\u4E0D\u662F\u9884\u5236\u4F53\u7684\u7269\u4F53\u90FD\u4F1A\u5F53\u6210\u6CE8\u91CA\uFF0C\u5206\u7C7B\u9664\u5916"
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

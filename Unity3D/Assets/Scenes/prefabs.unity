@@ -340,7 +340,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2143279297}
   m_Layer: 0
-  m_Name: "\u6240\u6709\u9690\u85CF\u7684\u8282\u70B9\u90FD\u4F1A\u5F53\u6210\u6CE8\u91CA\uFF0C\u5206\u7C7B\u9664\u5916"
+  m_Name: "\u6240\u6709\u4E0D\u662F\u9884\u5236\u4F53\u7684\u7269\u4F53\u90FD\u4F1A\u5F53\u6210\u6CE8\u91CA\uFF0C\u5206\u7C7B\u9664\u5916"
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

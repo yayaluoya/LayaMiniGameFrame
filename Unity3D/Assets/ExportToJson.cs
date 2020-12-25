@@ -36,7 +36,8 @@ namespace JsonEditor
             {
                 GameObject obj = objAll[i] as GameObject;
                 string name = obj.name;
-                if (!obj.activeSelf)
+                //判断是不是预制体
+                if (!ExportToJson.IsPrefabAsset(obj, true))
                 {
                     //检测是不是分类
                     if ((new Regex("^{")).IsMatch(name))
@@ -93,6 +94,10 @@ namespace JsonEditor
             {
                 _prefabeNameTest=_prefabeNameTest+names[i]+",";
             }
+            //去掉末尾逗号
+            _prefabeNameTest = (new Regex(",$")).Replace(_prefabeNameTest, "");
+            // Debug.Log(_prefabeNameTest);
+            //读取本地缓存各个场景预制体列表
             string _AllPrefabsNameCacheURL = @"./Assets/Cache/AllPrefabsNameCache.txt";
             string _AllPrefabsNameCacheText = "";
             try{
@@ -107,16 +112,16 @@ namespace JsonEditor
             string _cacheSceneText = "@"+sceneName+":{"+_prefabeNameTest+"}";
             //替换场景预制体列表
             if(_AllPrefabsNameCacheSceneRegex.IsMatch(_AllPrefabsNameCacheText)){
-                _AllPrefabsNameCacheSceneRegex.Replace(_AllPrefabsNameCacheText, _cacheSceneText);
+                _AllPrefabsNameCacheText = _AllPrefabsNameCacheSceneRegex.Replace(_AllPrefabsNameCacheText, _cacheSceneText);
             }
             else{
-                _AllPrefabsNameCacheText+=_cacheSceneText;
+                _AllPrefabsNameCacheText += _cacheSceneText;
             }
             // Debug.Log(_AllPrefabsNameCacheText);
             //存储缓存
             createFile(_AllPrefabsNameCacheURL);
             File.WriteAllText(_AllPrefabsNameCacheURL, _AllPrefabsNameCacheText);
-            //根据缓存设置一个全局的ts脚本
+            //根据缓存设置一个全局的预制体名字ts脚本
             TextAsset AllPrefabsAsset = (TextAsset)Resources.Load("template/AllPrefabsNames"); 
             string AllPrefabsTxt = AllPrefabsAsset.text;
             string _AllPrefabsNameSceneText = "";
@@ -124,7 +129,7 @@ namespace JsonEditor
             MatchCollection _allPrefabeMatch = (new Regex("@(?<scene>.*?):{(?<prefabs>.*?)}")).Matches(_AllPrefabsNameCacheText);
             for (int i = 0; i < _allPrefabeMatch.Count;i++ )
             {
-                _AllPrefabsNameSceneText = _AllPrefabsNameSceneText+ "    " + _allPrefabeMatch[i].Groups["scene"]+": {scene: string,prefabs: string} = {scene: '"+_allPrefabeMatch[i].Groups["scene"]+"',prefabs: '"+_allPrefabeMatch[i].Groups["prefabs"]+"'};\n";
+                _AllPrefabsNameSceneText = _AllPrefabsNameSceneText+ "    " + _allPrefabeMatch[i].Groups["scene"]+": string = '"+_allPrefabeMatch[i].Groups["prefabs"]+"';\n";
             }
             //
             AllPrefabsTxt = (new Regex("{{AllPrefab}}")).Replace(AllPrefabsTxt, _AllPrefabsNameSceneText);

@@ -231,8 +231,8 @@
 
     class _AllPrefabNames {
         constructor() {
-            this.Prefabs = { scene: 'Prefabs', prefabs: 'Camera,DirectionalLight,' };
-            this.Prefabs2 = { scene: 'Prefabs2', prefabs: 'Cube,Sphere,Cylinder,' };
+            this.Prefabs = 'Camera,DirectionalLight';
+            this.Prefabs2 = 'Cube,Sphere,Cylinder';
         }
     }
 
@@ -279,13 +279,11 @@
                 [EKeyResName.skin]: EKeyResName.RootRes + '/' + EKeyResName.Other + '/' + EKeyResName.skin + '/',
             };
             let _AllPrefabNames = new AllPrefabsNames();
-            let _scennName;
             for (let _i in _AllPrefabNames) {
-                _scennName = _AllPrefabNames[_i]['scene'];
-                EKeyResName[_scennName] = _scennName;
-                this.m_KeyResList[EKeyResName[_scennName]] = EKeyResName.RootRes + '/' + EKeyResName[_scennName] + '/';
+                EKeyResName[_i] = _i;
+                this.m_KeyResList[EKeyResName[_i]] = EKeyResName.RootRes + '/' + EKeyResName[_i] + '/';
+                console.log('注入预制体资源路径', this.m_KeyResList[EKeyResName[_i]]);
             }
-            console.log(this.m_KeyResList);
             for (let _i in this.m_KeyResList) {
                 this.m_KeyResList_[_i] = this.m_KeyResList[_i];
             }
@@ -342,8 +340,8 @@
         }
         static prefab_url(prefab) {
             for (let _i in this._AllPrefabsNames) {
-                if (this._AllPrefabsNames[_i]['prefabs'].indexOf(prefab) != -1) {
-                    return KeyResManager.instance.getResURL(EKeyResName[this._AllPrefabsNames[_i]['scene']]) + 'Conventional/' + prefab + '.lh';
+                if (this._AllPrefabsNames[_i].indexOf(prefab) != -1) {
+                    return KeyResManager.instance.getResURL(EKeyResName[_i]) + 'Conventional/' + prefab + '.lh';
                 }
             }
             console.log(...ConsoleEx.packError('没有在场景找到预制体', prefab, '可能是没有导出场景预制体列表导致的。'));
@@ -7455,7 +7453,7 @@
         constructor() {
             this.name = "LayaMiniGame";
             this.ZHName = "LayaBox小游戏";
-            this.versions = "1.2.2";
+            this.versions = "1.2.4";
         }
     }
 

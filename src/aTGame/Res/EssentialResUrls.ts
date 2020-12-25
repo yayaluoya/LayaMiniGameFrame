@@ -46,6 +46,7 @@ export default class EssentialResUrls {
         return KeyResManager.instance.getResURL(EKeyResName.FGUI) + _name;
     }
 
+    //所有预制体名字列表
     private static _AllPrefabsNames: AllPrefabsNames = new AllPrefabsNames();
     /**
      * 预制体资源路径
@@ -54,8 +55,8 @@ export default class EssentialResUrls {
     public static prefab_url(prefab: string): string {
         //判断该预制体在那个场景中被导出的
         for (let _i in this._AllPrefabsNames) {
-            if (this._AllPrefabsNames[_i]['prefabs'].indexOf(prefab) != -1) {
-                return KeyResManager.instance.getResURL(EKeyResName[this._AllPrefabsNames[_i]['scene']]) + 'Conventional/' + prefab + '.lh';
+            if (this._AllPrefabsNames[_i].indexOf(prefab) != -1) {
+                return KeyResManager.instance.getResURL(EKeyResName[_i]) + 'Conventional/' + prefab + '.lh';
             }
         }
         //
