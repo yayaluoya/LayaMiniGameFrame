@@ -92,10 +92,8 @@ namespace JsonEditor
             string _prefabeNameTest = "";
             for (int i = 0; i < names.Count; i++)
             {
-                _prefabeNameTest=_prefabeNameTest+names[i]+",";
+                _prefabeNameTest = _prefabeNameTest + "@" + names[i] + "@";
             }
-            //去掉末尾逗号
-            _prefabeNameTest = (new Regex(",$")).Replace(_prefabeNameTest, "");
             // Debug.Log(_prefabeNameTest);
             //读取本地缓存各个场景预制体列表
             string _AllPrefabsNameCacheURL = @"./Assets/Cache/AllPrefabsNameCache.txt";

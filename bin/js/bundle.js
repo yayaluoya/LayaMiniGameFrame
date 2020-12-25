@@ -231,8 +231,8 @@
 
     class _AllPrefabNames {
         constructor() {
-            this.Prefabs = 'Camera,DirectionalLight';
-            this.Prefabs2 = 'Cube,Sphere,Cylinder';
+            this.Prefabs = '@Camera@@DirectionalLight@';
+            this.Prefabs2 = '@Cube@@Sphere@@Cylinder@';
         }
     }
 
@@ -340,7 +340,7 @@
         }
         static prefab_url(prefab) {
             for (let _i in this._AllPrefabsNames) {
-                if (this._AllPrefabsNames[_i].indexOf(prefab) != -1) {
+                if (this._AllPrefabsNames[_i].indexOf('@' + prefab + '@') != -1) {
                     return KeyResManager.instance.getResURL(EKeyResName[_i]) + 'Conventional/' + prefab + '.lh';
                 }
             }
@@ -1654,12 +1654,24 @@
             }
         }
         sendEvent(event, data) {
+            if (typeof event[MesManager._mesKey] == 'undefined') {
+                console.log('事件', event, '没有被注册。');
+                return;
+            }
             MesManager.instance.event(event[MesManager._mesKey], data);
         }
         onEvent(type, caller, listener, args) {
+            if (typeof type[MesManager._mesKey] == 'undefined') {
+                console.log('事件', type, '没有被注册。');
+                return;
+            }
             MesManager.instance.on(type[MesManager._mesKey], caller, listener, args);
         }
         offEnent(type, caller, listener) {
+            if (typeof type[MesManager._mesKey] == 'undefined') {
+                console.log('事件', type, '没有被注册。');
+                return;
+            }
             MesManager.instance.off(type[MesManager._mesKey], caller, listener);
         }
     }
