@@ -16,6 +16,8 @@
 
 <script>
 import Tree from "./Tree.vue";
+import TreeTool from '../com/TreeTool';
+
 export default {
     name: "MainTree",
     components: {
@@ -27,20 +29,15 @@ export default {
         };
     },
     methods: {
+        /** 刷新源数据 */
         update() {
             this.data = {};
             setTimeout(() => {
-                this.data = this.getData();
+                this.data = TreeTool.getDebugData();
             }, 0);
-        },
-        getData() {
-            return window["$data"];
         },
     },
     mounted() {
-        window["$data"] = {
-            a: 1,
-        };
         this.update();
     },
 };

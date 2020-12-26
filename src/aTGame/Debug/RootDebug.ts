@@ -65,14 +65,14 @@ export default class RootDebug {
      * 打开一个新窗口调试
      */
     public static openWindowDebug() {
-        let _win: Window = window.open('', MainConfig.GameName, `fullscreen=yes,top=100,left=100,width=414,height=736`);
+        let _win: Window = window.open('', MainConfig.GameName);
         //把新窗口注入到当前win
         window[EDebugWindow.DebugWindow] = _win;
         //写入首页
         let _url: string = window.location.href.replace('bin/index.html', 'DebugWindow/dist/');
         _win.document.getElementsByTagName('html')[0].innerHTML = debugIndex.replace(/"\//g, '"' + _url);
         //
-        console.log(...ConsoleEx.packWarn('打开调式窗口，并注入全局对象。'));
+        console.log(...ConsoleEx.packWarn('打开调式窗口。'));
         //提取JavaScript标签并且重新添加
         let _HTMLCollection: any = _win.document.getElementsByTagName('body')[0].getElementsByTagName('script');
         //注入消息沟通对象

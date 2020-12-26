@@ -1,12 +1,12 @@
 <template>
     <div class="tree">
         <div class="container">
-            <div v-for="(item, index) in data" :key="index">
+            <div v-for="i in data" :key="i">
                 <TreeNode
                     :parent="data"
                     :depath="0"
-                    :name="index"
-                    :node="item"
+                    :name="i"
+                    :node="data[i]"
                 ></TreeNode>
             </div>
         </div>
@@ -16,6 +16,7 @@
 <script>
 //树形结构根节点
 import TreeNode from "./TreeNode";
+
 export default {
     name: "tree",
     components: { TreeNode },
@@ -26,6 +27,11 @@ export default {
                 return {};
             },
         },
+    },
+    data(){
+        return {
+            //
+        };
     },
 };
 </script>

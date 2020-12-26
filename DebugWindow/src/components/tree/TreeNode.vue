@@ -2,8 +2,9 @@
     <div class="tree_node">
         <div
             class="name"
+            :class="depth%2==0? 'odd':'plural'"
             :style="{
-                paddingLeft: depth * 25 + 5 + 'px',
+                paddingLeft: depth * 20 + 'px',
             }"
         >
             <div class="title">
@@ -15,13 +16,14 @@
                     @click="show = !show"
                 >
                 </i>
-                {{ name }}
+                <div class="name1">{{ name }}</div>
                 <el-button
                     icon="el-icon-refresh"
                     size="mini"
                     circle
                     @click="update"
                 ></el-button>
+                <div class="name2">{{ name }}</div>
             </div>
             <div class="child_content" v-if="typeof node == 'string'">
                 <el-input v-model="parent[name]" size="mini"></el-input>
@@ -33,14 +35,24 @@
                 ></el-input-number>
             </div>
         </div>
-        <div v-show="show" class="child_node" v-if="typeof node == 'object'">
+        <div class="child_node" v-if="show && typeof node == 'object'">
             <TreeNode
-                v-for="(item, index) in node"
+                v-for="index in node"
                 :key="index"
                 :depth="depth + 1"
                 :parent="node"
                 :name="index"
-                :node="item"
+                :node="node[index]"
+            >
+            </TreeNode>
+            {{ node.prototype }}
+            <TreeNode
+                v-for="index in node.prototype"
+                :key="index"
+                :depth="depth + 1"
+                :parent="node"
+                :name="index"
+                :node="node[index]"
             >
             </TreeNode>
         </div>
@@ -113,7 +125,14 @@ export default {
             }
             > .el-button {
                 margin-left: 5px;
+                margin-right: 5px;
                 padding: 4px;
+            }
+            > .name1{
+                color: #14274E;
+            }
+            > .name2{
+                color: #7e8a97;
             }
         }
         /deep/.el-input__inner {

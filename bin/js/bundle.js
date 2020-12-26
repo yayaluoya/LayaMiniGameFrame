@@ -1434,8 +1434,8 @@
     MainGameConfig.ifAddOimoSystem = false;
     MainGameConfig.ifGameTest = (!MainConfig.OnLine) && false;
     MainGameConfig.ifTest = (!MainConfig.OnLine) && false;
-    MainGameConfig.ifDebug = (!MainConfig.OnLine) && false;
-    MainGameConfig.ifOpenWindowDebug = (!MainConfig.OnLine) && false;
+    MainGameConfig.ifDebug = (!MainConfig.OnLine) && true;
+    MainGameConfig.ifOpenWindowDebug = (!MainConfig.OnLine) && true;
 
     class DebugWindowCommunication {
         constructor() {
@@ -1467,7 +1467,7 @@
         }
     }
 
-    const html = `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" href="/favicon.ico"><title>DebugWindow</title><link href="/css/app.95e24fb6.css" rel="preload" as="style"><link href="/css/chunk-vendors.84bb20f7.css" rel="preload" as="style"><link href="/js/app.ce391a18.js" rel="preload" as="script"><link href="/js/chunk-vendors.1d158a68.js" rel="preload" as="script"><link href="/css/chunk-vendors.84bb20f7.css" rel="stylesheet"><link href="/css/app.95e24fb6.css" rel="stylesheet"></head><body><noscript><strong>We're sorry but DebugWindow doesn't work properly without JavaScript enabled. Please enable it to continue.</strong></noscript><div id="app"></div><script src="/js/chunk-vendors.1d158a68.js"></script><script src="/js/app.ce391a18.js"></script></body></html>`;
+    const html = `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" href="/favicon.ico"><title>DebugWindow</title><link href="/css/app.5fba7d14.css" rel="preload" as="style"><link href="/css/chunk-vendors.84bb20f7.css" rel="preload" as="style"><link href="/js/app.b1882bb9.js" rel="preload" as="script"><link href="/js/chunk-vendors.3196fbad.js" rel="preload" as="script"><link href="/css/chunk-vendors.84bb20f7.css" rel="stylesheet"><link href="/css/app.5fba7d14.css" rel="stylesheet"></head><body><noscript><strong>We're sorry but DebugWindow doesn't work properly without JavaScript enabled. Please enable it to continue.</strong></noscript><div id="app"></div><script src="/js/chunk-vendors.3196fbad.js"></script><script src="/js/app.b1882bb9.js"></script></body></html>`;
 
     var EDebugWindow;
     (function (EDebugWindow) {
@@ -1505,11 +1505,11 @@
         }
         _startDebug() { }
         static openWindowDebug() {
-            let _win = window.open('', MainConfig.GameName, `fullscreen=yes,top=100,left=100,width=414,height=736`);
+            let _win = window.open('', MainConfig.GameName);
             window[EDebugWindow.DebugWindow] = _win;
             let _url = window.location.href.replace('bin/index.html', 'DebugWindow/dist/');
             _win.document.getElementsByTagName('html')[0].innerHTML = html.replace(/"\//g, '"' + _url);
-            console.log(...ConsoleEx.packWarn('打开调式窗口，并注入全局对象。'));
+            console.log(...ConsoleEx.packWarn('打开调式窗口。'));
             let _HTMLCollection = _win.document.getElementsByTagName('body')[0].getElementsByTagName('script');
             _win[EDebugWindow.Mes] = new DebugWindowCommunication();
             let _scriptSrc = [];

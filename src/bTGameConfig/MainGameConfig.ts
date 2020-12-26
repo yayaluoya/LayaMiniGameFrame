@@ -20,8 +20,8 @@ export default class MainGameConfig {
     public static ifTest: boolean = (!MainConfig.OnLine) && false;
 
     /** 是否开启调试类 */
-    public static ifDebug: boolean = (!MainConfig.OnLine) && false;
+    public static ifDebug: boolean = (!MainConfig.OnLine) && true;
 
     /** 是否打开一个新窗口调试 */
-    public static ifOpenWindowDebug: boolean = (!MainConfig.OnLine) && false;
+    public static ifOpenWindowDebug: boolean = (!MainConfig.OnLine) && true;
 }
