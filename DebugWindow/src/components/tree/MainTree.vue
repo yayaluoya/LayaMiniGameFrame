@@ -1,44 +1,39 @@
 <template>
     <div id="MainTree">
-        <div>
-            <el-button
-                type="primary"
-                size="small"
-                plain
-                @click="update"
-                icon="el-icon-refresh"
-                >刷新</el-button
-            >
-        </div>
-        <Tree :data="data"> </Tree>
+        <TreeNode
+            :parent="TreeTool.getDebugDataRoot()"
+            :depath="0"
+            :name="TreeTool.getDebugDataRootKey()"
+            @update="update"
+        ></TreeNode>
     </div>
 </template>
 
 <script>
-import Tree from "./Tree.vue";
-import TreeTool from '../com/TreeTool';
+//树形结构根节点
+import TreeNode from "./TreeNode";
+import TreeTool from "../com/TreeTool";
 
 export default {
     name: "MainTree",
     components: {
-        Tree,
+        TreeNode,
     },
     data() {
         return {
+            TreeTool: TreeTool,
             data: {},
         };
     },
     methods: {
         /** 刷新源数据 */
-        update() {
-            this.data = {};
-            setTimeout(() => {
-                this.data = TreeTool.getDebugData();
-            }, 0);
+        update(key) {
+            TreeTool.getDebugDataRoot()[key] = TreeTool.getDebugDataRoot()[key];
+            this.data = TreeTool.getDebugDataRoot()[key];
         },
     },
     mounted() {
-        this.update();
+        this.data = this.TreeTool.getDebugData();
     },
 };
 </script>
@@ -49,9 +44,5 @@ export default {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     color: #2c3e50;
-    > div {
-        width: 100%;
-        text-align: right;
-    }
 }
 </style>
