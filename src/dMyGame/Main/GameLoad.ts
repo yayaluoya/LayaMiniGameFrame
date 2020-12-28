@@ -61,11 +61,7 @@ export default class GameLoad extends RootGameLoad {
             new LoadUIPack(EssentialResUrls.FGUIPack('GameMain'), 0),//游戏主包
         ];
         //
-        return new Promise<void>((r) => {
-            Laya.timer.once(3000, this, () => {
-                r();
-            });
-        });
+        return;
     }
 
     //初始化

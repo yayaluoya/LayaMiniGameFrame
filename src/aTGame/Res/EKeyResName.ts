@@ -6,6 +6,8 @@ export enum EKeyResName {
     RootRes = 'res',
     /** 配置表目录 */
     Config = 'Config',
+    /** 字体目录 */
+    Font = 'Font',
     /** FGUI资源目录 */
     FGUI = 'FGUI',
     /** 关卡配置表目录 */

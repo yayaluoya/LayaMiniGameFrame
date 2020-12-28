@@ -46,6 +46,14 @@ export default class EssentialResUrls {
         return KeyResManager.instance.getResURL(EKeyResName.FGUI) + _name;
     }
 
+    /**
+     * 字体地址
+     * @param _name 字体名字，加后缀
+     */
+    public static fontURL(_name): string {
+        return KeyResManager.instance.getResURL(EKeyResName.Font) + _name;
+    }
+
     //所有预制体名字列表
     private static _AllPrefabsNames: AllPrefabsNames = new AllPrefabsNames();
     /**

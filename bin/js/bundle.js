@@ -261,6 +261,7 @@
     (function (EKeyResName) {
         EKeyResName["RootRes"] = "res";
         EKeyResName["Config"] = "Config";
+        EKeyResName["Font"] = "Font";
         EKeyResName["FGUI"] = "FGUI";
         EKeyResName["LvConfig"] = "LvConfig";
         EKeyResName["Other"] = "Other";
@@ -288,6 +289,7 @@
                 [EKeyResName.Config]: EKeyResName.RootRes + '/' + EKeyResName.Config + '/',
                 [EKeyResName.FGUI]: EKeyResName.RootRes + '/' + EKeyResName.FGUI + '/',
                 [EKeyResName.LvConfig]: EKeyResName.RootRes + '/' + EKeyResName.LvConfig + '/',
+                [EKeyResName.Font]: EKeyResName.RootRes + '/' + EKeyResName.Font + '/',
                 [EKeyResName.Other]: EKeyResName.RootRes + '/' + EKeyResName.Other + '/',
                 [EKeyResName.icon]: EKeyResName.RootRes + '/' + EKeyResName.Other + '/' + EKeyResName.icon + '/',
                 [EKeyResName.img]: EKeyResName.RootRes + '/' + EKeyResName.Other + '/' + EKeyResName.img + '/',
@@ -363,6 +365,9 @@
         }
         static FGUIPack(_name) {
             return KeyResManager.instance.getResURL(EKeyResName.FGUI) + _name;
+        }
+        static fontURL(_name) {
+            return KeyResManager.instance.getResURL(EKeyResName.Font) + _name;
         }
         static prefab_url(prefab) {
             for (let _i in this._AllPrefabsNames) {
@@ -7235,11 +7240,7 @@
                 new LoadUIPack(EssentialResUrls.FGUIPack('GameCommon')),
                 new LoadUIPack(EssentialResUrls.FGUIPack('GameMain'), 0),
             ];
-            return new Promise((r) => {
-                Laya.timer.once(3000, this, () => {
-                    r();
-                });
-            });
+            return;
         }
         _OnInitEmptyScreen() {
             this._emptyScreenShowUI = FGuiRootManager.AddUI(FGUI_EmptyScreen, new FGuiData(), EUILayer.Main);

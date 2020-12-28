@@ -32,6 +32,7 @@ export default class KeyResManager {
             [EKeyResName.Config]: EKeyResName.RootRes + '/' + EKeyResName.Config + '/',
             [EKeyResName.FGUI]: EKeyResName.RootRes + '/' + EKeyResName.FGUI + '/',
             [EKeyResName.LvConfig]: EKeyResName.RootRes + '/' + EKeyResName.LvConfig + '/',
+            [EKeyResName.Font]: EKeyResName.RootRes + '/' + EKeyResName.Font + '/',
             [EKeyResName.Other]: EKeyResName.RootRes + '/' + EKeyResName.Other + '/',
             [EKeyResName.icon]: EKeyResName.RootRes + '/' + EKeyResName.Other + '/' + EKeyResName.icon + '/',
             [EKeyResName.img]: EKeyResName.RootRes + '/' + EKeyResName.Other + '/' + EKeyResName.img + '/',
