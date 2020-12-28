@@ -49,7 +49,7 @@ export default class GameLoad extends RootGameLoad {
     private _loadShowUI: FGUI_splash;
 
     //初始化之前的操作
-    protected _Init() {
+    protected _Init(): Promise<void> {
         GlobalStateManager.instance.GameInit();
         //白屏时显示的包
         this._initEmptyScreen = new LoadUIPack(EssentialResUrls.FGUIPack('InitEmptyScreen'));
@@ -60,6 +60,12 @@ export default class GameLoad extends RootGameLoad {
             new LoadUIPack(EssentialResUrls.FGUIPack('GameCommon')),//游戏公共包
             new LoadUIPack(EssentialResUrls.FGUIPack('GameMain'), 0),//游戏主包
         ];
+        //
+        return new Promise<void>((r) => {
+            Laya.timer.once(3000, this, () => {
+                r();
+            });
+        });
     }
 
     //初始化

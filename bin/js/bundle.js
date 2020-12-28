@@ -6829,54 +6829,31 @@
                 + this._loadProgressWeight.otherUI * this._otherUIProgress;
             return (loadWeight / totalWeight) * 100;
         }
-        loadSubpackage() {
-            return new Promise((r) => {
-                if (FrameSubpackages.subpackages.length > 0) {
-                    let _promiseList = [];
-                    for (let _o of FrameSubpackages.subpackages) {
-                        if (_o.name) {
-                            _promiseList.push(new Promise((r) => {
-                                PlatformManager.PlatformInstance.LoadSubpackage(_o.name, Laya.Handler.create(this, () => {
-                                    r();
-                                }), Laya.Handler.create(this, () => {
-                                    r();
-                                }), undefined);
-                            }));
-                        }
-                    }
-                    Promise.all(_promiseList).then(() => {
-                        r();
-                    });
-                }
-                else {
-                    r();
-                }
-            });
-        }
-        __Init() {
-            return new Promise((r) => {
-                PlatformManager.instance.init();
-                PlatformManager.instance.initPlatform();
-                this.loadSubpackage().then(() => {
-                    SceneManager.instance.init();
-                    r();
-                });
-            });
-        }
         Enter(_this, _beforeHandler, _backHandler) {
             this.m_handlerThis = _this;
             this.m_beforeHandler = _beforeHandler;
             this.m_backHandler = _backHandler;
-            this.__Init().then(() => {
-                this.Init();
-            });
+            this.Init();
         }
-        _Init() { }
+        _Init() {
+            return;
+        }
         Init() {
-            this._Init();
-            this.initEmptyScreen();
+            let _promise = this._Init();
+            let _f = () => {
+                this.initEmptyScreen();
+            };
+            if (_promise) {
+                this._Init().then(() => {
+                    _f();
+                });
+            }
+            else {
+                _f();
+            }
         }
         initEmptyScreen() {
+            SceneManager.instance.init();
             FGuiRootManager.Init();
             this.OnBindUI();
             let loadUrl = [];
@@ -7258,6 +7235,11 @@
                 new LoadUIPack(EssentialResUrls.FGUIPack('GameCommon')),
                 new LoadUIPack(EssentialResUrls.FGUIPack('GameMain'), 0),
             ];
+            return new Promise((r) => {
+                Laya.timer.once(3000, this, () => {
+                    r();
+                });
+            });
         }
         _OnInitEmptyScreen() {
             this._emptyScreenShowUI = FGuiRootManager.AddUI(FGUI_EmptyScreen, new FGuiData(), EUILayer.Main);
@@ -7447,8 +7429,43 @@
 
     class MainStart {
         constructor() {
-            this.upGameLoad();
-            this.gameLoad();
+            this.init().then(() => {
+                this.upGameLoad();
+                this.gameLoad();
+            });
+        }
+        init() {
+            return new Promise((r) => {
+                PlatformManager.instance.init();
+                PlatformManager.instance.initPlatform();
+                this.loadSubpackage().then(() => {
+                    r();
+                });
+            });
+        }
+        loadSubpackage() {
+            return new Promise((r) => {
+                if (FrameSubpackages.subpackages.length > 0) {
+                    let _promiseList = [];
+                    for (let _o of FrameSubpackages.subpackages) {
+                        if (_o.name) {
+                            _promiseList.push(new Promise((r) => {
+                                PlatformManager.PlatformInstance.LoadSubpackage(_o.name, Laya.Handler.create(this, () => {
+                                    r();
+                                }), Laya.Handler.create(this, () => {
+                                    r();
+                                }), undefined);
+                            }));
+                        }
+                    }
+                    Promise.all(_promiseList).then(() => {
+                        r();
+                    });
+                }
+                else {
+                    r();
+                }
+            });
         }
         upGameLoad() {
             if (MainGameConfig.ifTest) {

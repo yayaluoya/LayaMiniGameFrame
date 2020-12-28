@@ -8,16 +8,68 @@ import MyMainTest from '../eTest/MyMainTest';
 import MainDebug from '../aTGame/Debug/MainDebug';
 import MyMainDebug from '../fDebug/MyMainDebug';
 import RootDebug from '../aTGame/Debug/RootDebug';
+import FrameSubpackages from '../cFrameBridge/FrameSubpackages';
+import PlatformManager from '../aTGame/Platform/PlatformManager';
 /**
  * 游戏开始类
  */
 export default class MainStart {
     //游戏开始创建
     constructor() {
+        //初始化
+        this.init().then(() => {
+            //
+            this.upGameLoad();
+            //
+            this.gameLoad();
+        });
+    }
+
+    //初始化之前执行
+    private init(): Promise<void> {
+        return new Promise<void>((r: Function) => {
+            //初始化平台管理器
+            PlatformManager.instance.init();
+            PlatformManager.instance.initPlatform();
+            //加载分包资源
+            this.loadSubpackage().then(() => {
+                r();
+            });
+        });
+    }
+
+    //加载分包资源
+    private loadSubpackage(): Promise<void> {
         //
-        this.upGameLoad();
-        //
-        this.gameLoad();
+        return new Promise<void>((r) => {
+            //分包列表
+            if (FrameSubpackages.subpackages.length > 0) {
+                //加载所有分包
+                let _promiseList: Promise<void>[] = [];
+                for (let _o of FrameSubpackages.subpackages) {
+                    //
+                    if (_o.name) {
+                        _promiseList.push(new Promise<void>((r) => {
+                            PlatformManager.PlatformInstance.LoadSubpackage(
+                                _o.name,
+                                Laya.Handler.create(this, () => {
+                                    r();
+                                }), Laya.Handler.create(this, () => {
+                                    r();
+                                }),
+                                undefined
+                            );
+                        }));
+                    }
+                }
+                //
+                Promise.all<Promise<void>>(_promiseList).then(() => {
+                    r();
+                });
+            } else {
+                r();
+            }
+        });
     }
 
     /** 游戏加载之前 */

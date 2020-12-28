@@ -5,8 +5,6 @@ import FGuiRootManager from '../UI/FGUI/FGuiRootManager';
 import Global3D from '../3D/Global3D';
 import EssentialResUrls from '../Res/EssentialResUrls';
 import CommonDataProxy from '../Commom/CommonDataProxy';
-import FrameSubpackages from '../../cFrameBridge/FrameSubpackages';
-import PlatformManager from '../Platform/PlatformManager';
 import { ELevelSceneName } from '../../cFrameBridge/Config/ELevelSceneName';
 /**
  * 游戏进入之前的加载操作基类
@@ -69,55 +67,6 @@ export default class RootGameLoad {
         return (loadWeight / totalWeight) * 100;
     }
 
-    //加载分包资源
-    private loadSubpackage(): Promise<void> {
-        //
-        return new Promise<void>((r) => {
-            //分包列表
-            if (FrameSubpackages.subpackages.length > 0) {
-                //加载所有分包
-                let _promiseList: Promise<void>[] = [];
-                for (let _o of FrameSubpackages.subpackages) {
-                    //
-                    if (_o.name) {
-                        _promiseList.push(new Promise<void>((r) => {
-                            PlatformManager.PlatformInstance.LoadSubpackage(
-                                _o.name,
-                                Laya.Handler.create(this, () => {
-                                    r();
-                                }), Laya.Handler.create(this, () => {
-                                    r();
-                                }),
-                                undefined
-                            );
-                        }));
-                    }
-                }
-                //
-                Promise.all<Promise<void>>(_promiseList).then(() => {
-                    r();
-                });
-            } else {
-                r();
-            }
-        });
-    }
-
-    //初始化之前执行
-    private __Init(): Promise<void> {
-        return new Promise<void>((r: Function) => {
-            //初始化平台管理器
-            PlatformManager.instance.init();
-            PlatformManager.instance.initPlatform();
-            //加载分包资源
-            this.loadSubpackage().then(() => {
-                //初始化场景管理器
-                SceneManager.instance.init();
-                r();
-            });
-        });
-    }
-
     /**
      * 开始
      */
@@ -127,25 +76,36 @@ export default class RootGameLoad {
         this.m_beforeHandler = _beforeHandler;
         this.m_backHandler = _backHandler;
         //
-        this.__Init().then(() => {
-            //
-            this.Init();
-        });
+        this.Init();
     }
 
-    //初始化之前(使用时重写)
-    protected _Init() { }
+    //初始化之前，可以返回一个promise(使用时重写)
+    protected _Init(): Promise<void> {
+        return;
+    }
 
     // 初始化
     private Init() {
-        //初始化之前
-        this._Init();
-        //开始初始化白屏页面
-        this.initEmptyScreen();
+        //判断初始化函数有没有promise返回值
+        let _promise: Promise<void> = this._Init();
+        let _f = () => {
+            //开始初始化白屏页面
+            this.initEmptyScreen();
+        }
+        if (_promise) {
+            //初始化之前
+            this._Init().then(() => {
+                _f();
+            });
+        } else {
+            _f();
+        }
     }
 
     //初始化空白页面
     private initEmptyScreen() {
+        //初始化场景管理器
+        SceneManager.instance.init();
         //初始化FGUI
         FGuiRootManager.Init();
         //捆绑所有UI
