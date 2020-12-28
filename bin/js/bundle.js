@@ -7506,7 +7506,7 @@
         constructor() {
             this.name = "LayaMiniGame";
             this.ZHName = "LayaBox小游戏";
-            this.versions = "1.2.4";
+            this.versions = "1.2.5";
         }
     }
 
