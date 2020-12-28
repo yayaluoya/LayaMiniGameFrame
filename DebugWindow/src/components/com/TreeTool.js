@@ -1,10 +1,13 @@
 import { getKeys, getClassName } from "./Tool";
 
+//免过滤键
+let _keyNotFilterArray = ['_children'];
+
 //
 function getAllKeys_(_o) {
     let _ifKey = true;
     let _ifValue = true;
-    return getKeys(_o, (key, o) => {
+    let _keys = getKeys(_o, (key, o) => {
         //不是方法和不是下划线开头的属性
         _ifKey = true;
         _ifValue = true;
@@ -14,15 +17,25 @@ function getAllKeys_(_o) {
             }
         } catch {
             _ifKey = false;
-            console.log('有一个键获取值时出错了', key, o);
+            // console.log('有一个键获取值时出错了', key, o);
         }
-        _ifValue = !/^_/.test(key);
-        return typeof _ifKey && _ifValue;
+        //保留指定不过滤的内容
+        if (_keyNotFilterArray.findIndex((item) => { return item == key }) == -1) {
+            //去掉前缀是下划线的
+            _ifValue = !/^_/.test(key);
+        }
+        return _ifKey && _ifValue;
     });
+    //
+    return _keys;
 }
 
 //获取对象可依次遍历的属性值
 function getKeys_(_o) {
+    //判断是否为空
+    if (typeof _o == "undefined" || (typeof _o == "object" && !_o)) {
+        return [];
+    }
     let _keys = Object.getOwnPropertyNames(_o);
     //剔除方法和_开头的属性
     _keys = _keys.filter((item) => {
@@ -85,7 +98,7 @@ let _TreeTool = {
 
             let _ap = new Proxy({ a: 1, b: 2 }, {});
 
-            console.log(anotherObj);
+            // console.log(anotherObj);
 
             var o = {};
             Object.defineProperty(o, "x", {
@@ -111,6 +124,7 @@ let _TreeTool = {
                 this.boole = true;
                 this.a = 1;
                 this.b = 2;
+                this.flot = 1.004;
                 _f.prototype.c = 3;
                 _f.prototype.d = 4;
                 _f.prototype.f = function () {
@@ -123,7 +137,7 @@ let _TreeTool = {
                 };
             }
             getDebugDataRoot()[getDebugDataRootKey()] = new _f();
-            console.log(getDebugDataRoot()[getDebugDataRootKey()]);
+            // console.log(getDebugDataRoot()[getDebugDataRootKey()]);
         }
         //
         return getDebugDataRoot()[getDebugDataRootKey()];

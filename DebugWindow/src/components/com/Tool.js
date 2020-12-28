@@ -17,6 +17,10 @@ function getKeys(_o, _filter) {
 //配合获取所哟原型链上的内容
 function _getKey(_o, _keys, _filter) {
     if (typeof _o == "object") {
+        //判断对象是否为null
+        if (!_o) {
+            return;
+        }
         let __keys = Object.getOwnPropertyNames(_o);
         //剔除这个对象公共的键
         __keys = __keys.filter((item) => {
