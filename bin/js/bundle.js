@@ -6849,7 +6849,7 @@
                 this.initEmptyScreen();
             };
             if (_promise) {
-                this._Init().then(() => {
+                _promise.then(() => {
                     _f();
                 });
             }

@@ -94,7 +94,7 @@ export default class RootGameLoad {
         }
         if (_promise) {
             //初始化之前
-            this._Init().then(() => {
+            _promise.then(() => {
                 _f();
             });
         } else {
