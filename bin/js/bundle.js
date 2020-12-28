@@ -906,7 +906,6 @@
     var EProcessor;
     (function (EProcessor) {
         EProcessor["CameraPro"] = "EProcessor_CameraPro";
-        EProcessor["HeightFogCubePro"] = "EProcessor_HeightFogCubePro";
     })(EProcessor || (EProcessor = {}));
 
     class ProScriptLink {
@@ -2594,13 +2593,6 @@
         }
     }
 
-    class HeightFogCubePro extends BasePrefabPro {
-        constructor() {
-            super(...arguments);
-            this.ifAddProStampScript = false;
-        }
-    }
-
     class ProManagerProxy extends RootClassProxy {
         constructor() { super(); }
         static get instance() {
@@ -2617,9 +2609,6 @@
         }
         get cameraPro() {
             return this.getPro(EProcessor.CameraPro);
-        }
-        get heightFogCubePro() {
-            return this.getPro(EProcessor.HeightFogCubePro);
         }
     }
 
@@ -2654,11 +2643,9 @@
         }
         register() {
             this.m_proList[EProcessor.CameraPro] = new CameraPro(EProcessor.CameraPro);
-            this.m_proList[EProcessor.HeightFogCubePro] = new HeightFogCubePro(EProcessor.HeightFogCubePro);
         }
         allotPrefab(_prefabs) {
             this.m_proList[EProcessor.CameraPro].startPor({ [PrefabNames.Camera]: [EnvironmentManager.instance.camera] });
-            this.m_proList[EProcessor.HeightFogCubePro].startPor({ [PrefabNames.HeightFog]: _prefabs[PrefabNames.HeightFog] });
         }
         allotMediator() {
         }

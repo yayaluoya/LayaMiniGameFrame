@@ -1,7 +1,6 @@
 import RootProManager from './z_T/RootProManager';
 import { EProcessor } from './c_Enum/EProcessor';
 import CameraPro from './d_SpecialPro/CameraPro';
-import HeightFogCubePro from './d_SpecialPro/HeightFogCubePro';
 import { ProManagerSprList } from './z_T/RootProManager';
 import ProManagerProxy from './ProManagerProxy';
 import EnvironmentManager from '../Manager/EnvironmentManager';
@@ -35,7 +34,6 @@ export default class ProManager extends RootProManager {
     protected register() {
         //默认加工者
         this.m_proList[EProcessor.CameraPro] = new CameraPro(EProcessor.CameraPro);
-        this.m_proList[EProcessor.HeightFogCubePro] = new HeightFogCubePro(EProcessor.HeightFogCubePro);
         //
     }
 
@@ -43,7 +41,6 @@ export default class ProManager extends RootProManager {
     protected allotPrefab(_prefabs: ProManagerSprList) {
         //
         this.m_proList[EProcessor.CameraPro].startPor({ [PrefabNames.Camera]: [EnvironmentManager.instance.camera] });
-        this.m_proList[EProcessor.HeightFogCubePro].startPor({ [PrefabNames.HeightFog]: _prefabs[PrefabNames.HeightFog] });
         //开始分配
     }
 
