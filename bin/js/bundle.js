@@ -370,8 +370,12 @@
             return KeyResManager.instance.getResURL(EKeyResName.Font) + _name;
         }
         static prefab_url(prefab) {
+            if (this._prefabsSceneCache[prefab]) {
+                return KeyResManager.instance.getResURL(EKeyResName[this._prefabsSceneCache[prefab]]) + 'Conventional/' + prefab + '.lh';
+            }
             for (let _i in this._AllPrefabsNames) {
                 if (this._AllPrefabsNames[_i].indexOf('@' + prefab + '@') != -1) {
+                    this._prefabsSceneCache[prefab] = _i;
                     return KeyResManager.instance.getResURL(EKeyResName[_i]) + 'Conventional/' + prefab + '.lh';
                 }
             }
@@ -379,6 +383,7 @@
         }
     }
     EssentialResUrls._AllPrefabsNames = new AllPrefabsNames();
+    EssentialResUrls._prefabsSceneCache = {};
 
     class ArrayUtils {
         static Unique(arr) {

@@ -56,14 +56,24 @@ export default class EssentialResUrls {
 
     //所有预制体名字列表
     private static _AllPrefabsNames: AllPrefabsNames = new AllPrefabsNames();
+    private static _prefabsSceneCache: {
+        [_index: string]: string,
+    } = {};
     /**
      * 预制体资源路径
      * @param prefab 预制体名字
      */
     public static prefab_url(prefab: string): string {
+        //先在缓存中查找场景名字
+        if (this._prefabsSceneCache[prefab]) {
+            return KeyResManager.instance.getResURL(EKeyResName[this._prefabsSceneCache[prefab]]) + 'Conventional/' + prefab + '.lh';
+        }
         //判断该预制体在那个场景中被导出的
         for (let _i in this._AllPrefabsNames) {
             if (this._AllPrefabsNames[_i].indexOf('@' + prefab + '@') != -1) {
+                //添加到缓存
+                this._prefabsSceneCache[prefab] = _i;
+                //
                 return KeyResManager.instance.getResURL(EKeyResName[_i]) + 'Conventional/' + prefab + '.lh';
             }
         }
