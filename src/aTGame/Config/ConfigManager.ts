@@ -21,7 +21,7 @@ export class ConfigManager {
      * 添加配置文件
      * @param configName 配置文件
      */
-    public static AddConfig(configName: any) {
+    public static AddConfig(configName: { [index: string]: any, config: any, data: any, path: string }) {
         ConfigManager._configList.push(configName);
     }
 
