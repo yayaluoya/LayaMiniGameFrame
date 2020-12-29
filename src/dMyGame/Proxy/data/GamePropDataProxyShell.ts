@@ -24,7 +24,7 @@ export default class GamePropDataProxyShell extends RootDataProxyShell {
     //游戏主数据
     private m_propData: GamePropData;
 
-    //出释怀数据
+    //初始化数据
     protected initData() {
         this.m_propData = GamePropDataProxy.instance.saveData;
         //

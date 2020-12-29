@@ -11,7 +11,6 @@ import { EEventUI } from '../EventEnum/EEventUI';
 import LevelConfigProxy from '../ConfigProxy/LevelConfigProxy';
 import { EOtherLevelName } from '../Enum/EOtherLevelName';
 import GameDataProxyShell from '../Proxy/data/GameDataProxyShell';
-import GameDataProxy from '../GameData/GameDataProxy';
 /**
  * 关卡管理器
  * 3D游戏实际从这里开始，沟通外界创建和销毁场景
@@ -79,7 +78,7 @@ export default class CustomsManager implements IRootManager {
         let lvId: number;
         //判断游戏是否已经初始化
         if (this.m_ifInit) {
-            lvId = GameDataProxy.instance.saveData.onCustoms;
+            lvId = GameDataProxyShell.instance.gameData.onCustoms;
         } else {
             this.m_ifInit = true;
             // 获取默认关卡

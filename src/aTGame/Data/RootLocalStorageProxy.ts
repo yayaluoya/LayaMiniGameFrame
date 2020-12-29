@@ -236,7 +236,15 @@ export default abstract class RootLocalStorageProxy<T extends RootLocalStorageDa
     /**
      * 保存数据到本地
      */
-    protected _SaveToDisk(_saveData: T) {
+    protected SaveToDisk(_saveData: T) {
+        //
+        setTimeout(() => {
+            //限流，每一帧只能执行一次
+            this._SaveToDisk(_saveData);
+        }, 0);
+    }
+    //保存数据到本地
+    private _SaveToDisk(_saveData: T) {
         let json = JSON.stringify(_saveData);
         Laya.LocalStorage.setJSON(this.saveName, json);
         //判断是否是线上环境

@@ -2,6 +2,7 @@ import BaseUIMediator from "../../../aTGame/UI/FGUI/BaseUIMediator";
 import FGUI_PGameTestMain from "../../../FGUI/GameMain/FGUI_PGameTestMain";
 import { EUI } from "../../Enum/EUI";
 import UIManagerProxy from "../../Manager/Proxy/UIManagerProxy";
+import GameTestDataProxyShell from "../../Proxy/data/GameTestDataProxyShell";
 import PGameUITestMediator from "./PGameUITestMediator";
 
 /**
@@ -33,6 +34,11 @@ export default class PGameTestMainMediator extends BaseUIMediator<FGUI_PGameTest
         UIManagerProxy.instance.setUIState([
             { typeIndex: EUI.TestPlatform },
         ], false);
+        //
+        GameTestDataProxyShell.instance.data.testNumber++;
+        GameTestDataProxyShell.instance.data.testNumber++;
+        GameTestDataProxyShell.instance.data.testNumber++;
+        GameTestDataProxyShell.instance.data.testNumber++;
     }
 
     //打开测试页面

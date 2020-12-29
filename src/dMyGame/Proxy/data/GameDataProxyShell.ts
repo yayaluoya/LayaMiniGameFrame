@@ -43,13 +43,13 @@ export default class GameDataProxyShell extends RootDataProxyShell {
         _maxCustoms = Math.floor(_maxCustoms);
         //
         if (this.m_gameData.maxCustoms == _maxCustoms) { return; }
-        //
+        //判断其他关卡数据是否超出了界限
         this.m_gameData.maxCustoms = _maxCustoms;
-        if (this.m_gameData.onCustoms > _maxCustoms) {
-            this.m_gameData.onCustoms = _maxCustoms;
-        }
         if (this.m_gameData.maxCustomsRecord > _maxCustoms) {
             this.m_gameData.maxCustomsRecord = _maxCustoms;
+        }
+        if (this.m_gameData.onCustoms > _maxCustoms) {
+            this.m_gameData.onCustoms = ECommonLeve.DefaultLeveId;
         }
     }
 
@@ -85,25 +85,11 @@ export default class GameDataProxyShell extends RootDataProxyShell {
     }
 
     /**
-     * 设置当前关卡id
-     * @param _n 关卡id
-     */
-    public setCustoms(_n: number) {
-        //化整
-        _n = Math.floor(_n);
-        //
-        if (_n > this.m_gameData.maxCustoms) {
-            return;
-        }
-        this.m_gameData.onCustoms = _n;
-    }
-
-    /**
-     * 增加关卡
+     * 设置关卡
      * @param _number 增加关卡数量
      * @return 是否增加成功
      */
-    public addCustoms(_number: number = 1): boolean {
+    public setCustoms(_number: number = 1): boolean {
         //化整
         _number = Math.floor(_number);
         //设置当前关卡

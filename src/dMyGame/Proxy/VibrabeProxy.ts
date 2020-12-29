@@ -1,5 +1,5 @@
 import PlatformManager from '../../aTGame/Platform/PlatformManager';
-import GameDataProxy from '../GameData/GameDataProxy';
+import GameDataProxyShell from './data/GameDataProxyShell';
 /**
  * 振动代理
  */
@@ -21,7 +21,7 @@ export default class VibrabeProxy {
      * @param _modle 振动模式
      */
     public vibrate(isLong: boolean) {
-        if (!GameDataProxy.instance.saveData.ifOpenVibrate) return;
+        if (!GameDataProxyShell.instance.gameData.ifOpenVibrate) return;
         //
         PlatformManager.PlatformInstance.device.Vibrate(isLong);
     }
@@ -31,7 +31,7 @@ export default class VibrabeProxy {
      * @param pattern 震动时间
      */
     public originalVibration(pattern: number | number[]) {
-        if (!GameDataProxy.instance.saveData.ifOpenVibrate) return;
+        if (!GameDataProxyShell.instance.gameData.ifOpenVibrate) return;
         //
     }
 }

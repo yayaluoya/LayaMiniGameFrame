@@ -4,7 +4,6 @@ import Global3D from '../../aTGame/3D/Global3D';
 import IRootManager from '../../aTGame/Manager/IRootManager';
 import { EEventScene } from '../EventEnum/EEventScene';
 import MesManager from './MesManager';
-import GameDataProxy from '../GameData/GameDataProxy';
 import { EOtherLevelName } from '../Enum/EOtherLevelName';
 import { OtherEnvironmentConfig } from '../_config/OtherEnvironmentConfig';
 import EnvironmentConfigProxy from '../ConfigProxy/EnvironmentConfigProxy';
@@ -12,6 +11,7 @@ import OtherEnvironmentConfigProxy from '../ConfigProxy/OtherEnvironmentProxy';
 import MainGameConfig from '../../bTGameConfig/MainGameConfig';
 import RootDebug from '../../aTGame/Debug/RootDebug';
 import { EDebugWindowEvent } from '../../aTGame/Debug/mes/EDebugWindowEvent';
+import GameDataProxyShell from '../Proxy/data/GameDataProxyShell';
 /**
  * 环境管理器，负责场景的环境管理
  */
@@ -51,7 +51,7 @@ export default class EnvironmentManager implements IRootManager {
      */
     public setEnvironment(_scene: Laya.Sprite3D) {
         this.m_scene = _scene;
-        let _lv: number = GameDataProxy.instance.saveData.onCustoms;
+        let _lv: number = GameDataProxyShell.instance.gameData.onCustoms;
         this.m_enviromentConfig = EnvironmentConfigProxy.instance.byLevelIdGetData(_lv);
         console.log('关卡环境配置参数->' + _lv + '->', this.m_enviromentConfig);
         //根据配置数据设置相关状态

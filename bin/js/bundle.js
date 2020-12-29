@@ -1715,6 +1715,87 @@
     MesManager._mesKey = Symbol('$MesKey');
     MesManager._onlyKey = 0;
 
+    var EnvironmentConfig;
+    (function (EnvironmentConfig) {
+        class config {
+        }
+        EnvironmentConfig.config = config;
+        EnvironmentConfig.path = "res/config/EnvironmentConfig.json";
+    })(EnvironmentConfig || (EnvironmentConfig = {}));
+
+    class EnvironmentConfigProxy extends BaseConfigDataProxy {
+        constructor() {
+            super();
+        }
+        static get instance() {
+            if (this._instance == null) {
+                this._instance = new EnvironmentConfigProxy();
+            }
+            return this._instance;
+        }
+        initData() {
+            this.m_dataList = EnvironmentConfig.dataList;
+        }
+        byLevelIdGetData(_id) {
+            return this.m_dataList.find((item) => {
+                return item.id == _id;
+            });
+        }
+    }
+
+    var OtherEnvironmentConfig;
+    (function (OtherEnvironmentConfig) {
+        class config {
+        }
+        OtherEnvironmentConfig.config = config;
+        OtherEnvironmentConfig.path = "res/config/OtherEnvironmentConfig.json";
+    })(OtherEnvironmentConfig || (OtherEnvironmentConfig = {}));
+
+    class OtherEnvironmentConfigProxy extends BaseConfigDataProxy {
+        constructor() {
+            super();
+        }
+        static get instance() {
+            if (this._instance == null) {
+                this._instance = new OtherEnvironmentConfigProxy();
+            }
+            return this._instance;
+        }
+        initData() {
+            this.m_dataList = OtherEnvironmentConfig.dataList;
+        }
+        byLevelIdGetData(_id) {
+            return this.m_dataList.find((item) => {
+                return item.id == _id;
+            });
+        }
+        byLevelNameGetData(_name) {
+            return this.m_dataList.find((item) => {
+                return item.name == _name;
+            });
+        }
+    }
+
+    var EDebugWindowEvent;
+    (function (EDebugWindowEvent) {
+        EDebugWindowEvent["SetEnvironment"] = "setEnvironment";
+    })(EDebugWindowEvent || (EDebugWindowEvent = {}));
+
+    var ECommonLeve;
+    (function (ECommonLeve) {
+        ECommonLeve[ECommonLeve["MinLeveNumber"] = 3] = "MinLeveNumber";
+        ECommonLeve[ECommonLeve["DefaultLeveId"] = 1] = "DefaultLeveId";
+        ECommonLeve[ECommonLeve["DebugLeveId"] = 0] = "DebugLeveId";
+        ECommonLeve[ECommonLeve["NewHandLeveId"] = 1] = "NewHandLeveId";
+    })(ECommonLeve || (ECommonLeve = {}));
+
+    class RootDataProxyShell {
+        constructor() {
+            this.initData();
+        }
+        initData() { }
+    }
+
     class StringUtils {
         static SplitToIntArray(str, splitStr) {
             var splits = str.split(splitStr);
@@ -2381,14 +2462,6 @@
     RootLocalStorageProxy.$RootDataCruxKey = Symbol('$RootDataCruxKey');
     RootLocalStorageProxy.$RootParentDataKey = Symbol('$RootParentDataKey');
 
-    var ECommonLeve;
-    (function (ECommonLeve) {
-        ECommonLeve[ECommonLeve["MinLeveNumber"] = 3] = "MinLeveNumber";
-        ECommonLeve[ECommonLeve["DefaultLeveId"] = 1] = "DefaultLeveId";
-        ECommonLeve[ECommonLeve["DebugLeveId"] = 0] = "DebugLeveId";
-        ECommonLeve[ECommonLeve["NewHandLeveId"] = 1] = "NewHandLeveId";
-    })(ECommonLeve || (ECommonLeve = {}));
-
     class RootGameData {
     }
 
@@ -2428,71 +2501,80 @@
         }
     }
 
-    var EnvironmentConfig;
-    (function (EnvironmentConfig) {
-        class config {
-        }
-        EnvironmentConfig.config = config;
-        EnvironmentConfig.path = "res/config/EnvironmentConfig.json";
-    })(EnvironmentConfig || (EnvironmentConfig = {}));
-
-    class EnvironmentConfigProxy extends BaseConfigDataProxy {
-        constructor() {
-            super();
-        }
+    class GameDataProxyShell extends RootDataProxyShell {
+        constructor() { super(); }
         static get instance() {
-            if (this._instance == null) {
-                this._instance = new EnvironmentConfigProxy();
+            if (!this.m_instance) {
+                this.m_instance = new GameDataProxyShell();
             }
-            return this._instance;
+            return this.m_instance;
+        }
+        get gameData() {
+            return this.m_gameData;
         }
         initData() {
-            this.m_dataList = EnvironmentConfig.dataList;
+            this.m_gameData = GameDataProxy.instance.saveData;
         }
-        byLevelIdGetData(_id) {
-            return this.m_dataList.find((item) => {
-                return item.id == _id;
-            });
-        }
-    }
-
-    var OtherEnvironmentConfig;
-    (function (OtherEnvironmentConfig) {
-        class config {
-        }
-        OtherEnvironmentConfig.config = config;
-        OtherEnvironmentConfig.path = "res/config/OtherEnvironmentConfig.json";
-    })(OtherEnvironmentConfig || (OtherEnvironmentConfig = {}));
-
-    class OtherEnvironmentConfigProxy extends BaseConfigDataProxy {
-        constructor() {
-            super();
-        }
-        static get instance() {
-            if (this._instance == null) {
-                this._instance = new OtherEnvironmentConfigProxy();
+        initCustoms(_maxCustoms) {
+            _maxCustoms = Math.floor(_maxCustoms);
+            if (this.m_gameData.maxCustoms == _maxCustoms) {
+                return;
             }
-            return this._instance;
+            this.m_gameData.maxCustoms = _maxCustoms;
+            if (this.m_gameData.maxCustomsRecord > _maxCustoms) {
+                this.m_gameData.maxCustomsRecord = _maxCustoms;
+            }
+            if (this.m_gameData.onCustoms > _maxCustoms) {
+                this.m_gameData.onCustoms = ECommonLeve.DefaultLeveId;
+            }
         }
-        initData() {
-            this.m_dataList = OtherEnvironmentConfig.dataList;
+        ifNewHandCustoms() {
+            return this.m_gameData.onCustoms == ECommonLeve.NewHandLeveId && this.m_gameData.maxCustomsRecord <= ECommonLeve.NewHandLeveId;
         }
-        byLevelIdGetData(_id) {
-            return this.m_dataList.find((item) => {
-                return item.id == _id;
-            });
+        setIfOpenBGM(_b) {
+            this.m_gameData.ifOpenBgm = _b;
         }
-        byLevelNameGetData(_name) {
-            return this.m_dataList.find((item) => {
-                return item.name == _name;
-            });
+        setIfOpenSound(_b) {
+            this.m_gameData.ifOpenSound = _b;
+        }
+        setIfOpenVibrate(_b) {
+            this.m_gameData.ifOpenVibrate = _b;
+        }
+        setCustoms(_number = 1) {
+            _number = Math.floor(_number);
+            let _sum = this.m_gameData.onCustoms + _number;
+            let _win = false;
+            if (_sum <= this.m_gameData.maxCustoms) {
+                this.m_gameData.onCustoms = _sum;
+                if (_sum > this.m_gameData.maxCustomsRecord) {
+                    this.m_gameData.maxCustomsRecord = _sum;
+                }
+                _win = true;
+            }
+            else {
+                this.m_gameData.onCustoms = ECommonLeve.DefaultLeveId;
+                _win = true;
+            }
+            MesManager.instance.sendEvent(EEventUI.CustomsChange);
+            return _win;
+        }
+        getDefaultCustoms() {
+            if (this.m_gameData.onCustoms > this.m_gameData.maxCustoms) {
+                this.m_gameData.onCustoms = ECommonLeve.DefaultLeveId;
+            }
+            return this.m_gameData.onCustoms;
+        }
+        getPreloadCustoms() {
+            return this.getNextCustoms();
+        }
+        getNextCustoms() {
+            let _customs = this.m_gameData.onCustoms + 1;
+            if (_customs > this.m_gameData.maxCustoms) {
+                _customs = ECommonLeve.DefaultLeveId;
+            }
+            return _customs;
         }
     }
-
-    var EDebugWindowEvent;
-    (function (EDebugWindowEvent) {
-        EDebugWindowEvent["SetEnvironment"] = "setEnvironment";
-    })(EDebugWindowEvent || (EDebugWindowEvent = {}));
 
     class EnvironmentManager {
         constructor() { }
@@ -2509,7 +2591,7 @@
         }
         setEnvironment(_scene) {
             this.m_scene = _scene;
-            let _lv = GameDataProxy.instance.saveData.onCustoms;
+            let _lv = GameDataProxyShell.instance.gameData.onCustoms;
             this.m_enviromentConfig = EnvironmentConfigProxy.instance.byLevelIdGetData(_lv);
             console.log('关卡环境配置参数->' + _lv + '->', this.m_enviromentConfig);
             this.setS3D(this.m_s3d);
@@ -2660,95 +2742,6 @@
         }
     }
 
-    class RootDataProxyShell {
-        constructor() {
-            this.initData();
-        }
-        initData() { }
-    }
-
-    class GameDataProxyShell extends RootDataProxyShell {
-        constructor() { super(); }
-        static get instance() {
-            if (!this.m_instance) {
-                this.m_instance = new GameDataProxyShell();
-            }
-            return this.m_instance;
-        }
-        get gameData() {
-            return this.m_gameData;
-        }
-        initData() {
-            this.m_gameData = GameDataProxy.instance.saveData;
-        }
-        initCustoms(_maxCustoms) {
-            _maxCustoms = Math.floor(_maxCustoms);
-            if (this.m_gameData.maxCustoms == _maxCustoms) {
-                return;
-            }
-            this.m_gameData.maxCustoms = _maxCustoms;
-            if (this.m_gameData.onCustoms > _maxCustoms) {
-                this.m_gameData.onCustoms = _maxCustoms;
-            }
-            if (this.m_gameData.maxCustomsRecord > _maxCustoms) {
-                this.m_gameData.maxCustomsRecord = _maxCustoms;
-            }
-        }
-        ifNewHandCustoms() {
-            return this.m_gameData.onCustoms == ECommonLeve.NewHandLeveId && this.m_gameData.maxCustomsRecord <= ECommonLeve.NewHandLeveId;
-        }
-        setIfOpenBGM(_b) {
-            this.m_gameData.ifOpenBgm = _b;
-        }
-        setIfOpenSound(_b) {
-            this.m_gameData.ifOpenSound = _b;
-        }
-        setIfOpenVibrate(_b) {
-            this.m_gameData.ifOpenVibrate = _b;
-        }
-        setCustoms(_n) {
-            _n = Math.floor(_n);
-            if (_n > this.m_gameData.maxCustoms) {
-                return;
-            }
-            this.m_gameData.onCustoms = _n;
-        }
-        addCustoms(_number = 1) {
-            _number = Math.floor(_number);
-            let _sum = this.m_gameData.onCustoms + _number;
-            let _win = false;
-            if (_sum <= this.m_gameData.maxCustoms) {
-                this.m_gameData.onCustoms = _sum;
-                if (_sum > this.m_gameData.maxCustomsRecord) {
-                    this.m_gameData.maxCustomsRecord = _sum;
-                }
-                _win = true;
-            }
-            else {
-                this.m_gameData.onCustoms = ECommonLeve.DefaultLeveId;
-                _win = true;
-            }
-            MesManager.instance.sendEvent(EEventUI.CustomsChange);
-            return _win;
-        }
-        getDefaultCustoms() {
-            if (this.m_gameData.onCustoms > this.m_gameData.maxCustoms) {
-                this.m_gameData.onCustoms = ECommonLeve.DefaultLeveId;
-            }
-            return this.m_gameData.onCustoms;
-        }
-        getPreloadCustoms() {
-            return this.getNextCustoms();
-        }
-        getNextCustoms() {
-            let _customs = this.m_gameData.onCustoms + 1;
-            if (_customs > this.m_gameData.maxCustoms) {
-                _customs = ECommonLeve.DefaultLeveId;
-            }
-            return _customs;
-        }
-    }
-
     class CustomsManager {
         constructor() {
             this.m_ifInit = false;
@@ -2781,7 +2774,7 @@
             }
             let lvId;
             if (this.m_ifInit) {
-                lvId = GameDataProxy.instance.saveData.onCustoms;
+                lvId = GameDataProxyShell.instance.gameData.onCustoms;
             }
             else {
                 this.m_ifInit = true;
@@ -3588,6 +3581,63 @@
     }
     FGUI_PGameTestMain.URL = "ui://kk7g5mmmo9js9x";
 
+    class GameTestData extends RootLocalStorageData {
+        constructor() {
+            super(...arguments);
+            this.testNumber = 0;
+            this.testBoolean = false;
+            this.testArray = [];
+            this.testObject = {
+                a: 0,
+                b: 0,
+                c: 0,
+            };
+        }
+    }
+
+    class GameTestDataProxy extends RootLocalStorageProxy {
+        constructor() {
+            super();
+        }
+        static get instance() {
+            if (this._instance == null) {
+                this._instance = new GameTestDataProxy();
+            }
+            return this._instance;
+        }
+        get _saveName() {
+            return "GameTest";
+        }
+        getNewData() {
+            return new GameTestData();
+        }
+    }
+
+    class GameTestDataProxyShell extends RootDataProxyShell {
+        constructor() { super(); }
+        static get instance() {
+            if (!this.m_instance) {
+                this.m_instance = new GameTestDataProxyShell();
+            }
+            return this.m_instance;
+        }
+        get data() {
+            return this.m_data;
+        }
+        initData() {
+            this.m_data = GameTestDataProxy.instance.saveData;
+            GameTestDataProxy.instance.addDataSetMonitor(this, () => {
+                console.log('根属性testNumber改变');
+            }, GameTestDataProxy.instance.rootData, GameTestDataProxy.instance.rootData.testNumber);
+            GameTestDataProxy.instance.addDataSetMonitor(this, () => {
+                console.log('对象属性a改变');
+            }, GameTestDataProxy.instance.rootData.testObject, GameTestDataProxy.instance.rootData.testObject['a']);
+            GameTestDataProxy.instance.addDataSetMonitor(this, () => {
+                console.log('数组属性改变');
+            }, GameTestDataProxy.instance.rootData.testArray);
+        }
+    }
+
     class FGUI_PGameTestUI extends fairygui.GComponent {
         constructor() {
             super();
@@ -3642,6 +3692,10 @@
             UIManagerProxy.instance.setUIState([
                 { typeIndex: EUI.TestPlatform },
             ], false);
+            GameTestDataProxyShell.instance.data.testNumber++;
+            GameTestDataProxyShell.instance.data.testNumber++;
+            GameTestDataProxyShell.instance.data.testNumber++;
+            GameTestDataProxyShell.instance.data.testNumber++;
         }
         UITest() {
             PGameUITestMediator.instance.Show();
@@ -6601,13 +6655,13 @@
             }
         }
         playBGM(_name, loops, complete, startTime) {
-            if (!GameDataProxy.instance.saveData.ifOpenBgm || this.m_stop)
+            if (!GameDataProxyShell.instance.gameData.ifOpenBgm || this.m_stop)
                 return;
             AudioUtils.instance.playBGM(_name, loops, complete, startTime);
             this.m_onBGM = _name;
         }
         playSound(_eSoundName, loops, complete, soundClass, startTime) {
-            if (!GameDataProxy.instance.saveData.ifOpenSound || this.m_stop)
+            if (!GameDataProxyShell.instance.gameData.ifOpenSound || this.m_stop)
                 return;
             if (loops == 0) {
                 this.m_onLoopSoundList.add(_eSoundName);
@@ -7188,38 +7242,6 @@
         }
         getNewData() {
             return new GameNewHandData();
-        }
-    }
-
-    class GameTestData extends RootLocalStorageData {
-        constructor() {
-            super(...arguments);
-            this.testNumber = 0;
-            this.testBoolean = false;
-            this.testArray = [];
-            this.testObject = {
-                a: 0,
-                b: 0,
-                c: 0,
-            };
-        }
-    }
-
-    class GameTestDataProxy extends RootLocalStorageProxy {
-        constructor() {
-            super();
-        }
-        static get instance() {
-            if (this._instance == null) {
-                this._instance = new GameTestDataProxy();
-            }
-            return this._instance;
-        }
-        get _saveName() {
-            return "GameTest";
-        }
-        getNewData() {
-            return new GameTestData();
         }
     }
 
