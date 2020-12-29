@@ -2287,6 +2287,7 @@
             this._ifSetDataProxy = true;
             this._dataSetMonitor = [];
             this._ifDifferData = true;
+            this.m_saveToDiskDegree = 0;
         }
         get saveName() {
             return MainConfig.GameName + '->' + this._saveName + '->' + MainConfig.versions;
@@ -2402,9 +2403,18 @@
                 }
                 item._f.call(item._this, target, key, value, _rotValue, target[RootLocalStorageProxy.$RootObjectKey]);
             }
-            this._SaveToDisk(this._saveData);
+            this.SaveToDisk(this._saveData);
         }
         _initData() { }
+        SaveToDisk(_saveData) {
+            this.m_saveToDiskDegree++;
+            window.requestAnimationFrame(() => {
+                this.m_saveToDiskDegree--;
+                if (this.m_saveToDiskDegree == 0) {
+                    this._SaveToDisk(_saveData);
+                }
+            });
+        }
         _SaveToDisk(_saveData) {
             let json = JSON.stringify(_saveData);
             Laya.LocalStorage.setJSON(this.saveName, json);
@@ -2440,7 +2450,7 @@
         }
         _saveNewData() {
             let _saveData = this.getNewData();
-            this._SaveToDisk(_saveData);
+            this.SaveToDisk(_saveData);
             return _saveData;
         }
         getDifferData(_string) {
@@ -3581,63 +3591,6 @@
     }
     FGUI_PGameTestMain.URL = "ui://kk7g5mmmo9js9x";
 
-    class GameTestData extends RootLocalStorageData {
-        constructor() {
-            super(...arguments);
-            this.testNumber = 0;
-            this.testBoolean = false;
-            this.testArray = [];
-            this.testObject = {
-                a: 0,
-                b: 0,
-                c: 0,
-            };
-        }
-    }
-
-    class GameTestDataProxy extends RootLocalStorageProxy {
-        constructor() {
-            super();
-        }
-        static get instance() {
-            if (this._instance == null) {
-                this._instance = new GameTestDataProxy();
-            }
-            return this._instance;
-        }
-        get _saveName() {
-            return "GameTest";
-        }
-        getNewData() {
-            return new GameTestData();
-        }
-    }
-
-    class GameTestDataProxyShell extends RootDataProxyShell {
-        constructor() { super(); }
-        static get instance() {
-            if (!this.m_instance) {
-                this.m_instance = new GameTestDataProxyShell();
-            }
-            return this.m_instance;
-        }
-        get data() {
-            return this.m_data;
-        }
-        initData() {
-            this.m_data = GameTestDataProxy.instance.saveData;
-            GameTestDataProxy.instance.addDataSetMonitor(this, () => {
-                console.log('根属性testNumber改变');
-            }, GameTestDataProxy.instance.rootData, GameTestDataProxy.instance.rootData.testNumber);
-            GameTestDataProxy.instance.addDataSetMonitor(this, () => {
-                console.log('对象属性a改变');
-            }, GameTestDataProxy.instance.rootData.testObject, GameTestDataProxy.instance.rootData.testObject['a']);
-            GameTestDataProxy.instance.addDataSetMonitor(this, () => {
-                console.log('数组属性改变');
-            }, GameTestDataProxy.instance.rootData.testArray);
-        }
-    }
-
     class FGUI_PGameTestUI extends fairygui.GComponent {
         constructor() {
             super();
@@ -3692,10 +3645,6 @@
             UIManagerProxy.instance.setUIState([
                 { typeIndex: EUI.TestPlatform },
             ], false);
-            GameTestDataProxyShell.instance.data.testNumber++;
-            GameTestDataProxyShell.instance.data.testNumber++;
-            GameTestDataProxyShell.instance.data.testNumber++;
-            GameTestDataProxyShell.instance.data.testNumber++;
         }
         UITest() {
             PGameUITestMediator.instance.Show();
@@ -7242,6 +7191,38 @@
         }
         getNewData() {
             return new GameNewHandData();
+        }
+    }
+
+    class GameTestData extends RootLocalStorageData {
+        constructor() {
+            super(...arguments);
+            this.testNumber = 0;
+            this.testBoolean = false;
+            this.testArray = [];
+            this.testObject = {
+                a: 0,
+                b: 0,
+                c: 0,
+            };
+        }
+    }
+
+    class GameTestDataProxy extends RootLocalStorageProxy {
+        constructor() {
+            super();
+        }
+        static get instance() {
+            if (this._instance == null) {
+                this._instance = new GameTestDataProxy();
+            }
+            return this._instance;
+        }
+        get _saveName() {
+            return "GameTest";
+        }
+        getNewData() {
+            return new GameTestData();
         }
     }
 
