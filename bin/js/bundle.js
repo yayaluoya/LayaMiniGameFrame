@@ -2287,7 +2287,7 @@
             this._ifSetDataProxy = true;
             this._dataSetMonitor = [];
             this._ifDifferData = true;
-            this.m_saveToDiskDegree = 0;
+            this.m_saveToDiskQueue = 0;
         }
         get saveName() {
             return MainConfig.GameName + '->' + this._saveName + '->' + MainConfig.versions;
@@ -2407,13 +2407,13 @@
         }
         _initData() { }
         SaveToDisk(_saveData) {
-            this.m_saveToDiskDegree++;
-            window.requestAnimationFrame(() => {
-                this.m_saveToDiskDegree--;
-                if (this.m_saveToDiskDegree == 0) {
+            this.m_saveToDiskQueue++;
+            this.m_saveToDiskQueue = setTimeout(() => {
+                this.m_saveToDiskQueue--;
+                if (this.m_saveToDiskQueue == 0) {
                     this._SaveToDisk(_saveData);
                 }
-            });
+            }, 0);
         }
         _SaveToDisk(_saveData) {
             let json = JSON.stringify(_saveData);

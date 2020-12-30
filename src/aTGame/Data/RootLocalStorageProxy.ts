@@ -233,21 +233,22 @@ export default abstract class RootLocalStorageProxy<T extends RootLocalStorageDa
     /** 初始化完成，继承使用 */
     protected _initData() { }
 
-    protected m_saveToDiskDegree: number = 0;
+    /** 保存执行队列 */
+    private m_saveToDiskQueue: number = 0;
     /**
      * 保存数据到本地
      */
     protected SaveToDisk(_saveData: T) {
         //
-        this.m_saveToDiskDegree++;
+        this.m_saveToDiskQueue++;
         //当前帧末尾执行
-        window.requestAnimationFrame(() => {
-            this.m_saveToDiskDegree--;
-            if (this.m_saveToDiskDegree == 0) {
+        this.m_saveToDiskQueue = setTimeout(() => {
+            this.m_saveToDiskQueue--;
+            if (this.m_saveToDiskQueue == 0) {
                 //限流，每一帧只保存一次数据
                 this._SaveToDisk(_saveData);
             }
-        });
+        }, 0);
     }
     //保存数据到本地
     private _SaveToDisk(_saveData: T) {
