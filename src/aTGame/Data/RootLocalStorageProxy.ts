@@ -242,7 +242,7 @@ export default abstract class RootLocalStorageProxy<T extends RootLocalStorageDa
         //
         this.m_saveToDiskQueue++;
         //当前帧末尾执行
-        this.m_saveToDiskQueue = setTimeout(() => {
+        setTimeout(() => {
             this.m_saveToDiskQueue--;
             if (this.m_saveToDiskQueue == 0) {
                 //限流，每一帧只保存一次数据

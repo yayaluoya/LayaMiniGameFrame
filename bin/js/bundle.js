@@ -2408,7 +2408,7 @@
         _initData() { }
         SaveToDisk(_saveData) {
             this.m_saveToDiskQueue++;
-            this.m_saveToDiskQueue = setTimeout(() => {
+            setTimeout(() => {
                 this.m_saveToDiskQueue--;
                 if (this.m_saveToDiskQueue == 0) {
                     this._SaveToDisk(_saveData);
@@ -6795,9 +6795,6 @@
                 this._instance = new CommonDataProxy();
             }
             return this._instance;
-        }
-        static get comData() {
-            return this._instance._saveData;
         }
         get _saveName() {
             return "Common";

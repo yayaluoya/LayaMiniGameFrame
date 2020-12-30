@@ -14,10 +14,6 @@ export default class CommonDataProxy extends RootLocalStorageProxy<ComData> {
         }
         return this._instance;
     }
-    /** 数据单例 */
-    public static get comData(): ComData {
-        return this._instance._saveData;
-    }
 
     /** 不允许外界实例化 */
     private constructor() {
