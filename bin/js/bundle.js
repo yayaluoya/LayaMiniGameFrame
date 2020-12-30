@@ -2406,14 +2406,19 @@
             this.SaveToDisk(this._saveData);
         }
         _initData() { }
-        SaveToDisk(_saveData) {
-            this.m_saveToDiskQueue++;
-            setTimeout(() => {
-                this.m_saveToDiskQueue--;
-                if (this.m_saveToDiskQueue == 0) {
-                    this._SaveToDisk(_saveData);
-                }
-            }, 0);
+        SaveToDisk(_saveData, _ifCl = true) {
+            if (!_ifCl) {
+                this._SaveToDisk(_saveData);
+            }
+            else {
+                this.m_saveToDiskQueue++;
+                setTimeout(() => {
+                    this.m_saveToDiskQueue--;
+                    if (this.m_saveToDiskQueue == 0) {
+                        this._SaveToDisk(_saveData);
+                    }
+                }, 0);
+            }
         }
         _SaveToDisk(_saveData) {
             let json = JSON.stringify(_saveData);
@@ -2450,7 +2455,7 @@
         }
         _saveNewData() {
             let _saveData = this.getNewData();
-            this.SaveToDisk(_saveData);
+            this.SaveToDisk(_saveData, false);
             return _saveData;
         }
         getDifferData(_string) {
