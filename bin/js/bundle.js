@@ -2050,7 +2050,7 @@
             this._ifSetDataProxy = true;
             this._dataSetMonitor = [];
             this._ifDifferData = true;
-            this.m_saveToDiskDegree = 0;
+            this.m_saveToDiskQueue = 0;
         }
         get saveName() {
             return MainConfig.GameName + '->' + this._saveName + '->' + MainConfig.versions;
@@ -2169,14 +2169,19 @@
             this.SaveToDisk(this._saveData);
         }
         _initData() { }
-        SaveToDisk(_saveData) {
-            this.m_saveToDiskDegree++;
-            window.requestAnimationFrame(() => {
-                this.m_saveToDiskDegree--;
-                if (this.m_saveToDiskDegree == 0) {
-                    this._SaveToDisk(_saveData);
-                }
-            });
+        SaveToDisk(_saveData, _ifCl = true) {
+            if (!_ifCl) {
+                this._SaveToDisk(_saveData);
+            }
+            else {
+                this.m_saveToDiskQueue++;
+                setTimeout(() => {
+                    this.m_saveToDiskQueue--;
+                    if (this.m_saveToDiskQueue == 0) {
+                        this._SaveToDisk(_saveData);
+                    }
+                }, 0);
+            }
         }
         _SaveToDisk(_saveData) {
             let json = JSON.stringify(_saveData);
@@ -2213,7 +2218,7 @@
         }
         _saveNewData() {
             let _saveData = this.getNewData();
-            this.SaveToDisk(_saveData);
+            this.SaveToDisk(_saveData, false);
             return _saveData;
         }
         getDifferData(_string) {
@@ -6463,9 +6468,6 @@
                 this._instance = new CommonDataProxy();
             }
             return this._instance;
-        }
-        static get comData() {
-            return this._instance._saveData;
         }
         get _saveName() {
             return "Common";

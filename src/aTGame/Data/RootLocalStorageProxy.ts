@@ -233,25 +233,34 @@ export default abstract class RootLocalStorageProxy<T extends RootLocalStorageDa
     /** 初始化完成，继承使用 */
     protected _initData() { }
 
-    protected m_saveToDiskDegree: number = 0;
+    /** 保存执行队列 */
+    private m_saveToDiskQueue: number = 0;
     /**
      * 保存数据到本地
+     * @param _saveData 数据
+     * @param _ifCl 是否限流
      */
-    protected SaveToDisk(_saveData: T) {
-        //
-        this.m_saveToDiskDegree++;
-        //当前帧末尾执行
-        window.requestAnimationFrame(() => {
-            this.m_saveToDiskDegree--;
-            if (this.m_saveToDiskDegree == 0) {
-                //限流，每一帧只保存一次数据
-                this._SaveToDisk(_saveData);
-            }
-        });
+    protected SaveToDisk(_saveData: T, _ifCl: boolean = true) {
+        //判断是否限流
+        if (!_ifCl) {
+            this._SaveToDisk(_saveData);
+        }
+        else {
+            this.m_saveToDiskQueue++;
+            //当前帧末尾执行
+            setTimeout(() => {
+                this.m_saveToDiskQueue--;
+                if (this.m_saveToDiskQueue == 0) {
+                    //限流，每一帧只保存一次数据
+                    this._SaveToDisk(_saveData);
+                }
+            }, 0);
+        }
     }
     //保存数据到本地
-    private _SaveToDisk(_saveData: T) {
-        // console.log('数据保存');
+    private _SaveToDisk(_saveData?: T) {
+        // console.log('保存数据');
+        //序列化
         let json = JSON.stringify(_saveData);
         Laya.LocalStorage.setJSON(this.saveName, json);
         //判断是否是线上环境
@@ -296,8 +305,8 @@ export default abstract class RootLocalStorageProxy<T extends RootLocalStorageDa
     //获取并保存一个新数据
     private _saveNewData(): T {
         let _saveData: T = this.getNewData();
-        //保存数据
-        this.SaveToDisk(_saveData as T);
+        //保存数据，马上保存，不然后续这个数据会被修改
+        this.SaveToDisk(_saveData as T, false);
         //
         return _saveData as T;
     }

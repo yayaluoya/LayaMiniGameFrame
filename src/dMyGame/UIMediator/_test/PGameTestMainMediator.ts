@@ -2,6 +2,7 @@ import BaseUIMediator from "../../../aTGame/UI/FGUI/BaseUIMediator";
 import FGUI_PGameTestMain from "../../../FGUI/GameMain/FGUI_PGameTestMain";
 import { EUI } from "../../Enum/EUI";
 import UIManagerProxy from "../../Manager/Proxy/UIManagerProxy";
+import GameTestDataProxyShell from "../../Proxy/data/GameTestDataProxyShell";
 import PGameUITestMediator from "./PGameUITestMediator";
 
 /**

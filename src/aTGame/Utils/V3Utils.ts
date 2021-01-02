@@ -17,10 +17,13 @@ export default class V3Utils {
      * @param _l 目标长度
      */
     public static setV3Length(_v3: Laya.Vector3, _l: number) {
-        let _a: number = _l / Laya.Vector3.scalarLength(_v3);
-        _v3.x = _v3.x * _a;
-        _v3.y = _v3.y * _a;
-        _v3.z = _v3.z * _a;
+        let _length: number = Laya.Vector3.scalarLength(_v3);
+        if (_length != 0) {
+            let _a: number = _l / _length;
+            _v3.x = _v3.x * _a;
+            _v3.y = _v3.y * _a;
+            _v3.z = _v3.z * _a;
+        }
     }
 
     /**
