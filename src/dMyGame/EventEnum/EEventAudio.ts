@@ -1,6 +1,5 @@
 /**
  * 音效事件
- * * 只有音效管理类能监听和抛出
  */
 export enum EEventAudio {
     /** BGM暂停 */

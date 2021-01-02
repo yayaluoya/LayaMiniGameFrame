@@ -1,4 +1,4 @@
-import _AllPrefabNames from "../../dMyGame/_prefabsName/_AllPrefabNames";
+import _AllScenePrefabsNames from "../../dMyGame/_prefabsName/_AllScenePrefabsNames";
 
 /**
  * 关卡场景名字枚举列表，必须共用一套预制体
@@ -9,9 +9,9 @@ export enum ELevelSceneName {
 }
 
 /**
- * 所有预制体名字
+ * 所有场景预制体名字集合
  */
-export class AllPrefabsNames extends _AllPrefabNames { }
+export class AllScenePrefabsNames extends _AllScenePrefabsNames { }
 
 /**
  * 关卡场景配置类
