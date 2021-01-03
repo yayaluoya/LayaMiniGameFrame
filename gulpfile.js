@@ -19,7 +19,7 @@ let _awakeTime = 0;
 
 //创建一个名称为compile的gulp任务
 task("compile", function () {
-    console.log('\033[35m', '开始自动编译。。。', '\033[0m');
+    console.log('\033[35m', '增量编译。。。', '\033[0m');
     //自动编译
     compile((code, signal) => {
         console.log('\033[35m', '正在创建服务。。。', '\033[0m');
@@ -38,7 +38,7 @@ task("compile", function () {
             serverInit: (_server) => {
                 //
                 console.log(' ----▷');
-                console.log(' ----▷ 配置参数：\n', gulpfileConst);
+                // console.log(' ----▷ 配置参数：\n', gulpfileConst);
                 console.log(' ----▷');
                 console.log('\033[34m', '----▶ ' + _homePage, '\033[0m');
                 console.log(' --');
@@ -56,6 +56,17 @@ task("compile", function () {
                 autoCompile();
             },
         });
+    });
+});
+
+//创建一个名称为webpack的gulp任务
+task("webpackCompile", function () {
+    let process = exec("webpack --config webpack.js");
+    process.stdout.on("data", (data) => {
+        console.log(data);
+    });
+    process.stderr.on("data", (data) => {
+        console.log(data);
     });
 });
 
@@ -121,8 +132,21 @@ function compile(_back) {
         return;
     }
     _ifCompile = true;
-    //执行编译命令 layaair2-cmd compile 
-    let process = exec("layaair2-cmd compile");
+    //判断打包方式
+    let process
+    switch (gulpfileConst.packType) {
+        case 'webpack':
+            process = exec("webpack --config webpack.js");
+            break;
+        case 'layaAir':
+            process = exec("layaair2-cmd compile");
+            break;
+    }
+    //
+    if (!process) {
+        console.log('\033[31m', '没有设置打包方式', '\033[0m');
+        return;
+    }
     process.stdout.on("data", (data) => {
         console.log(data);
     });

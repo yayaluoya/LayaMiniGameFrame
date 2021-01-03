@@ -42,7 +42,7 @@ gulp.task("compile", prevTasks, function () {
 		plugins: [
 			typescript({
 				tsconfig: workSpaceDir + "/tsconfig.json",
-				check: false, //Set to false to avoid doing any diagnostic checks on the code
+				check: true, //Set to false to avoid doing any diagnostic checks on the code
 				tsconfigOverride: { compilerOptions: { removeComments: true } },
 				include: /.*.ts/,
 			}),

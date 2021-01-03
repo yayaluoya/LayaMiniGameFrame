@@ -12,16 +12,15 @@ export default class AsyncTest extends RootTest {
 
     //
     private async asyncTest() {
-        console.log('异步开始');
+        console.log('异步开始。');
         await this._asyncTest();
-        console.log('异步结束');
+        console.log('异步结束。');
     }
 
     //
     private _asyncTest(): Promise<void> {
         return new Promise<void>((_r) => {
             Laya.timer.once(1000, this, () => {
-                console.log('异步函数执行中');
                 _r();
             });
         });

@@ -7,8 +7,9 @@
     "layaminigameframe": "game.js"
   },
   "scripts": {
-    "项目编译": "layaair2-cmd compile",
-    "自动编译": "gulp compile",
+    "LayaAir编译": "layaair2-cmd compile",
+    "webpack编译": "gulp webpackCompile",
+    "增量编译": "gulp compile",
     "Http-服务": "gulp httpServer",
     "打包-Web-Game": "layaair2-cmd publish -c web",
     "打包到-微信-Game": "layaair2-cmd publish -c wxgame",
@@ -18,22 +19,31 @@
     "打包到-VIVO-Game": "layaair2-cmd publish -c vivogame",
     "打包到-QQ Game": "layaair2-cmd publish -c qqgame",
     "更新调试页面首页": "gulp setDebugIndexHtml",
-    "安装-layaair2-cmd": "npm i layaair2-cmd -g --ignore-scripts",
-    "安装-gulp": "npm i gulp -g --ignore-scripts",
-    "安装-http-server": "npm i http-server -g --ignore-scripts"
+    "设置淘宝镜像-更快的安装包": "npm config set registry https://registry.npm.taobao.org",
+    "安装-全局包": "npm i typescript layaair2-cmd http-server -g --ignore-scripts"
   },
   "repository": {
     "type": "git",
-    "url": "https://gitee.com/Sheng_Dou_Shi/laya-mini-game-frame.git"
+    "url": "https://github.com/yayaluoya/LayaMiniGameFrame"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "browser-sync": "^2.26.13",
+    "@babel/polyfill": "^7.12.1",
+    "core-js": "^3.8.1",
     "gulp": "^4.0.2",
     "gulp-connect": "^5.7.0",
     "gulp-rev-append": "^0.1.8",
-    "request": "^2.88.2"
+    "raw-loader": "^4.0.2",
+    "ts-loader": "^8.0.13",
+    "webpack": "^5.11.1",
+    "webpack-cli": "^4.3.1"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "@babel/cli": "^7.12.10",
+    "@babel/core": "^7.12.10",
+    "@babel/preset-env": "^7.12.11",
+    "@babel/preset-typescript": "^7.12.7",
+    "babel-loader": "^8.2.2"
+  }
 }

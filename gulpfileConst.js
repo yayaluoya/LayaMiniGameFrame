@@ -5,6 +5,9 @@ let gulpfileConst = {
     /** 名字 */
     itemName: 'LayaMiniGame',
 
+    /** 打包方式，webpack | layaAir */
+    packType: 'webpack',
+
     /** */
     livereload: true,
 
@@ -19,10 +22,10 @@ let gulpfileConst = {
     indexPage: './bin/index.html',
 
     /** 是否自动刷新 */
-    ifAutoUpdate: false,
+    ifAutoUpdate: true,
 
     /** 是否自动唤醒编译 */
-    ifAutoAwakeCompile: true,
+    ifAutoAwakeCompile: false,
 
     /** 自动唤醒编译时间 */
     autoAwakeCompileTime: 10 * 60 * 1000,
