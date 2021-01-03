@@ -238,7 +238,7 @@
     class GlobalUnitClassProxy extends RootClassProxy {
     }
 
-    class _AllPrefabNames {
+    class _AllScenePrefabsNames {
         constructor() {
             this.Prefabs = '@Camera@@DirectionalLight@';
             this.Prefabs2 = '@Cube@@Sphere@@Cylinder@';
@@ -249,7 +249,7 @@
     (function (ELevelSceneName) {
         ELevelSceneName["Export"] = "export";
     })(ELevelSceneName || (ELevelSceneName = {}));
-    class AllPrefabsNames extends _AllPrefabNames {
+    class AllScenePrefabsNames extends _AllScenePrefabsNames {
     }
     class LevelSceneNameConst {
         static get defaultLevelSceneName() {
@@ -297,7 +297,7 @@
                 [EKeyResName.sound]: EKeyResName.RootRes + '/' + EKeyResName.Other + '/' + EKeyResName.sound + '/',
                 [EKeyResName.skin]: EKeyResName.RootRes + '/' + EKeyResName.Other + '/' + EKeyResName.skin + '/',
             };
-            let _AllPrefabNames = new AllPrefabsNames();
+            let _AllPrefabNames = new AllScenePrefabsNames();
             for (let _i in _AllPrefabNames) {
                 EKeyResName[_i] = _i;
                 this.m_KeyResList[EKeyResName[_i]] = EKeyResName.RootRes + '/' + EKeyResName[_i] + '/';
@@ -373,8 +373,8 @@
             if (this._prefabsSceneCache[prefab]) {
                 return KeyResManager.instance.getResURL(EKeyResName[this._prefabsSceneCache[prefab]]) + 'Conventional/' + prefab + '.lh';
             }
-            for (let _i in this._AllPrefabsNames) {
-                if (this._AllPrefabsNames[_i].indexOf('@' + prefab + '@') != -1) {
+            for (let _i in this._AllScenePrefabsNames) {
+                if (this._AllScenePrefabsNames[_i].indexOf('@' + prefab + '@') != -1) {
                     this._prefabsSceneCache[prefab] = _i;
                     return KeyResManager.instance.getResURL(EKeyResName[_i]) + 'Conventional/' + prefab + '.lh';
                 }
@@ -382,7 +382,7 @@
             console.log(...ConsoleEx.packError('没有在场景找到预制体', prefab, '可能是没有导出场景预制体列表导致的。'));
         }
     }
-    EssentialResUrls._AllPrefabsNames = new AllPrefabsNames();
+    EssentialResUrls._AllScenePrefabsNames = new AllScenePrefabsNames();
     EssentialResUrls._prefabsSceneCache = {};
 
     class ArrayUtils {
@@ -832,7 +832,7 @@
                 console.log(...ConsoleEx.packError("不存在此关卡->", id));
             }
             if (!this._scenes[lvConfig.key]) {
-                this._scenes[lvConfig.key] = this.getSceneByData(lvConfig.key, lvConfig);
+                this._scenes[lvConfig.key] = this.getSceneByData(lvConfig);
             }
             return this._scenes[lvConfig.key];
         }
@@ -842,11 +842,15 @@
                 console.log(...ConsoleEx.packError("不存在此关卡->", _name));
             }
             if (!this._scenes[lvConfig.key]) {
-                this._scenes[lvConfig.key] = this.getSceneByData(lvConfig.key, lvConfig);
+                this._scenes[lvConfig.key] = this.getSceneByData(lvConfig);
             }
             return this._scenes[lvConfig.key];
         }
-        getSceneByData(_key, _lvConfig) {
+        getSceneByData(_lvConfig) {
+            let _data = this.getSceneConfig(_lvConfig);
+            return new Scene(_data.sceneNodes, _data.sceneNodes_, _lvConfig);
+        }
+        getSceneConfig(_lvConfig) {
             let sceneName = _lvConfig.sceneName;
             let _sceneName_ = _lvConfig.sceneOtherRes;
             let sceneNodes = {};
@@ -862,7 +866,10 @@
                     sceneNodes_.push(this._levelConfig[_lvConfig.rootScene][_i]);
                 }
             }
-            return new Scene(sceneNodes, sceneNodes_, _lvConfig);
+            return {
+                sceneNodes: sceneNodes,
+                sceneNodes_: sceneNodes_,
+            };
         }
         getLvResName(id) {
             return this.getSceneByLv(id).scenePrefabResName();
@@ -876,239 +883,6 @@
     }
     Const.gravity = -10;
     Const.ifPreloadCustoms = false;
-
-    class RootProManager {
-        constructor() {
-            this.m_proList = {};
-            this.init();
-            this.register();
-        }
-        getPro(_pro) {
-            return this.m_proList[_pro];
-        }
-        init() {
-        }
-        register() {
-        }
-        AllotPre(_prefabs) {
-            this.allotPrefab(_prefabs);
-            this.allotMediator();
-        }
-        allotPrefab(_prefabs) {
-        }
-        allotMediator() {
-        }
-        AllotOtherScenePre(_sceneName, _prefabs) {
-            this.allotOtherScenePrefab(_sceneName, _prefabs);
-            this.allotOtherSceneMediator(_sceneName);
-        }
-        allotOtherScenePrefab(_sceneName, _prefabs) {
-        }
-        allotOtherSceneMediator(_sceneName) {
-        }
-    }
-
-    var EProcessor;
-    (function (EProcessor) {
-        EProcessor["CameraPro"] = "EProcessor_CameraPro";
-    })(EProcessor || (EProcessor = {}));
-
-    class ProScriptLink {
-        constructor(_plantTypeof) {
-            this.m_proTypeof = _plantTypeof;
-        }
-        get proTypeof() {
-            return this.m_proTypeof;
-        }
-        addScript(_o, _com, _data) {
-            let _scr = _o.addComponent(_com);
-            _scr.setPro(this);
-            _scr.setData(_data);
-            return _scr;
-        }
-    }
-
-    class ProStampScript extends Laya.Script3D {
-        constructor() {
-            super(...arguments);
-            this.m_proStamp = [];
-        }
-        addProStamp(_pro) {
-            if (this.m_proStamp.findIndex((item) => { return item == _pro; }) == -1) {
-                this.m_proStamp.push(_pro);
-            }
-        }
-        get proStamp() {
-            return this.m_proStamp;
-        }
-        ifAtPro(_pro) {
-            return this.m_proStamp.findIndex((item) => { return item == _pro; }) != -1;
-        }
-    }
-
-    class BasePrefabPro extends ProScriptLink {
-        constructor(_plantTypeof) {
-            super(_plantTypeof);
-            this.ifAddProStampScript = false;
-            this.ifAddParentNode = false;
-            this.onlyInit();
-        }
-        get sprList() {
-            return this.m_sprList;
-        }
-        get parentNode() {
-            return this.m_parentNode;
-        }
-        set _vo(_vo) {
-            this.m_vo = _vo;
-            this.m_vo._initPro(this);
-        }
-        set _mediator(_me) {
-            this.m_mediator = _me;
-            this.m_mediator._initPro(this);
-        }
-        onlyInit() { }
-        _init() {
-            if (this.ifAddParentNode) {
-                this.m_parentNode = new Laya.Sprite3D();
-            }
-        }
-        startPor(_content) {
-            this._init();
-            this.initExtend();
-            this.init();
-            this.m_sprList = this.proSpr(_content);
-            this.sprInitExtend();
-            this.sprInit();
-        }
-        addSprAndPor(_content) {
-            let _sprList = this.proSpr(_content);
-            this.m_sprList.push(..._sprList);
-            this.addSprAndProCom(_sprList);
-        }
-        addSprAndProCom(_sprs) { }
-        init() { }
-        initExtend() { }
-        setSpr(_spr) { }
-        setSprExtend(_spr) { }
-        sprInit() { }
-        sprInitExtend() { }
-        getSprClass({ id }) {
-            for (let _class in this.m_sprIdClassList) {
-                if (this.m_sprIdClassList[_class].findIndex((item) => { return item == id; }) != -1) {
-                    return _class;
-                }
-            }
-        }
-        getAddCommonScrSpr(_spr) {
-            return _spr;
-        }
-        static getProStamp(_spr) {
-            let _scr = _spr.getComponent(ProStampScript);
-            if (_scr) {
-                return _scr.proStamp;
-            }
-            else {
-                return [];
-            }
-        }
-        proSpr(_content) {
-            let _sprList = [];
-            for (let _class in _content) {
-                if (_content[_class]) {
-                    _sprList.push(..._content[_class]);
-                    this.addSprIdClassList(_class, _content[_class]);
-                }
-            }
-            _sprList.forEach((item) => {
-                if (this.ifAddParentNode) {
-                    this.m_parentNode.addChild(item);
-                }
-                this.addProStampCommonScr(this.getAddCommonScrSpr(item));
-                this.setSprExtend(item);
-                this.setSpr(item);
-            });
-            return _sprList;
-        }
-        addSprIdClassList(_class, _sprs) {
-            if (!_sprs)
-                return;
-            if (!this.m_sprIdClassList) {
-                this.m_sprIdClassList = {};
-            }
-            if (!this.m_sprIdClassList[_class]) {
-                this.m_sprIdClassList[_class] = [];
-            }
-            let _ids = _sprs.map((item) => {
-                return item.id;
-            });
-            this.m_sprIdClassList[_class].push(..._ids);
-            let _sets = new Set(this.m_sprIdClassList[_class]);
-            this.m_sprIdClassList[_class] = Array.from(_sets);
-        }
-        addProStampCommonScr(_spr) {
-            if (!this.ifAddProStampScript)
-                return;
-            let _scr;
-            let __scr;
-            __scr = _spr.getComponent(ProStampScript);
-            if (__scr) {
-                _scr = __scr;
-            }
-            else {
-                _scr = _spr.addComponent(ProStampScript);
-            }
-            _scr.addProStamp(this.proTypeof);
-        }
-    }
-
-    class RootScript extends Laya.Script3D {
-    }
-
-    class BaseProScript extends RootScript {
-        get pro() {
-            if (this.m_Pro) {
-                return this.m_Pro;
-            }
-            else {
-                console.log(...ConsoleEx.packWarn('->没有找到Pro!<-'));
-            }
-        }
-        get data() {
-            return this.m_data;
-        }
-        setPro(_Pro) {
-            this.m_Pro = _Pro;
-        }
-        setData(_data) {
-            this.m_data = _data;
-        }
-    }
-
-    class CameraScr extends BaseProScript {
-        set cameraNode(_spr) {
-            this.m_cameraNode = _spr;
-            this.m_cameraNodeTransform = _spr.transform;
-        }
-        init() {
-        }
-        onAwake() {
-            this.m_transform = this.owner.transform;
-        }
-        onUpdate() {
-        }
-    }
-
-    class ValueConst {
-        static get zeroV3() {
-            return ValueConst.m_zeroV3.clone();
-        }
-        static get zeroV2() {
-            return ValueConst.m_zeroV2.clone();
-        }
-    }
-    ValueConst.m_zeroV3 = new Laya.Vector3(0, 0, 0);
-    ValueConst.m_zeroV2 = new Laya.Vector2(0, 0);
 
     class ColorUtils {
         static RgbToHex(r, g, b) {
@@ -1595,8 +1369,6 @@
 
     var EEventScene;
     (function (EEventScene) {
-        EEventScene["LookAd"] = "LookAd";
-        EEventScene["UnLookAd"] = "UnLookAd";
         EEventScene["GameLevelsBuild"] = "GameLevelsBuild";
         EEventScene["GameOtherLevelsBuild"] = "GameOtherLevelsBuild";
         EEventScene["GameLevelsBuildBefore"] = "GameLevelsBuildBefore";
@@ -1611,14 +1383,16 @@
         EEventScene["GameRestart"] = "GameRestart";
         EEventScene["GameEnd"] = "GameEnd";
         EEventScene["GameCom"] = "GameCom";
-        EEventScene["GameWin"] = "gameWin";
         EEventScene["GameFail"] = "gameFail";
         EEventScene["RoleDie"] = "RoleDie";
         EEventScene["RoleRevive"] = "Revive";
-        EEventScene["MouseClick"] = "MouseClick";
-        EEventScene["MouseMove"] = "MouseMove";
-        EEventScene["MouseUp"] = "MouseUp";
     })(EEventScene || (EEventScene = {}));
+
+    var EEventAd;
+    (function (EEventAd) {
+        EEventAd["LookAd"] = "LookAd";
+        EEventAd["UnLookAd"] = "UnLookAd";
+    })(EEventAd || (EEventAd = {}));
 
     var EEventAudio;
     (function (EEventAudio) {
@@ -1640,24 +1414,12 @@
 
     var EEventUI;
     (function (EEventUI) {
-        EEventUI["LookAd"] = "LookAd";
-        EEventUI["UnLookAd"] = "UnLookAd";
         EEventUI["CustomsChange"] = "CustomsChange";
-        EEventUI["GameStart"] = "Start";
-        EEventUI["GameEnd"] = "GameEnd";
-        EEventUI["GamePasue"] = "GamePause";
-        EEventUI["GameResume"] = "GameResume";
-        EEventUI["GameCom"] = "GameCom";
-        EEventUI["GameWin"] = "GameWin";
-        EEventUI["GameFail"] = "GameFail";
-        EEventUI["RoleDie"] = "RoleDie";
-        EEventUI["RoleRevive"] = "RoleRevive";
         EEventUI["GameCoinChange"] = "GameCoinChange";
         EEventUI["SoundStateChange"] = "SoundStateChange";
         EEventUI["VibrateStateChange"] = "VibrateStateChange";
-        EEventUI["SceneGameCustomsInit"] = "SceneGameCustomsInit";
         EEventUI["SceneGameCustomsLoading"] = "SceneGameCustomsLoading";
-        EEventUI["SceneGameCustomDelete"] = "SceneGameCustomDelete";
+        EEventUI["Updata3D"] = "Updata3D";
     })(EEventUI || (EEventUI = {}));
 
     class MesManager extends Laya.EventDispatcher {
@@ -1677,6 +1439,7 @@
         }
         init() { }
         enumerationEegistrationMes() {
+            this.enumerationEegistrationMes_(EEventAd);
             this.enumerationEegistrationMes_(EEventGlobal);
             this.enumerationEegistrationMes_(EEventUI);
             this.enumerationEegistrationMes_(EEventScene);
@@ -2666,97 +2429,6 @@
         }
     }
 
-    class CameraPro extends BasePrefabPro {
-        constructor() {
-            super(...arguments);
-            this.ifAddProStampScript = false;
-        }
-        sprInit() {
-            if (!this.m_camera) {
-                if (!this.m_sprList[0]) {
-                    console.log(...ConsoleEx.packError('没有找到摄像机!'));
-                }
-                this.m_camera = this.m_sprList[0];
-                this.m_cameraNode = new Laya.Sprite3D();
-                this.m_rootPos = this.m_camera.transform.position.clone();
-                this.m_rootAng = this.m_camera.transform.rotationEuler.clone();
-                this.m_rootAng.x = -this.m_rootAng.x;
-                this.m_rootAng.y = this.m_rootAng.y - 180;
-                this.m_cameraNode.addChild(this.m_camera);
-                this.m_camera.transform.localPosition = ValueConst.zeroV3;
-                this.m_camera.transform.localRotationEuler = new Laya.Vector3(0, -180, 0);
-                this.m_Scr = this.addScript(this.m_camera, CameraScr);
-                this.m_Scr.cameraNode = this.m_cameraNode;
-                EnvironmentManager.instance.s3d.addChild(this.m_cameraNode);
-            }
-            this.m_cameraNode.transform.position = this.m_rootPos;
-            this.m_cameraNode.transform.rotationEuler = new Laya.Vector3(this.m_rootAng.x, this.m_rootAng.y, 0);
-            this.m_Scr.init();
-        }
-    }
-
-    class ProManagerProxy extends RootClassProxy {
-        constructor() { super(); }
-        static get instance() {
-            if (this._instance) {
-                return this._instance;
-            }
-            else {
-                this._instance = new ProManagerProxy();
-                return this._instance;
-            }
-        }
-        getPro(_pro) {
-            return this.ProList[_pro];
-        }
-        get cameraPro() {
-            return this.getPro(EProcessor.CameraPro);
-        }
-    }
-
-    class _PrefabsPrefabName {
-    }
-    _PrefabsPrefabName.Camera = 'Camera';
-    _PrefabsPrefabName.DirectionalLight = 'DirectionalLight';
-    class _PrefabsPrefabClass {
-    }
-
-    class PrefabNames extends _PrefabsPrefabName {
-    }
-    PrefabNames.Camera = 'camera';
-    PrefabNames.Environment = 'environment';
-    PrefabNames.HeightFog = 'heightFog';
-    class PrefabsGather extends _PrefabsPrefabClass {
-    }
-
-    class ProManager extends RootProManager {
-        constructor() { super(); }
-        static get instance() {
-            if (this._instance) {
-                return this._instance;
-            }
-            else {
-                this._instance = new ProManager();
-                return this._instance;
-            }
-        }
-        init() {
-            ProManagerProxy.instance.ProList = this.m_proList;
-        }
-        register() {
-            this.m_proList[EProcessor.CameraPro] = new CameraPro(EProcessor.CameraPro);
-        }
-        allotPrefab(_prefabs) {
-            this.m_proList[EProcessor.CameraPro].startPor({ [PrefabNames.Camera]: [EnvironmentManager.instance.camera] });
-        }
-        allotMediator() {
-        }
-        allotOtherScenePrefab(_sceneName, _prefabs) {
-        }
-        allotOtherSceneMediator(_sceneName) {
-        }
-    }
-
     class CustomsManager {
         constructor() {
             this.m_ifInit = false;
@@ -2803,7 +2475,6 @@
             scene.buildScene(Laya.Handler.create(this, this.customsProgress, null, false)).then((_sceneSpr) => {
                 this.m_ifSceneBuild = false;
                 EnvironmentManager.instance.setEnvironment(this.m_scene.scene);
-                ProManager.instance.AllotPre(scene.prefabs);
                 ConManager.addScrCon(scene.scene);
                 ConManager.addCommonCon();
                 if (Const.ifPreloadCustoms) {
@@ -2815,7 +2486,6 @@
                     _handler.run();
                 }
                 MesManager.instance.sendEvent(EEventScene.GameLevelsOnBuild);
-                MesManager.instance.sendEvent(EEventUI.SceneGameCustomsInit);
             });
         }
         onCustomsInit(_lvId) {
@@ -2835,7 +2505,6 @@
             }
             this.m_scene = null;
             MesManager.instance.sendEvent(EEventScene.GameLevelsOnDelete);
-            MesManager.instance.sendEvent(EEventUI.SceneGameCustomDelete);
         }
         gameOtherLevelsBuild(_name, _handler) {
             if (this.m_ifSceneBuild) {
@@ -2850,7 +2519,6 @@
             _scene.buildScene(Laya.Handler.create(this, this.customsProgress, null, false)).then((_sceneSpr) => {
                 this.m_ifSceneBuild = false;
                 EnvironmentManager.instance.setOtherEnvironment(_name, _sceneSpr);
-                ProManager.instance.AllotOtherScenePre(_name, _scene.prefabs);
                 if (_handler) {
                     _handler.run();
                 }

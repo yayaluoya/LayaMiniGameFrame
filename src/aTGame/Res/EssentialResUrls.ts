@@ -1,4 +1,4 @@
-import { AllPrefabsNames } from '../../cFrameBridge/Config/ELevelSceneName';
+import { AllScenePrefabsNames } from '../../cFrameBridge/Config/ELevelSceneName';
 import ConsoleEx from '../Console/ConsoleEx';
 import { EKeyResName } from './EKeyResName';
 import KeyResManager from './KeyResManager';
@@ -55,7 +55,7 @@ export default class EssentialResUrls {
     }
 
     //所有预制体名字列表
-    private static _AllPrefabsNames: AllPrefabsNames = new AllPrefabsNames();
+    private static _AllScenePrefabsNames: AllScenePrefabsNames = new AllScenePrefabsNames();
     private static _prefabsSceneCache: {
         [_index: string]: string,
     } = {};
@@ -69,8 +69,8 @@ export default class EssentialResUrls {
             return KeyResManager.instance.getResURL(EKeyResName[this._prefabsSceneCache[prefab]]) + 'Conventional/' + prefab + '.lh';
         }
         //判断该预制体在那个场景中被导出的
-        for (let _i in this._AllPrefabsNames) {
-            if (this._AllPrefabsNames[_i].indexOf('@' + prefab + '@') != -1) {
+        for (let _i in this._AllScenePrefabsNames) {
+            if (this._AllScenePrefabsNames[_i].indexOf('@' + prefab + '@') != -1) {
                 //添加到缓存
                 this._prefabsSceneCache[prefab] = _i;
                 //

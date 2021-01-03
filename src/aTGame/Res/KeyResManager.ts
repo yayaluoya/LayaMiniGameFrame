@@ -1,4 +1,4 @@
-import { AllPrefabsNames } from "../../cFrameBridge/Config/ELevelSceneName";
+import { AllScenePrefabsNames } from "../../cFrameBridge/Config/ELevelSceneName";
 import FrameCDNURL from "../../cFrameBridge/FrameCDNURL";
 import FrameSubpackages from "../../cFrameBridge/FrameSubpackages";
 import ConsoleEx from "../Console/ConsoleEx";
@@ -41,7 +41,7 @@ export default class KeyResManager {
             [EKeyResName.skin]: EKeyResName.RootRes + '/' + EKeyResName.Other + '/' + EKeyResName.skin + '/',
         };
         //注入预制体目录
-        let _AllPrefabNames: AllPrefabsNames = new AllPrefabsNames();
+        let _AllPrefabNames: AllScenePrefabsNames = new AllScenePrefabsNames();
         for (let _i in _AllPrefabNames) {
             EKeyResName[_i] = _i;
             this.m_KeyResList[EKeyResName[_i]] = EKeyResName.RootRes + '/' + EKeyResName[_i] + '/';

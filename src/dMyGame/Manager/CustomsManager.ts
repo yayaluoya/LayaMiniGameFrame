@@ -2,7 +2,6 @@ import ConManager from '../Control/ConManager';
 import Scene from '../../aTGame/3D/Scene';
 import SceneManager from '../../aTGame/3D/SceneManager';
 import { Const } from '../Common/Const';
-import ProManager from '../PrefabProcessor/ProManager';
 import EnvironmentManager from './EnvironmentManager';
 import IRootManager from '../../aTGame/Manager/IRootManager';
 import MesManager from './MesManager';
@@ -97,8 +96,6 @@ export default class CustomsManager implements IRootManager {
             this.m_ifSceneBuild = false;//加载结束
             //设置环境管理器
             EnvironmentManager.instance.setEnvironment(this.m_scene.scene);
-            //分配预制体到预制体工厂
-            ProManager.instance.AllotPre(scene.prefabs);
             //添加控制器
             ConManager.addScrCon(scene.scene);//依赖脚本的控制器
             ConManager.addCommonCon();//没有任何依赖的控制器
@@ -114,8 +111,6 @@ export default class CustomsManager implements IRootManager {
             }
             //抛出事件场景初始化完成
             MesManager.instance.sendEvent(EEventScene.GameLevelsOnBuild);
-            //显示隐藏页面
-            MesManager.instance.sendEvent(EEventUI.SceneGameCustomsInit);
         });
     }
 
@@ -150,7 +145,6 @@ export default class CustomsManager implements IRootManager {
         this.m_scene = null;
         //抛出事件
         MesManager.instance.sendEvent(EEventScene.GameLevelsOnDelete);
-        MesManager.instance.sendEvent(EEventUI.SceneGameCustomDelete);
     }
 
     /**
@@ -174,8 +168,6 @@ export default class CustomsManager implements IRootManager {
             this.m_ifSceneBuild = false;//加载结束
             //设置环境
             EnvironmentManager.instance.setOtherEnvironment(_name, _sceneSpr);
-            //分配预制体
-            ProManager.instance.AllotOtherScenePre(_name, _scene.prefabs);
             //判断是否有构建完成回调
             if (_handler) {
                 _handler.run();

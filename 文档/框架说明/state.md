@@ -105,6 +105,8 @@
     - dMyGame/ 项目文件
         - _config/ untiy打包出的配置文件ts文件！内容全是自动生成的，不要修改
         - _refabsName/ unity自动导出的场景预制体列表文件，包括预制体分类
+        - $PrefabProcessor/ 场景相关预制体批量处理，项目合适就使用，不合适就不用，重写写一套即可
+          - 可以批量修改和分类场景中的所有预制体，并统一添加脚本
         - common/ 公共内容
         - configProxy/ 配置文件数据代理
         - control/ 控制器
@@ -119,8 +121,6 @@
         - Main/ 游戏主入口
         - manager/ 一些管理器
         - Physics/ 物理相关
-        - PrefabProcessor/ 场景相关预制体批量处理
-          - 可以批量修改和分类场景中的所有预制体，并统一添加脚本
         - proxy/ 相关代理，代理本地数据和音效处理
         - ResList/ 资源列表，比如说预制体资源列表，音效资源列表（会预加载）
         - UIMediator/ UI调度者，管理对于的FGUI目录下的UI界面，建议注册到manager/UiManager.ts文件中，然后由UIManagerProxy.ts文件代理设置

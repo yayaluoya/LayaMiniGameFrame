@@ -114,7 +114,7 @@ export default class SceneManager implements IRootManager {
         //查看缓存
         if (!this._scenes[lvConfig.key]) {
             //创建场景实例
-            this._scenes[lvConfig.key] = this.getSceneByData(lvConfig.key, lvConfig);
+            this._scenes[lvConfig.key] = this.getSceneByData(lvConfig);
         }
         return this._scenes[lvConfig.key];
     }
@@ -131,13 +131,22 @@ export default class SceneManager implements IRootManager {
         //查看缓存
         if (!this._scenes[lvConfig.key]) {
             //创建场景实例
-            this._scenes[lvConfig.key] = this.getSceneByData(lvConfig.key, lvConfig);
+            this._scenes[lvConfig.key] = this.getSceneByData(lvConfig);
         }
         return this._scenes[lvConfig.key];
     }
 
     //通过关卡数据构建关卡
-    private getSceneByData(_key: string, _lvConfig: IFrameLevelData): Scene {
+    private getSceneByData(_lvConfig: IFrameLevelData): Scene {
+        let _data = this.getSceneConfig(_lvConfig);
+        return new Scene(_data.sceneNodes, _data.sceneNodes_, _lvConfig);
+    }
+
+    // 获取场景配置数据
+    private getSceneConfig(_lvConfig: IFrameLevelData): {
+        sceneNodes: { [index: string]: ISceneNode },
+        sceneNodes_: ISceneNode[],
+    } {
         //获取该关卡名字
         let sceneName: string[] = _lvConfig.sceneName;
         //获取该关卡其他资源加载名字
@@ -157,7 +166,11 @@ export default class SceneManager implements IRootManager {
                 sceneNodes_.push(this._levelConfig[_lvConfig.rootScene][_i]);
             }
         }
-        return new Scene(sceneNodes, sceneNodes_, _lvConfig);
+        //
+        return {
+            sceneNodes: sceneNodes,
+            sceneNodes_: sceneNodes_,
+        }
     }
 
     /**

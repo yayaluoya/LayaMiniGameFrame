@@ -1,6 +1,5 @@
 /**
  * 全局事件
- * * 都能抛出和监听
  */
 export enum EEventGlobal {
     /** 游戏初始化 */

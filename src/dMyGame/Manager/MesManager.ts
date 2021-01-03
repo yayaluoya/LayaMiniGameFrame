@@ -1,4 +1,5 @@
 import IRootManager from '../../aTGame/Manager/IRootManager';
+import { EEventAd } from '../EventEnum/EEventAd';
 import { EEventAudio } from '../EventEnum/EEventAudio';
 import { EEventGlobal } from '../EventEnum/EEventGlobal';
 import { EEventScene } from '../EventEnum/EEventScene';
@@ -38,6 +39,7 @@ export default class MesManager extends Laya.EventDispatcher implements IRootMan
     //注册消息枚举
     private enumerationEegistrationMes() {
         //注册消息类型，没注册的话就不能用本消息类发送该类型消息
+        this.enumerationEegistrationMes_(EEventAd);//广告事件
         this.enumerationEegistrationMes_(EEventGlobal);//全局事件
         this.enumerationEegistrationMes_(EEventUI);//UI事件
         this.enumerationEegistrationMes_(EEventScene);//场景事件
