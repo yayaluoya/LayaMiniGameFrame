@@ -24,4 +24,11 @@ export default class LayaUtils {
     public static get deltaTimeSec(): number {
         return Laya.timer.delta / 1000;
     }
+
+    /**
+     * 获取当前帧的缩放值
+     */
+    public static get deltaTimeScale(): number {
+        return Math.min(60, Laya.timer.delta) / 60;
+    }
 }
