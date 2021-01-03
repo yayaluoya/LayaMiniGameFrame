@@ -21,7 +21,7 @@ export default class PlatformManagerProxy extends RootClassProxy {
     /** 获取平台实例 */
     public get PlatformInstance(): IPlatform {
         if (!this.m_platformInstance) {
-            console.log(...ConsoleEx.packError('还没有设置过平台实例代理！'));
+            console.error(...ConsoleEx.packError('还没有设置过平台实例代理！'));
         }
         return this.m_platformInstance;
     }

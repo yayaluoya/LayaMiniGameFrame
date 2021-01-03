@@ -20,7 +20,7 @@ export default class BaseUIMediators<T extends fgui.GComponent> {
     protected constructor() {
         this._classDefine = this.getClass();
         if (!this._classDefine) {
-            console.log(...ConsoleEx.packError('没有设置UI类型'));
+            console.error(...ConsoleEx.packError('没有设置UI类型'));
         }
         this._ui = this._classDefine.createInstance() as T;
     }

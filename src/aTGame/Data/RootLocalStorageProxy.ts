@@ -87,13 +87,13 @@ export default abstract class RootLocalStorageProxy<T extends RootLocalStorageDa
     public addDataSetMonitor(_this: any, _dataSetMonitor: (target, key, newValue, value, rootData) => void, _rootData?: object, _key?: string | number | boolean) {
         //判断是否设置了数据代理
         if (!this._ifSetDataProxy) {
-            console.log(...ConsoleEx.packWarn('没有设置数据代理，数据被设置时不会被监听！'));
+            console.warn(...ConsoleEx.packWarn('没有设置数据代理，数据被设置时不会被监听！'));
         } else {
             //判断是否是对象属性
             if (_key && typeof _key == 'object') {
                 //判断对象和键值是否匹配
                 if (_key[RootLocalStorageProxy.$RootParentDataKey] != _rootData) {
-                    console.log(...ConsoleEx.packError('监听的对象属性不存在该对象属性列表中！'));
+                    console.error(...ConsoleEx.packError('监听的对象属性不存在该对象属性列表中！'));
                 }
                 _key = _key[RootLocalStorageProxy.$RootDataCruxKey];
             }

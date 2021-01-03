@@ -22,7 +22,7 @@ export default class MovieClipProxy extends RootClassProxy {
      */
     public static SetProxy(_mcArr: object, _handNum: object) {
         if (this.m_ifSetProxy) {
-            console.log(...ConsoleEx.packError('已经设置过代理了！'));
+            console.error(...ConsoleEx.packError('已经设置过代理了！'));
             return;
         }
         this.m_ifSetProxy = true;

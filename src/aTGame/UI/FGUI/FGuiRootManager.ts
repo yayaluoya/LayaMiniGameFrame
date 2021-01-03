@@ -86,7 +86,7 @@ export default class FGuiRootManager {
         //判断该层级是否有该ui
         let _index: number = _layerCom.getChildIndex(_ui);
         if (_index == -1) {
-            console.log(...ConsoleEx.packWarn('设置ui到最顶层失败，因为该层级里面没有该UI！'));
+            console.warn(...ConsoleEx.packWarn('设置ui到最顶层失败，因为该层级里面没有该UI！'));
             return;
         }
         //先从顶层删除

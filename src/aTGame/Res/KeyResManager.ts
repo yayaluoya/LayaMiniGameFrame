@@ -100,7 +100,7 @@ export default class KeyResManager {
     public editKeyResList(_key: string, _str: string) {
         let _replace: string = this.m_KeyResList_[_key];
         if (!_replace) {
-            console.log(...ConsoleEx.packWarn('修改资源路径失败，没有' + _key + '这个关键路径！'));
+            console.warn(...ConsoleEx.packWarn('修改资源路径失败，没有' + _key + '这个关键路径！'));
             return;
         } else {
             console.log(...ConsoleEx.packLog('修改关键点资源路径', _replace, '替换成', _str));

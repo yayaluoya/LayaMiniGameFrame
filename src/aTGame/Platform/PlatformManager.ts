@@ -38,7 +38,7 @@ export default class PlatformManager implements IRootManager {
     /** 获取平台实例 */
     public static get PlatformInstance(): IPlatform {
         if (!this.instance.m_platformInstance) {
-            console.log(...ConsoleEx.packError('还没有设置过平台实例代理！'));
+            console.error(...ConsoleEx.packError('还没有设置过平台实例代理！'));
         }
         return this.instance.m_platformInstance;
     }
@@ -82,7 +82,7 @@ export default class PlatformManager implements IRootManager {
             this.m_platformData = new OPPOData();
         }
         else {
-            console.log(...ConsoleEx.packWarn("未识别平台,默认创建为web"));
+            console.warn(...ConsoleEx.packWarn("未识别平台,默认创建为web"));
             result = new DefaultPlatform();
         }
         this.m_platformInstance = result;

@@ -78,6 +78,6 @@ export default class EssentialResUrls {
             }
         }
         //
-        console.log(...ConsoleEx.packError('没有在场景找到预制体', prefab, '可能是没有导出场景预制体列表导致的。'));
+        console.error(...ConsoleEx.packError('没有在场景找到预制体', prefab, '可能是没有导出场景预制体列表导致的。'));
     }
 }

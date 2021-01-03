@@ -137,7 +137,7 @@
         static Get(resUrl, noClone = false) {
             let getRes = Laya.loader.getRes(resUrl);
             if (getRes == null) {
-                console.log(...ConsoleEx.packError("资源尚未加载", resUrl));
+                console.error(...ConsoleEx.packError("资源尚未加载", resUrl));
                 return null;
             }
             return noClone ? getRes : getRes.clone();
@@ -160,10 +160,13 @@
             return new Laya.Vector3(Number(strs[0]), Number(strs[1]), Number(strs[2]));
         }
         static setV3Length(_v3, _l) {
-            let _a = _l / Laya.Vector3.scalarLength(_v3);
-            _v3.x = _v3.x * _a;
-            _v3.y = _v3.y * _a;
-            _v3.z = _v3.z * _a;
+            let _length = Laya.Vector3.scalarLength(_v3);
+            if (_length != 0) {
+                let _a = _l / _length;
+                _v3.x = _v3.x * _a;
+                _v3.y = _v3.y * _a;
+                _v3.z = _v3.z * _a;
+            }
         }
         static PotLerpMove(_pos, _tragetPot, _lerp, _outV3, _initialLength) {
             if (!_outV3) {
@@ -339,7 +342,7 @@
         editKeyResList(_key, _str) {
             let _replace = this.m_KeyResList_[_key];
             if (!_replace) {
-                console.log(...ConsoleEx.packWarn('修改资源路径失败，没有' + _key + '这个关键路径！'));
+                console.warn(...ConsoleEx.packWarn('修改资源路径失败，没有' + _key + '这个关键路径！'));
                 return;
             }
             else {
@@ -379,7 +382,7 @@
                     return KeyResManager.instance.getResURL(EKeyResName[_i]) + 'Conventional/' + prefab + '.lh';
                 }
             }
-            console.log(...ConsoleEx.packError('没有在场景找到预制体', prefab, '可能是没有导出场景预制体列表导致的。'));
+            console.error(...ConsoleEx.packError('没有在场景找到预制体', prefab, '可能是没有导出场景预制体列表导致的。'));
         }
     }
     EssentialResUrls._AllScenePrefabsNames = new AllScenePrefabsNames();
@@ -515,7 +518,7 @@
         buildScene(onProgress = null) {
             return new Promise((r) => {
                 if (this._scene) {
-                    console.log(...ConsoleEx.packWarn('重复构建关卡，请注意'));
+                    console.warn(...ConsoleEx.packWarn('重复构建关卡，请注意'));
                     r(this._scene);
                     return;
                 }
@@ -575,7 +578,7 @@
                 _length++;
             }
             if (_length == 0) {
-                console.log(...ConsoleEx.packError('关卡->' + this._lvConfig.key + '<-不存在,或者是没有内容'));
+                console.error(...ConsoleEx.packError('关卡->' + this._lvConfig.key + '<-不存在,或者是没有内容'));
                 return;
             }
             if (!this._prefabRes || this._prefabRes.length <= 0) {
@@ -829,7 +832,7 @@
         getSceneByLv(id) {
             let lvConfig = FrameLevelConfig.byLevelIdGetLevelData(id);
             if (!lvConfig) {
-                console.log(...ConsoleEx.packError("不存在此关卡->", id));
+                console.error(...ConsoleEx.packError("不存在此关卡->", id));
             }
             if (!this._scenes[lvConfig.key]) {
                 this._scenes[lvConfig.key] = this.getSceneByData(lvConfig);
@@ -839,7 +842,7 @@
         getOtherSceneByName(_name) {
             let lvConfig = FrameLevelConfig.byLevelNameGetOtherLevelData(_name);
             if (!lvConfig) {
-                console.log(...ConsoleEx.packError("不存在此关卡->", _name));
+                console.error(...ConsoleEx.packError("不存在此关卡->", _name));
             }
             if (!this._scenes[lvConfig.key]) {
                 this._scenes[lvConfig.key] = this.getSceneByData(lvConfig);
@@ -856,7 +859,7 @@
             let sceneNodes = {};
             let sceneNodes_ = [];
             if (!this._levelConfig[_lvConfig.rootScene]) {
-                console.log(...ConsoleEx.packError('没有找到场景-', _lvConfig.rootScene, ' 请先注册。'));
+                console.error(...ConsoleEx.packError('没有找到场景-', _lvConfig.rootScene, ' 请先注册。'));
             }
             for (let _i in this._levelConfig[_lvConfig.rootScene]) {
                 if (sceneName.findIndex((item) => { return item == _i; }) != -1) {
@@ -1265,14 +1268,14 @@
         static addItem(_key, _item) {
             let _rootKey = this.prefix + ':' + _key;
             if (this[_rootKey]) {
-                console.log(...ConsoleEx.packWarn('该调试对象已经存在了，将会被第二个覆盖', _rootKey));
+                console.warn(...ConsoleEx.packWarn('该调试对象已经存在了，将会被第二个覆盖', _rootKey));
             }
             this[_rootKey] = _item;
         }
         startDebug() {
             this._ifStart = true;
             if (window[RootDebug.prefix][this._name]) {
-                console.log(...ConsoleEx.packWarn('有一个调试对象名字重名了，将会被第二个覆盖', this._name));
+                console.warn(...ConsoleEx.packWarn('有一个调试对象名字重名了，将会被第二个覆盖', this._name));
             }
             window[RootDebug.prefix][this._name] = this;
             this._startDebug();
@@ -1282,7 +1285,7 @@
                 return;
             }
             if (this[_key]) {
-                console.log(...ConsoleEx.packWarn('该调试对象已经存在了，将会被第二个覆盖', this._name, '-', _key));
+                console.warn(...ConsoleEx.packWarn('该调试对象已经存在了，将会被第二个覆盖', this._name, '-', _key));
             }
             this[_key] = _item;
         }
@@ -1292,7 +1295,7 @@
             window[EDebugWindow.DebugWindow] = _win;
             let _url = window.location.href.replace('bin/index.html', 'DebugWindow/dist/');
             _win.document.getElementsByTagName('html')[0].innerHTML = html.replace(/"\//g, '"' + _url);
-            console.log(...ConsoleEx.packWarn('打开调式窗口。'));
+            console.warn(...ConsoleEx.packWarn('打开调式窗口。'));
             let _HTMLCollection = _win.document.getElementsByTagName('body')[0].getElementsByTagName('script');
             _win[EDebugWindow.Mes] = new DebugWindowCommunication();
             let _scriptSrc = [];
@@ -1314,7 +1317,7 @@
     RootDebug.prefix = '$Debug';
     window[RootDebug.prefix] = {};
     if (MainGameConfig.ifDebug) {
-        console.log(...ConsoleEx.packWarn('开启调试模式，通过', RootDebug.prefix, '访问'));
+        console.warn(...ConsoleEx.packWarn('开启调试模式，通过', RootDebug.prefix, '访问'));
     }
 
     class EnvironmentDebug extends RootDebug {
@@ -2066,12 +2069,12 @@
         }
         addDataSetMonitor(_this, _dataSetMonitor, _rootData, _key) {
             if (!this._ifSetDataProxy) {
-                console.log(...ConsoleEx.packWarn('没有设置数据代理，数据被设置时不会被监听！'));
+                console.warn(...ConsoleEx.packWarn('没有设置数据代理，数据被设置时不会被监听！'));
             }
             else {
                 if (_key && typeof _key == 'object') {
                     if (_key[RootLocalStorageProxy.$RootParentDataKey] != _rootData) {
-                        console.log(...ConsoleEx.packError('监听的对象属性不存在该对象属性列表中！'));
+                        console.error(...ConsoleEx.packError('监听的对象属性不存在该对象属性列表中！'));
                     }
                     _key = _key[RootLocalStorageProxy.$RootDataCruxKey];
                 }
@@ -2603,7 +2606,7 @@
             let _layerCom = this.getLayer(_layer);
             let _index = _layerCom.getChildIndex(_ui);
             if (_index == -1) {
-                console.log(...ConsoleEx.packWarn('设置ui到最顶层失败，因为该层级里面没有该UI！'));
+                console.warn(...ConsoleEx.packWarn('设置ui到最顶层失败，因为该层级里面没有该UI！'));
                 return;
             }
             _ui.removeFromParent();
@@ -2926,7 +2929,7 @@
         }
         setUIState(_uiStates, _ifUnify = true, _unifyState = { state: false, dispose: true }, _showAffectLayer, _hideAffectLayer) {
             if (!this.m_ifSetMediatroList) {
-                console.log(...ConsoleEx.packError('还没有为UI代理类设置代理UI调度者列表！'));
+                console.error(...ConsoleEx.packError('还没有为UI代理类设置代理UI调度者列表！'));
                 return;
             }
             for (let _o of _uiStates) {
@@ -2999,14 +3002,14 @@
             }
             for (let _o of _hideUI) {
                 if (this.m_UIMediator[_o.typeIndex].ifBelongUIMediator) {
-                    console.log(...ConsoleEx.packWarn('注意：有一个附属UI的UI调度者试图被隐藏，KEY为', this.m_UIMediator[_o.typeIndex].keyId));
+                    console.warn(...ConsoleEx.packWarn('有一个附属UI的UI调度者试图被隐藏，KEY为', this.m_UIMediator[_o.typeIndex].keyId));
                     continue;
                 }
                 this.hideUIMediator(this.m_UIMediator[_o.typeIndex], _o.dispose);
             }
             for (let _o of _showUI) {
                 if (this.m_UIMediator[_o.typeIndex].ifBelongUIMediator) {
-                    console.log(...ConsoleEx.packWarn('注意：有一个附属UI的UI调度者试图被显示，KEY为', this.m_UIMediator[_o.typeIndex].keyId));
+                    console.warn(...ConsoleEx.packWarn('有一个附属UI的UI调度者试图被显示，KEY为', this.m_UIMediator[_o.typeIndex].keyId));
                     continue;
                 }
                 this.showUIMediator(this.m_UIMediator[_o.typeIndex]);
@@ -3028,7 +3031,7 @@
                 _UIMed.Hide(_dispose);
             }
             else {
-                console.log(...ConsoleEx.packWarn('注意：有一个不是附属UI的UI调度者试图被隐藏，KEY为', _UIMed.keyId));
+                console.warn(...ConsoleEx.packWarn('有一个不是附属UI的UI调度者试图被隐藏，KEY为', _UIMed.keyId));
             }
             if (_UIMed.belongDownUIMediator.length > 0) {
                 _UIMed.belongDownUIMediator.forEach((item) => {
@@ -3046,7 +3049,7 @@
                 _UIMed.Show();
             }
             else {
-                console.log(...ConsoleEx.packWarn('注意：有一个不是附属UI的UI调度者试图被显示，KEY为', _UIMed.keyId));
+                console.warn(...ConsoleEx.packWarn('有一个不是附属UI的UI调度者试图被显示，KEY为', _UIMed.keyId));
             }
             if (_UIMed.belongUpUIMediator.length > 0) {
                 _UIMed.belongUpUIMediator.forEach((item) => {
@@ -3526,7 +3529,7 @@
         }
         get PlatformInstance() {
             if (!this.m_platformInstance) {
-                console.log(...ConsoleEx.packError('还没有设置过平台实例代理！'));
+                console.error(...ConsoleEx.packError('还没有设置过平台实例代理！'));
             }
             return this.m_platformInstance;
         }
@@ -5834,7 +5837,7 @@
         }
         static get PlatformInstance() {
             if (!this.instance.m_platformInstance) {
-                console.log(...ConsoleEx.packError('还没有设置过平台实例代理！'));
+                console.error(...ConsoleEx.packError('还没有设置过平台实例代理！'));
             }
             return this.instance.m_platformInstance;
         }
@@ -5871,7 +5874,7 @@
                 this.m_platformData = new OPPOData();
             }
             else {
-                console.log(...ConsoleEx.packWarn("未识别平台,默认创建为web"));
+                console.warn(...ConsoleEx.packWarn("未识别平台,默认创建为web"));
                 result = new DefaultPlatform();
             }
             this.m_platformInstance = result;
@@ -5961,7 +5964,20 @@
         initUIMediator() { }
         _initUIMediator() {
             if (!this.m_UIMediator) {
-                console.log(...ConsoleEx.packWarn('注意！没有注册UI代理类。'));
+                console.error(...ConsoleEx.packError('没有注册UI状态列表'));
+            }
+            let _length = 0;
+            for (let _i in this.m_UIMediator) {
+                _length++;
+                if (typeof this.m_UIMediator[_i] == "undefined" || !this.m_UIMediator[_i]) {
+                    console.warn(...ConsoleEx.packWarn('有一个UIMediator不存在', _i));
+                }
+            }
+            if (_length == 0) {
+                console.warn(...ConsoleEx.packWarn('UI状态列表长度为0'));
+            }
+            if (!this.m_UIProxy) {
+                console.warn(...ConsoleEx.packWarn('没有注册UI代理类。'));
             }
             this.m_UIProxy.setProxyMediatroList(this.m_UIMediator);
             let _serialNumber;
@@ -5973,7 +5989,7 @@
                 _serialNumberLenth = _serialNumber.length;
                 _serialNumber = ArrayUtils.Unique(_serialNumber);
                 if (_serialNumberLenth != _serialNumber.length) {
-                    console.log(...ConsoleEx.packError('UI调度者', _i, '的附属UI有重复出现！'));
+                    console.error(...ConsoleEx.packError('UI调度者', _i, '的附属UI有重复出现！'));
                 }
             }
         }
@@ -5985,12 +6001,12 @@
             }
             if (!_ifR) {
                 if (_UIMed.ifBelongUIMediator) {
-                    console.log(...ConsoleEx.packWarn('注意！有一个附属UI调度者被添加进了UI管理器列表中，它将不会被显示。'));
+                    console.warn(...ConsoleEx.packWarn('注意！有一个附属UI调度者被添加进了UI管理器列表中，它将不会被显示。'));
                 }
             }
             else {
                 if (!_UIMed.ifBelongUIMediator) {
-                    console.log(...ConsoleEx.packWarn('注意！有一个不是附属的UI调度者被添加进了附属列表中'));
+                    console.warn(...ConsoleEx.packWarn('注意！有一个不是附属的UI调度者被添加进了附属列表中'));
                 }
             }
             _numbers.push(_UIMed.serialNumber);
@@ -7004,8 +7020,8 @@
         startTest() {
             console.log('->开启测试<-');
             console.log(...ConsoleEx.packLog(this._consoleExStr));
-            console.log(...ConsoleEx.packWarn(this._consoleExStr));
-            console.log(...ConsoleEx.packError(this._consoleExStr));
+            console.warn(...ConsoleEx.packWarn(this._consoleExStr));
+            console.error(...ConsoleEx.packError(this._consoleExStr));
         }
     }
 

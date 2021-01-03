@@ -109,7 +109,7 @@ export default class SceneManager implements IRootManager {
     public getSceneByLv(id: number): Scene {
         let lvConfig: IFrameLevelData = FrameLevelConfig.byLevelIdGetLevelData(id);
         if (!lvConfig) {
-            console.log(...ConsoleEx.packError("不存在此关卡->", id));
+            console.error(...ConsoleEx.packError("不存在此关卡->", id));
         }
         //查看缓存
         if (!this._scenes[lvConfig.key]) {
@@ -126,7 +126,7 @@ export default class SceneManager implements IRootManager {
     public getOtherSceneByName(_name: string): Scene {
         let lvConfig: IFrameLevelData = FrameLevelConfig.byLevelNameGetOtherLevelData(_name);
         if (!lvConfig) {
-            console.log(...ConsoleEx.packError("不存在此关卡->", _name));
+            console.error(...ConsoleEx.packError("不存在此关卡->", _name));
         }
         //查看缓存
         if (!this._scenes[lvConfig.key]) {
@@ -156,7 +156,7 @@ export default class SceneManager implements IRootManager {
         let sceneNodes_: ISceneNode[] = [];
         //获取需要加载和预加载的节点
         if (!this._levelConfig[_lvConfig.rootScene]) {
-            console.log(...ConsoleEx.packError('没有找到场景-', _lvConfig.rootScene, ' 请先注册。'));
+            console.error(...ConsoleEx.packError('没有找到场景-', _lvConfig.rootScene, ' 请先注册。'));
         }
         for (let _i in this._levelConfig[_lvConfig.rootScene]) {
             if (sceneName.findIndex((item) => { return item == _i }) != -1) {

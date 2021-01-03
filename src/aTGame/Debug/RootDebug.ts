@@ -26,7 +26,7 @@ export default class RootDebug {
     public static addItem(_key: string, _item: any) {
         let _rootKey: string = this.prefix + ':' + _key;
         if (this[_rootKey]) {
-            console.log(...ConsoleEx.packWarn('该调试对象已经存在了，将会被第二个覆盖', _rootKey));
+            console.warn(...ConsoleEx.packWarn('该调试对象已经存在了，将会被第二个覆盖', _rootKey));
         }
         this[_rootKey] = _item;
     }
@@ -36,7 +36,7 @@ export default class RootDebug {
         this._ifStart = true;
         //注入到全局中
         if (window[RootDebug.prefix][this._name]) {
-            console.log(...ConsoleEx.packWarn('有一个调试对象名字重名了，将会被第二个覆盖', this._name));
+            console.warn(...ConsoleEx.packWarn('有一个调试对象名字重名了，将会被第二个覆盖', this._name));
         }
         window[RootDebug.prefix][this._name] = this;
         //
@@ -53,7 +53,7 @@ export default class RootDebug {
         if (!this._ifStart) { return; }
         //
         if (this[_key]) {
-            console.log(...ConsoleEx.packWarn('该调试对象已经存在了，将会被第二个覆盖', this._name, '-', _key));
+            console.warn(...ConsoleEx.packWarn('该调试对象已经存在了，将会被第二个覆盖', this._name, '-', _key));
         }
         this[_key] = _item;
     }
@@ -72,7 +72,7 @@ export default class RootDebug {
         let _url: string = window.location.href.replace('bin/index.html', 'DebugWindow/dist/');
         _win.document.getElementsByTagName('html')[0].innerHTML = debugIndex.replace(/"\//g, '"' + _url);
         //
-        console.log(...ConsoleEx.packWarn('打开调式窗口。'));
+        console.warn(...ConsoleEx.packWarn('打开调式窗口。'));
         //提取JavaScript标签并且重新添加
         let _HTMLCollection: any = _win.document.getElementsByTagName('body')[0].getElementsByTagName('script');
         //注入消息沟通对象
@@ -103,5 +103,5 @@ window[RootDebug.prefix] = {};
 
 //判断是否开启了调试模式
 if (MainGameConfig.ifDebug) {
-    console.log(...ConsoleEx.packWarn('开启调试模式，通过', RootDebug.prefix, '访问'));
+    console.warn(...ConsoleEx.packWarn('开启调试模式，通过', RootDebug.prefix, '访问'));
 }

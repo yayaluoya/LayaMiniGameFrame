@@ -17,7 +17,7 @@ export default class BaseProScript<Pro extends ProScriptLink, Data> extends Root
         if (this.m_Pro) {
             return this.m_Pro;
         } else {
-            console.log(...ConsoleEx.packWarn('->没有找到Pro!<-'));
+            console.warn(...ConsoleEx.packWarn('->没有找到Pro!<-'));
         }
     }
 

@@ -86,7 +86,7 @@ export default class RootUIStateManagerProxy extends RootClassProxy {
     ) {
         //判断是否设置过ui代理列表
         if (!this.m_ifSetMediatroList) {
-            console.log(...ConsoleEx.packError('还没有为UI代理类设置代理UI调度者列表！'));
+            console.error(...ConsoleEx.packError('还没有为UI代理类设置代理UI调度者列表！'));
             return;
         }
         //自动设置ui状态列表
@@ -183,7 +183,7 @@ export default class RootUIStateManagerProxy extends RootClassProxy {
         //隐藏上一批需要隐藏的列表
         for (let _o of _hideUI) {
             if (this.m_UIMediator[_o.typeIndex].ifBelongUIMediator) {
-                console.log(...ConsoleEx.packWarn('注意：有一个附属UI的UI调度者试图被隐藏，KEY为', this.m_UIMediator[_o.typeIndex].keyId));
+                console.warn(...ConsoleEx.packWarn('有一个附属UI的UI调度者试图被隐藏，KEY为', this.m_UIMediator[_o.typeIndex].keyId));
                 continue;
             }
             //递归隐藏该UI和它的所有附属
@@ -192,7 +192,7 @@ export default class RootUIStateManagerProxy extends RootClassProxy {
         //显示在显示列表里面的全部UI
         for (let _o of _showUI) {
             if (this.m_UIMediator[_o.typeIndex].ifBelongUIMediator) {
-                console.log(...ConsoleEx.packWarn('注意：有一个附属UI的UI调度者试图被显示，KEY为', this.m_UIMediator[_o.typeIndex].keyId));
+                console.warn(...ConsoleEx.packWarn('有一个附属UI的UI调度者试图被显示，KEY为', this.m_UIMediator[_o.typeIndex].keyId));
                 continue;
             }
             //递归显示该UI和它的所有附属
@@ -223,7 +223,7 @@ export default class RootUIStateManagerProxy extends RootClassProxy {
         if (!_ifR || _UIMed.ifBelongUIMediator) {
             _UIMed.Hide(_dispose);
         } else {
-            console.log(...ConsoleEx.packWarn('注意：有一个不是附属UI的UI调度者试图被隐藏，KEY为', _UIMed.keyId));
+            console.warn(...ConsoleEx.packWarn('有一个不是附属UI的UI调度者试图被隐藏，KEY为', _UIMed.keyId));
         }
         //
         if (_UIMed.belongDownUIMediator.length > 0) {
@@ -244,7 +244,7 @@ export default class RootUIStateManagerProxy extends RootClassProxy {
         if (!_ifR || _UIMed.ifBelongUIMediator) {
             _UIMed.Show();
         } else {
-            console.log(...ConsoleEx.packWarn('注意：有一个不是附属UI的UI调度者试图被显示，KEY为', _UIMed.keyId));
+            console.warn(...ConsoleEx.packWarn('有一个不是附属UI的UI调度者试图被显示，KEY为', _UIMed.keyId));
         }
         //
         if (_UIMed.belongUpUIMediator.length > 0) {

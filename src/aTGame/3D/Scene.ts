@@ -91,7 +91,7 @@ export default class Scene {
     public buildScene(onProgress: Laya.Handler = null): Promise<Laya.Sprite3D> {
         return new Promise<Laya.Sprite3D>((r: Function) => {
             if (this._scene) {
-                console.log(...ConsoleEx.packWarn('重复构建关卡，请注意'));
+                console.warn(...ConsoleEx.packWarn('重复构建关卡，请注意'));
                 r(this._scene);
                 return;
             }
@@ -181,7 +181,7 @@ export default class Scene {
         for (let _i in this.sceneNode) {
             _length++;
         }
-        if (_length == 0) { console.log(...ConsoleEx.packError('关卡->' + this._lvConfig.key + '<-不存在,或者是没有内容')); return; }
+        if (_length == 0) { console.error(...ConsoleEx.packError('关卡->' + this._lvConfig.key + '<-不存在,或者是没有内容')); return; }
         if (!this._prefabRes || this._prefabRes.length <= 0) {
             //判断需要构建的节点
             for (let _i in this.sceneNode) {

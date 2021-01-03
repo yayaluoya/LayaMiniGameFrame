@@ -2,7 +2,6 @@ import BasePrefabPro from '../z_T/pro/BasePrefabPro';
 import CameraScr from '../b_Script/CameraScr';
 import ValueConst from '../../Common/ValueConst';
 import EnvironmentManager from '../../Manager/EnvironmentManager';
-import ConsoleEx from '../../../aTGame/Console/ConsoleEx';
 /**
  * 摄像机加工者
  */
@@ -19,7 +18,7 @@ export default class CameraPro extends BasePrefabPro {
     protected sprInit() {
         if (!this.m_camera) {
             if (!this.m_sprList[0]) {
-                console.log(...ConsoleEx.packError('没有找到摄像机!'));
+                console.log('没有找到摄像机!');
             }
             //
             this.m_camera = this.m_sprList[0] as Laya.Camera;
