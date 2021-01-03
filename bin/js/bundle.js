@@ -759,17 +759,17 @@
     class FrameLevelConfig {
         static byLevelIdGetLevelData(_id) {
             let _levelConfigData = LevelConfigProxy.instance.byIdGetData(_id);
-            return this.getLevelData('ID', _levelConfigData.sceneName, _levelConfigData.sceneOtherRes, _levelConfigData.rootScene);
+            return this.getLevelData('ID', _levelConfigData.id, _levelConfigData.sceneName, _levelConfigData.sceneOtherRes, _levelConfigData.rootScene);
         }
         static byLevelNameGetOtherLevelData(_name) {
             let _levelConfigData = OtherLevelConfigProxy.instance.byNameGetData(_name);
-            return this.getLevelData('Name', _levelConfigData.sceneName, _levelConfigData.sceneOtherRes, _levelConfigData.rootScene);
+            return this.getLevelData('Name', _levelConfigData.id, _levelConfigData.sceneName, _levelConfigData.sceneOtherRes, _levelConfigData.rootScene);
         }
-        static getLevelData(_key, _sceneName, _sceneOtherRes, _rootScene) {
+        static getLevelData(_key, _id, _sceneName, _sceneOtherRes, _rootScene) {
             _sceneName.replace(/\s+/g, '').replace(/^,+/, '').replace(/,+$/, '').replace(/,+/g, ',');
             _sceneOtherRes.replace(/\s+/g, '').replace(/^,+/, '').replace(/,+$/, '').replace(/,+/g, ',');
             return {
-                key: '$' + _rootScene + ':' + _key + '-' + _sceneName,
+                key: '$' + _rootScene + ':' + _key + '-' + _id + '-' + _sceneName,
                 rootScene: _rootScene,
                 sceneName: _sceneName.split(','),
                 sceneOtherRes: _sceneOtherRes.split(','),
@@ -7187,7 +7187,7 @@
         constructor() {
             this.name = "LayaMiniGame";
             this.ZHName = "LayaBox小游戏";
-            this.versions = "1.2.5";
+            this.versions = "1.2.6";
         }
     }
 
