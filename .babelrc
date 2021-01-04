@@ -1,0 +1,14 @@
+{
+    "presets": [
+        [
+            "@babel/preset-env",
+            {
+                "corejs": "3",
+                "useBuiltIns": "usage"
+            }
+        ],
+        "@babel/preset-typescript",
+    ],
+    // 插件
+    "plugins": ["transform-class-properties"]
+}

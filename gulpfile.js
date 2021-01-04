@@ -18,7 +18,8 @@ let _time = 0;
 let _awakeTime = 0;
 
 //创建一个名称为compile的gulp任务
-task("compile", function () {
+task("compile", function (f) {
+    f();
     console.log('\033[35m', '增量编译。。。', '\033[0m');
     //自动编译
     compile((code, signal) => {
@@ -60,7 +61,8 @@ task("compile", function () {
 });
 
 //创建一个名称为webpack的gulp任务
-task("webpackCompile", function () {
+task("webpackCompile", function (f) {
+    f();
     let process = exec("webpack --config webpack.js");
     process.stdout.on("data", (data) => {
         console.log(data);
@@ -178,7 +180,8 @@ function getLocalIP() {
 }
 
 //创建一个名称为compile的gulp任务
-task("httpServer", function () {
+task("httpServer", function (f) {
+    f();
     console.log('开启 HTTP 服务');
     let process = exec("http-server -p 3000 --cors");
     process.stdout.on("data", (data) => {
