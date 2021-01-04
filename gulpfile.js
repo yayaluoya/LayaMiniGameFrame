@@ -134,21 +134,8 @@ function compile(_back) {
         return;
     }
     _ifCompile = true;
-    //判断打包方式
-    let process
-    switch (gulpfileConst.packType) {
-        case 'webpack':
-            process = exec("webpack --config webpack.js");
-            break;
-        case 'layaAir':
-            process = exec("layaair2-cmd compile");
-            break;
-    }
     //
-    if (!process) {
-        console.log('\033[31m', '没有设置打包方式', '\033[0m');
-        return;
-    }
+    let process = exec("layaair2-cmd compile");
     process.stdout.on("data", (data) => {
         console.log(data);
     });

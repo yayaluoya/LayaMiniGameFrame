@@ -5,9 +5,6 @@ let gulpfileConst = {
     /** 名字 */
     itemName: 'LayaMiniGame',
 
-    /** 打包方式，webpack | layaAir */
-    packType: 'webpack',
-
     /** */
     livereload: true,
 

@@ -7,9 +7,9 @@
     "layaminigameframe": "game.js"
   },
   "scripts": {
-    "LayaAir编译-慢": "layaair2-cmd compile",
-    "webpack编译-快": "gulp webpackCompile",
-    "增量编译": "gulp compile",
+    "LayaAir编译": "layaair2-cmd compile",
+    "webpack增量编译-快": "gulp webpackCompile",
+    "LayaAir增量编译": "gulp compile",
     "Http-服务": "gulp httpServer",
     "打包-Web-Game": "layaair2-cmd publish -c web",
     "打包到-微信-Game": "layaair2-cmd publish -c wxgame",
@@ -20,7 +20,8 @@
     "打包到-QQ Game": "layaair2-cmd publish -c qqgame",
     "更新调试页面首页": "gulp setDebugIndexHtml",
     "设置淘宝镜像-更快的安装包": "npm config set registry https://registry.npm.taobao.org",
-    "安装-全局包": "npm i layaair2-cmd http-server -g --ignore-scripts"
+    "安装-全局包": "npm i layaair2-cmd http-server -g --ignore-scripts",
+    "安装-本地包": "npm install"
   },
   "repository": {
     "type": "git",
@@ -30,12 +31,11 @@
   "license": "ISC",
   "dependencies": {
     "@babel/polyfill": "^7.12.1",
-    "babel-plugin-transform-class-properties": "^6.24.1",
-    "babel-plugin-transform-typescript": "^7.0.0-alpha.19",
     "core-js": "^3.8.1",
     "gulp": "^4.0.2",
     "gulp-connect": "^5.7.0",
     "gulp-rev-append": "^0.1.8",
+    "happypack": "^5.0.1",
     "raw-loader": "^4.0.2",
     "ts-loader": "^8.0.13",
     "typescript": "^4.1.3",
@@ -47,6 +47,8 @@
     "@babel/core": "^7.12.10",
     "@babel/preset-env": "^7.12.11",
     "@babel/preset-typescript": "^7.12.7",
-    "babel-loader": "^8.2.2"
+    "babel-loader": "^8.2.2",
+    "cache-loader": "^4.1.0",
+    "hard-source-webpack-plugin": "^0.13.1"
   }
 }
