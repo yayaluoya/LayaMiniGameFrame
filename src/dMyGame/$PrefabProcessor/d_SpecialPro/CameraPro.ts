@@ -23,9 +23,12 @@ export default class CameraPro extends BasePrefabPro {
             //
             this.m_camera = this.m_sprList[0] as Laya.Camera;
             this.m_cameraNode = new Laya.Sprite3D();
+            //添加到根节点
+            EnvironmentManager.instance.s3d.addChild(this.m_cameraNode);
+            //
             this.m_rootPos = this.m_camera.transform.position.clone();
             this.m_rootAng = this.m_camera.transform.rotationEuler.clone();
-            this.m_rootAng.x = -this.m_rootAng.x;
+            this.m_rootAng.x *= -1;
             this.m_rootAng.y = this.m_rootAng.y - 180;
             this.m_cameraNode.addChild(this.m_camera);
             this.m_camera.transform.localPosition = ValueConst.zeroV3;
@@ -34,14 +37,10 @@ export default class CameraPro extends BasePrefabPro {
             this.m_Scr = this.addScript<CameraScr>(this.m_camera, CameraScr);
             //设置节点
             this.m_Scr.cameraNode = this.m_cameraNode;
-            //添加到根节点
-            EnvironmentManager.instance.s3d.addChild(this.m_cameraNode);
         }
         //回到初始位置
         this.m_cameraNode.transform.position = this.m_rootPos;
         //回到初始旋转
         this.m_cameraNode.transform.rotationEuler = new Laya.Vector3(this.m_rootAng.x, this.m_rootAng.y, 0);
-        //初始化
-        this.m_Scr.init();
     }
 }

@@ -16,13 +16,6 @@ export default class CameraScr extends BaseProScript<CameraPro, any>{
         this.m_cameraNodeTransform = _spr.transform;
     }
 
-    /**
-     * 初始化
-     */
-    public init() {
-        //
-    }
-
     public onAwake() {
         //
         this.m_transform = (this.owner as Laya.Sprite3D).transform;

@@ -1,5 +1,5 @@
 import ResLoad from '../Res/ResLoad';
-import SceneUtils, { ISceneNode, IScenePrefab } from "./SceneUtils";
+import SceneUtils, { IPrefabsGather, ISceneNode, IScenePrefab } from "./SceneUtils";
 import GlobalUnitClassProxy from "./GlobalUnitClassProxy";
 import EssentialResUrls from '../Res/EssentialResUrls';
 import ConsoleEx from '../Console/ConsoleEx';
@@ -22,7 +22,7 @@ export default class Scene {
     private m_affiliateResURLs: string[] = [];
 
     /** 根据预制体分类的物品列表 */
-    public prefabs: { [key: string]: Laya.Sprite3D[] } = {};
+    public prefabs: IPrefabsGather = {};
 
     /** 所有的物品 */
     public sprite3Ds: Laya.Sprite3D[] = [];

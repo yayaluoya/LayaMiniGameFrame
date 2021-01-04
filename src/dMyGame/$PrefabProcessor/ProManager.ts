@@ -1,11 +1,11 @@
 import RootProManager from './z_T/RootProManager';
 import { EProcessor } from './c_Enum/EProcessor';
 import CameraPro from './d_SpecialPro/CameraPro';
-import { ProManagerSprList } from './z_T/RootProManager';
 import ProManagerProxy from './ProManagerProxy';
 import EnvironmentManager from '../Manager/EnvironmentManager';
 import PrefabNames from '../ResList/PrefabNames';
 import { EOtherLevelName } from '../Enum/EOtherLevelName';
+import { IPrefabsGather } from 'src/aTGame/3D/SceneUtils';
 /**
  * 预制体工管理类
  */
@@ -38,7 +38,7 @@ export default class ProManager extends RootProManager {
     }
 
     //分配预制体
-    protected allotPrefab(_prefabs: ProManagerSprList) {
+    protected allotPrefab(_prefabs: IPrefabsGather) {
         //
         this.m_proList[EProcessor.CameraPro].startPor({ [PrefabNames.Camera]: [EnvironmentManager.instance.camera] });
         //开始分配
@@ -50,7 +50,7 @@ export default class ProManager extends RootProManager {
     }
 
     //分配其他关卡预制体
-    protected allotOtherScenePrefab(_sceneName: EOtherLevelName, _prefabs: ProManagerSprList) {
+    protected allotOtherScenePrefab(_sceneName: EOtherLevelName, _prefabs: IPrefabsGather) {
         //
     }
 

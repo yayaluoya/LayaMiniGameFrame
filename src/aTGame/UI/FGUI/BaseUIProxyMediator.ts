@@ -6,13 +6,13 @@ import BaseUIMediator from "./BaseUIMediator";
  */
 export default class BaseUIProxyMediator<UI extends fgui.GComponent, Mediator extends BaseUIMediator<fgui.GComponent>> {
     /** 是否开始代理 */
-    private m_ifProxy: boolean = false;
+    protected m_ifProxy: boolean = false;
 
     /** 代理的调度者 */
-    private m_mediator: Mediator;
+    protected m_mediator: Mediator;
 
     /** 代理的UI */
-    private m_ui: UI;
+    protected m_ui: UI;
 
     /** 是否开始代理 */
     public get ifProxy(): boolean {

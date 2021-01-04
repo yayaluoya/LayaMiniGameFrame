@@ -17,7 +17,7 @@ export default class MainGameConfig {
     public static ifGameTest: boolean = (!MainConfig.OnLine) && false;
 
     /** 是否开启测试类 */
-    public static ifTest: boolean = (!MainConfig.OnLine) && true;
+    public static ifTest: boolean = (!MainConfig.OnLine) && false;
 
     /** 是否开启调试类 */
     public static ifDebug: boolean = (!MainConfig.OnLine) && true;

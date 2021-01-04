@@ -3,6 +3,7 @@ import ProStampScript from './ProStampScript';
 import BaseProVo from '../vo/BaseProVo';
 import BasePorMediator from '../mediator/BasePorMediator';
 import { EProcessor } from '../../c_Enum/EProcessor';
+import { IPrefabsGather } from 'src/aTGame/3D/SceneUtils';
 /**
  * 加工者基类
  */
@@ -75,7 +76,7 @@ export default class BasePrefabPro extends ProScriptLink {
      * 开始加工物体
      * @param _content
      */
-    public startPor(_content: ProSetParameter) {
+    public startPor(_content: IPrefabsGather) {
         //
         this._init();
         this.initExtend();
@@ -92,7 +93,7 @@ export default class BasePrefabPro extends ProScriptLink {
      * 添加物体并加工
      * @param _content 物体列表包括分类 
      */
-    public addSprAndPor(_content: ProSetParameter) {
+    public addSprAndPor(_content: IPrefabsGather) {
         let _sprList: Laya.Sprite3D[] = this.proSpr(_content);
         this.m_sprList.push(..._sprList);
         //添加完成
@@ -168,7 +169,7 @@ export default class BasePrefabPro extends ProScriptLink {
     //* ------------------------------私有方法-------------------------------- *//
 
     //处理预制体
-    private proSpr(_content: ProSetParameter): Laya.Sprite3D[] {
+    private proSpr(_content: IPrefabsGather): Laya.Sprite3D[] {
         let _sprList: Laya.Sprite3D[] = [];
         for (let _class in _content) {
             //检查是否有内容
@@ -227,11 +228,4 @@ export default class BasePrefabPro extends ProScriptLink {
         //添加加工印记
         _scr.addProStamp(this.proTypeof);
     }
-}
-
-/**
- * 加工精灵时传入的数据类型
- */
-export interface ProSetParameter {
-    [_class: string]: Laya.Sprite3D[];
 }

@@ -23,6 +23,13 @@ export interface IScenePrefab {
 }
 
 /**
+ * 预制体集合
+ */
+export interface IPrefabsGather {
+    [_prefabsName: string]: Laya.Sprite3D[];
+}
+
+/**
  * 场景实用工具类
  */
 export default class SceneUtils {

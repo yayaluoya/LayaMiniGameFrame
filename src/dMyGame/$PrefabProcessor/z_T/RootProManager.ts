@@ -1,6 +1,7 @@
 import BasePrefabPro from './pro/BasePrefabPro';
 import { EProcessor } from '../c_Enum/EProcessor';
 import { EOtherLevelName } from '../../Enum/EOtherLevelName';
+import { IPrefabsGather } from 'src/aTGame/3D/SceneUtils';
 /**
  * 加工者管理类基类
  */
@@ -43,7 +44,7 @@ export default class RootProManager {
      * 分配场景中的所有精灵
      * @param _prefabs 精灵列表
      */
-    public AllotPre(_prefabs: ProManagerSprList) {
+    public AllotPre(_prefabs: IPrefabsGather) {
         //分配预制体
         this.allotPrefab(_prefabs);
         //分配调度者
@@ -51,7 +52,7 @@ export default class RootProManager {
     }
 
     //分配预制体
-    protected allotPrefab(_prefabs: ProManagerSprList) {
+    protected allotPrefab(_prefabs: IPrefabsGather) {
         //
     }
 
@@ -64,7 +65,7 @@ export default class RootProManager {
      * 分配其他场景中的所有精灵
      * @param _prefabs 精灵列表
      */
-    public AllotOtherScenePre(_sceneName: EOtherLevelName, _prefabs: ProManagerSprList) {
+    public AllotOtherScenePre(_sceneName: EOtherLevelName, _prefabs: IPrefabsGather) {
         //分配预制体
         this.allotOtherScenePrefab(_sceneName, _prefabs);
         //分配调度者
@@ -72,7 +73,7 @@ export default class RootProManager {
     }
 
     //分配其他关卡预制体
-    protected allotOtherScenePrefab(_sceneName: EOtherLevelName, _prefabs: ProManagerSprList) {
+    protected allotOtherScenePrefab(_sceneName: EOtherLevelName, _prefabs: IPrefabsGather) {
         //
     }
 
@@ -80,11 +81,4 @@ export default class RootProManager {
     protected allotOtherSceneMediator(_sceneName: EOtherLevelName) {
         //
     }
-}
-
-/**
- * 加工者管理精灵列表
- */
-export interface ProManagerSprList {
-    [key: string]: Laya.Sprite3D[];
 }

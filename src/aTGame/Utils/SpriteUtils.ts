@@ -111,6 +111,25 @@ export default class SpriteUtils {
     }
 
     /**
+     * 获取精灵的脚本
+     * @param _spr 该精灵
+     * @param _scr 脚本类型，可以是继承链上的某个组件
+     */
+    public static getScrs<Scr extends Laya.Script3D>(_spr: Laya.Sprite3D, _scr: any): Scr[] {
+        let _scrs: Scr[] = [];
+        //获取脚本列表
+        let __scrs: Laya.Script3D[] = _spr['_components'] as Laya.Script3D[];
+        //遍历脚本列表
+        for (let _o of __scrs) {
+            if (_o instanceof _scr) {
+                _scrs.push(_o as Scr);
+            }
+        }
+        return _scrs;
+    }
+
+
+    /**
      * 设置层级
      * @param obj 
      * @param layerIndex 

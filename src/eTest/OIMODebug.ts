@@ -1,3 +1,4 @@
+import { IPrefabsGather } from "src/aTGame/3D/SceneUtils";
 import RootTest from "../aTGame/Test/RootTest"
 /**
  * OIMO物理测试
@@ -19,7 +20,7 @@ export default class OIMODebug extends RootTest {
     public wallList: Laya.Sprite3D[];
 
     //
-    public start(_prefabs: { [index: string]: Laya.Sprite3D[] }) {
+    public start(_prefabs: IPrefabsGather) {
         let _spr: Laya.Sprite3D[] = [];
     }
 }
