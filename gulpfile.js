@@ -63,7 +63,7 @@ task("compile", function (f) {
 //创建一个名称为webpack的gulp任务
 task("webpackCompile", function (f) {
     f();
-    let process = exec("webpack --config webpack.js");
+    let process = exec("webpack");
     process.stdout.on("data", (data) => {
         console.log(data);
     });

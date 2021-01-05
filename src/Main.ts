@@ -1,6 +1,7 @@
 import GameConfig from "./GameConfig";
 import MainStart from './dMyGame/MainStart';
 import LayaMiniGameConfig from "./LayaMiniGameConfig";
+import newTest from "./_a/_b/_c/_d/test";
 class Main {
 	constructor() {
 		//根据IDE设置初始化引擎		
@@ -44,3 +45,5 @@ window['$' + _LayaMiniGameConfig.name] = _LayaMiniGameConfig;
 
 //激活启动类
 new Main();
+
+new newTest();

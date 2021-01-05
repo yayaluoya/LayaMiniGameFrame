@@ -1,7227 +1,1914 @@
-(function () {
-    'use strict';
-
-    class GameConfig {
-        constructor() { }
-        static init() {
-            var reg = Laya.ClassUtils.regClass;
-        }
-    }
-    GameConfig.width = 750;
-    GameConfig.height = 1334;
-    GameConfig.scaleMode = "fixedwidth";
-    GameConfig.screenMode = "none";
-    GameConfig.alignV = "top";
-    GameConfig.alignH = "left";
-    GameConfig.startScene = "";
-    GameConfig.sceneRoot = "";
-    GameConfig.debug = false;
-    GameConfig.stat = false;
-    GameConfig.physicsDebug = false;
-    GameConfig.exportSceneToJson = true;
-    GameConfig.init();
-
-    class ConManager {
-        static addScrCon(_scene) {
-        }
-        static addCommonCon() {
-        }
-    }
-
-    class ConsoleConst {
-    }
-    ConsoleConst.logStyle = `
-        color: #fff;
-        background-color: #8d93ab;
-        border-radius: 3px;
-        line-height: 15px;
-        `;
-    ConsoleConst.logLightStyle = `
-        color: #52575d;
-        background-color: #EBEBEB;
-        border-radius: 3px;
-        line-height: 15px;
-        `;
-    ConsoleConst.comStyle = `
-        color: #fff;
-        background-color: #ade498;
-        border-radius: 3px;
-        line-height: 15px;
-        `;
-    ConsoleConst.warnStyle = `
-        color: #5c6e06;
-        background-color: #ffa931;
-        border-radius: 3px;
-        line-height: 15px;
-        `;
-    ConsoleConst.errorStyle = `
-        color: #fff;
-        background-color: #ec0101;
-        border-radius: 3px;
-        line-height: 15px;
-        `;
-    ConsoleConst.platformStyle = `
-        color: #52575d;
-        background-color: #e3fdfd;
-        border-radius: 3px;
-        line-height: 15px;
-        `;
-
-    class ConsoleEx {
-        static log(...any) {
-            console.log(`%c ${any}`, ConsoleConst.logStyle);
-        }
-        static warn(...any) {
-            console.log(`%c ${any}`, ConsoleConst.warnStyle);
-        }
-        static error(...any) {
-            console.log(`%c ${any}`, ConsoleConst.errorStyle);
-        }
-        static packLog(...any) {
-            return [`%c ${any} `, ConsoleConst.logStyle];
-        }
-        static packLogLight(...any) {
-            return [`%c ${any} `, ConsoleConst.logLightStyle];
-        }
-        static comLog(...any) {
-            return [`%c ${any} `, ConsoleConst.comStyle];
-        }
-        static packWarn(...any) {
-            return [`%c 警告: ${any} `, ConsoleConst.warnStyle];
-        }
-        static packError(...any) {
-            return [`%c 错误: ${any} `, ConsoleConst.errorStyle];
-        }
-        static packPlatform(...any) {
-            return [`%c 平台: ${any} `, ConsoleConst.platformStyle];
-        }
-    }
-
-    class ResLoad {
-        static Load(urls, onCompleted, onProgress = null) {
-            if (onProgress && onProgress.once) {
-                onProgress.once = false;
-            }
-            if (!urls || urls.length == 0) {
-                onCompleted.run();
-                onProgress.run();
-                return;
-            }
-            Laya.loader.create(urls, onCompleted, onProgress);
-        }
-        static Load2d(urls, onCompleted, onProgress = null) {
-            if (onProgress && onProgress.once) {
-                onProgress.once = false;
-            }
-            if (!urls || urls.length == 0) {
-                onCompleted.run();
-                onProgress.run();
-                return;
-            }
-            Laya.loader.load(urls, onCompleted, onProgress);
-        }
-        static LoadAsync(urls, onProgress = null) {
-            return new Promise((resolve) => {
-                ResLoad.Load(urls, Laya.Handler.create(null, () => {
-                    resolve();
-                }), onProgress);
-            });
-        }
-        static Load2dAsync(urls, onProgress = null) {
-            return new Promise(function (resolve) {
-                ResLoad.Load2d(urls, Laya.Handler.create(null, () => {
-                    resolve();
-                }), onProgress);
-            });
-        }
-        static Get(resUrl, noClone = false) {
-            let getRes = Laya.loader.getRes(resUrl);
-            if (getRes == null) {
-                console.error(...ConsoleEx.packError("资源尚未加载", resUrl));
-                return null;
-            }
-            return noClone ? getRes : getRes.clone();
-        }
-        static LoadAndGet(resUrl, noClone = false) {
-            return new Promise((r) => {
-                ResLoad.LoadAsync(resUrl).then((_data) => {
-                    r(ResLoad.Get(resUrl, noClone));
-                });
-            });
-        }
-        static Unload(resUrl) {
-            Laya.loader.clearRes(resUrl);
-        }
-    }
-
-    class V3Utils {
-        static parseVector3(str) {
-            var strs = str.split(',');
-            return new Laya.Vector3(Number(strs[0]), Number(strs[1]), Number(strs[2]));
-        }
-        static setV3Length(_v3, _l) {
-            let _length = Laya.Vector3.scalarLength(_v3);
-            if (_length != 0) {
-                let _a = _l / _length;
-                _v3.x = _v3.x * _a;
-                _v3.y = _v3.y * _a;
-                _v3.z = _v3.z * _a;
-            }
-        }
-        static PotLerpMove(_pos, _tragetPot, _lerp, _outV3, _initialLength) {
-            if (!_outV3) {
-                console.error('必须有一个输出的向量！');
-                return;
-            }
-            let _distance = Laya.Vector3.distance(_pos, _tragetPot);
-            Laya.Vector3.lerp(_pos, _tragetPot, _lerp, _outV3);
-            return 1 - (_distance / _initialLength);
-        }
-        static PotConstantSpeedMove(_pos, _tragetPot, _speed, _outV3) {
-            if (!_outV3) {
-                console.error('必须有一个输出的向量！');
-                return;
-            }
-            let _ifEnd;
-            let _differV3 = new Laya.Vector3();
-            Laya.Vector3.subtract(_tragetPot, _pos, _differV3);
-            let _distance = Laya.Vector3.scalarLength(_differV3);
-            if (_distance > _speed) {
-                this.setV3Length(_differV3, _speed);
-                _ifEnd = false;
-            }
-            else {
-                _ifEnd = true;
-            }
-            Laya.Vector3.add(_pos, _differV3, _outV3);
-            return _ifEnd;
-        }
-    }
-
-    class SceneUtils {
-        static initNode(_spr, _target) {
-            _spr.name = _target.name;
-            if (!_target.position) {
-                _spr.transform.localPosition = new Laya.Vector3(0, 0, 0);
-            }
-            else {
-                _spr.transform.localPosition = V3Utils.parseVector3(_target.position);
-            }
-            if (!_target.euler) {
-                _spr.transform.localRotationEuler = new Laya.Vector3(0, 0, 0);
-            }
-            else {
-                _spr.transform.localRotationEuler = V3Utils.parseVector3(_target.euler);
-            }
-            if (!_target.scale) {
-                _spr.transform.localScale = new Laya.Vector3(1, 1, 1);
-            }
-            else {
-                _spr.transform.localScale = V3Utils.parseVector3(_target.scale);
-            }
-        }
-    }
-
-    class RootClassProxy {
-        static get Datas() {
-            return this.m_datas;
-        }
-        static set Datas(_data) {
-            this.m_datas = _data;
-        }
-        static get Handlers() {
-            return this.m_handlers;
-        }
-        static set Handlers(_handler) {
-            this.m_handlers = _handler;
-        }
-    }
-    RootClassProxy.m_ifSetProxy = false;
-
-    class GlobalUnitClassProxy extends RootClassProxy {
-    }
-
-    class _AllScenePrefabsNames {
-        constructor() {
-            this.Prefabs = '@Camera@@DirectionalLight@';
-            this.Prefabs2 = '@Cube@@Sphere@@Cylinder@';
-        }
-    }
-
-    var ELevelSceneName;
-    (function (ELevelSceneName) {
-        ELevelSceneName["Export"] = "export";
-    })(ELevelSceneName || (ELevelSceneName = {}));
-    class AllScenePrefabsNames extends _AllScenePrefabsNames {
-    }
-    class LevelSceneNameConst {
-        static get defaultLevelSceneName() {
-            return ELevelSceneName.Export;
-        }
-    }
-
-    var EKeyResName;
-    (function (EKeyResName) {
-        EKeyResName["RootRes"] = "res";
-        EKeyResName["Config"] = "Config";
-        EKeyResName["Font"] = "Font";
-        EKeyResName["FGUI"] = "FGUI";
-        EKeyResName["LvConfig"] = "LvConfig";
-        EKeyResName["Other"] = "Other";
-        EKeyResName["icon"] = "icon";
-        EKeyResName["img"] = "img";
-        EKeyResName["music"] = "music";
-        EKeyResName["sound"] = "sound";
-        EKeyResName["skin"] = "skin";
-    })(EKeyResName || (EKeyResName = {}));
-
-    class FrameCDNURL {
-    }
-    FrameCDNURL.CDNURLs = [];
-
-    class FrameSubpackages {
-    }
-    FrameSubpackages.subpackages = [];
-
-    class KeyResManager {
-        constructor() {
-            this.m_KeyResList = {};
-            this.m_KeyResList_ = {};
-            this.m_KeyResList = {
-                [EKeyResName.RootRes]: EKeyResName.RootRes + '/',
-                [EKeyResName.Config]: EKeyResName.RootRes + '/' + EKeyResName.Config + '/',
-                [EKeyResName.FGUI]: EKeyResName.RootRes + '/' + EKeyResName.FGUI + '/',
-                [EKeyResName.LvConfig]: EKeyResName.RootRes + '/' + EKeyResName.LvConfig + '/',
-                [EKeyResName.Font]: EKeyResName.RootRes + '/' + EKeyResName.Font + '/',
-                [EKeyResName.Other]: EKeyResName.RootRes + '/' + EKeyResName.Other + '/',
-                [EKeyResName.icon]: EKeyResName.RootRes + '/' + EKeyResName.Other + '/' + EKeyResName.icon + '/',
-                [EKeyResName.img]: EKeyResName.RootRes + '/' + EKeyResName.Other + '/' + EKeyResName.img + '/',
-                [EKeyResName.music]: EKeyResName.RootRes + '/' + EKeyResName.Other + '/' + EKeyResName.music + '/',
-                [EKeyResName.sound]: EKeyResName.RootRes + '/' + EKeyResName.Other + '/' + EKeyResName.sound + '/',
-                [EKeyResName.skin]: EKeyResName.RootRes + '/' + EKeyResName.Other + '/' + EKeyResName.skin + '/',
-            };
-            let _AllPrefabNames = new AllScenePrefabsNames();
-            for (let _i in _AllPrefabNames) {
-                EKeyResName[_i] = _i;
-                this.m_KeyResList[EKeyResName[_i]] = EKeyResName.RootRes + '/' + EKeyResName[_i] + '/';
-                console.log(...ConsoleEx.packLogLight('注入预制体资源路径', this.m_KeyResList[EKeyResName[_i]]));
-            }
-            for (let _i in this.m_KeyResList) {
-                this.m_KeyResList_[_i] = this.m_KeyResList[_i];
-            }
-            this.setRes();
-        }
-        static get instance() {
-            if (this._instance == null) {
-                this._instance = new KeyResManager();
-            }
-            return this._instance;
-        }
-        ;
-        setRes() {
-            for (let _o of FrameSubpackages.subpackages) {
-                this.editKeyResList(_o.name, _o.root);
-            }
-            for (let _o of FrameCDNURL.CDNURLs) {
-                this.editKeyResList(_o.name, _o.root);
-            }
-        }
-        ifKeyRes(_key) {
-            let _if = false;
-            for (let _i in EKeyResName) {
-                if (_key == EKeyResName[_i]) {
-                    _if = true;
-                    break;
-                }
-            }
-            return _if;
-        }
-        getResURL(_key) {
-            return this.m_KeyResList[_key];
-        }
-        editKeyResList(_key, _str) {
-            let _replace = this.m_KeyResList_[_key];
-            if (!_replace) {
-                console.warn(...ConsoleEx.packWarn('修改资源路径失败，没有' + _key + '这个关键路径！'));
-                return;
-            }
-            else {
-                console.log(...ConsoleEx.packLog('修改关键点资源路径', _replace, '替换成', _str));
-            }
-            for (let _i in this.m_KeyResList) {
-                this.m_KeyResList[_i] = this.m_KeyResList[_i].replace(_replace, _str);
-            }
-            this.m_KeyResList_[_key] = _str;
-        }
-    }
-
-    class EssentialResUrls {
-        static EssentialOtherResUrl() {
-            let _URLs = [];
-            return _URLs;
-        }
-        static levelConfigURL(_name) {
-            return KeyResManager.instance.getResURL(EKeyResName.LvConfig) + _name + '.json';
-        }
-        static ConfigURL(_name) {
-            return KeyResManager.instance.getResURL(EKeyResName.Config) + _name;
-        }
-        static FGUIPack(_name) {
-            return KeyResManager.instance.getResURL(EKeyResName.FGUI) + _name;
-        }
-        static fontURL(_name) {
-            return KeyResManager.instance.getResURL(EKeyResName.Font) + _name;
-        }
-        static prefab_url(prefab) {
-            if (this._prefabsSceneCache[prefab]) {
-                return KeyResManager.instance.getResURL(EKeyResName[this._prefabsSceneCache[prefab]]) + 'Conventional/' + prefab + '.lh';
-            }
-            for (let _i in this._AllScenePrefabsNames) {
-                if (this._AllScenePrefabsNames[_i].indexOf('@' + prefab + '@') != -1) {
-                    this._prefabsSceneCache[prefab] = _i;
-                    return KeyResManager.instance.getResURL(EKeyResName[_i]) + 'Conventional/' + prefab + '.lh';
-                }
-            }
-            console.error(...ConsoleEx.packError('没有在场景找到预制体', prefab, '可能是没有导出场景预制体列表导致的。'));
-        }
-    }
-    EssentialResUrls._AllScenePrefabsNames = new AllScenePrefabsNames();
-    EssentialResUrls._prefabsSceneCache = {};
-
-    class ArrayUtils {
-        static Unique(arr) {
-            return Array.from(new Set(arr));
-        }
-        static ReverseReserveUnique(arr) {
-            return Array.from(new Set(arr.reverse())).reverse();
-        }
-        static ObjUnique(arr, _F) {
-            for (let i = 0, len = arr.length; i < len; i++) {
-                for (let j = i + 1, len = arr.length; j < len; j++) {
-                    if (_F(arr[i]) === _F(arr[j])) {
-                        arr.splice(j, 1);
-                        j--;
-                        len--;
-                    }
-                }
-            }
-            return arr;
-        }
-        static Replace(arr, oldObj, newObj) {
-            let index = arr.indexOf(oldObj);
-            if (index < 0)
-                return false;
-            arr.splice(index, 1, newObj);
-            return true;
-        }
-        static RemoveItem(arr, obj) {
-            let index = arr.indexOf(obj);
-            if (index < 0)
-                return false;
-            arr.splice(index, 1);
-            return true;
-        }
-        static RemoveAt(arr, index) {
-            if (arr.length <= index)
-                return false;
-            arr.splice(index, 1);
-            return true;
-        }
-        static Contains(arr, obj) {
-            let index = arr.indexOf(obj);
-            return index >= 0;
-        }
-        static Copy(arr) {
-            let result = [];
-            for (let i = 0; i < arr.length; ++i) {
-                result.push(arr[i]);
-            }
-            return result;
-        }
-        static upsetArray(_array) {
-            _array.sort(() => {
-                return Math.random() - 0.5;
-            });
-        }
-        static RandomGet(_array, _n = 1, _weight = _array.map((item) => { return 1; })) {
-            if (_array.length <= 0) {
-                return;
-            }
-            let _rootArray = [];
-            let _newArray = [];
-            let _indexArray = [];
-            let _minWeight = _weight[0];
-            _weight.forEach((item) => {
-                _minWeight = Math.min(_minWeight, item);
-            });
-            _weight = _weight.map((item) => {
-                return Math.floor(item * (1 / _minWeight));
-            });
-            _array.forEach((item, index) => {
-                _rootArray.push(item);
-                for (let _i = 0; _i < _weight[index]; _i++) {
-                    _indexArray.push(index);
-                }
-            });
-            let _index;
-            for (let _i = 0; _i < _n; _i++) {
-                if (_rootArray.length <= 0) {
-                    break;
-                }
-                _index = Math.floor(Math.random() * _indexArray.length);
-                _indexArray = _indexArray.filter((item) => {
-                    return item != _index;
-                });
-                _newArray.push(_rootArray.splice(_indexArray[_index], 1)[0]);
-            }
-            return _newArray;
-        }
-    }
-
-    class Scene {
-        constructor(sceneNode, sceneNode_, _lvConfig) {
-            this._prefabRes = [];
-            this.m_affiliateResURLs = [];
-            this.prefabs = {};
-            this.sprite3Ds = [];
-            this.sceneNode = sceneNode;
-            this.sceneNode_ = sceneNode_;
-            this._lvConfig = _lvConfig;
-        }
-        get ifDestroy() {
-            return !Boolean(this._scene);
-        }
-        get scene() {
-            return this._scene;
-        }
-        set affiliateResURLs(_URLs) {
-            this.m_affiliateResURLs = _URLs;
-        }
-        get affiliateResURLs() {
-            return this.m_affiliateResURLs;
-        }
-        get allResURLs() {
-            let _URLs = this.scenePrefabUrl();
-            _URLs.push(...this.m_affiliateResURLs);
-            return _URLs;
-        }
-        addAffiliateResURLs(_URLs) {
-            if (_URLs.length <= 0) {
-                return;
-            }
-            this.m_affiliateResURLs.push(..._URLs);
-            this.m_affiliateResURLs = ArrayUtils.Unique(this.m_affiliateResURLs);
-        }
-        loadRes(onProgress = null) {
-            return ResLoad.LoadAsync(this.allResURLs, onProgress);
-        }
-        buildScene(onProgress = null) {
-            return new Promise((r) => {
-                if (this._scene) {
-                    console.warn(...ConsoleEx.packWarn('重复构建关卡，请注意'));
-                    r(this._scene);
-                    return;
-                }
-                console.log(...ConsoleEx.packLog('开始构建关卡->' + this._lvConfig.key));
-                this.loadRes(onProgress).then(() => {
-                    this._scene = new Laya.Sprite3D();
-                    GlobalUnitClassProxy.s3d.addChild(this._scene);
-                    for (let _i in this.sceneNode) {
-                        let _spr = new Laya.Sprite3D();
-                        _spr.name = _i;
-                        this._scene.addChild(_spr);
-                        this._buildScene(this.sceneNode[_i], _spr);
-                    }
-                    console.log(...ConsoleEx.packLog('关卡->' + this._lvConfig.key + '构建完成'));
-                    console.log('关卡->' + this._lvConfig.key, '\n场景->', this._scene, '\n预制体->', this.prefabs, '\n物体->', this.sprite3Ds);
-                    r(this._scene);
-                });
-            });
-        }
-        clearScene() {
-            if (this._scene) {
-                console.log(...ConsoleEx.packLog('清除关卡->' + this._lvConfig.key));
-                this._scene.destroy();
-                this._prefabRes = [];
-                this.prefabs = {};
-                this._scene = null;
-                this.sprite3Ds = [];
-            }
-        }
-        scenePrefabUrl() {
-            let resUrl = [];
-            let resName = this.scenePrefabResName();
-            resName && resName.forEach((name) => {
-                resUrl.push(EssentialResUrls.prefab_url(name));
-            });
-            return resUrl;
-        }
-        sceneDirectPrefabUrl() {
-            let resUrl = [];
-            let resName = this.sceneDirectPrefabResName();
-            resName && resName.forEach((name) => {
-                resUrl.push(EssentialResUrls.prefab_url(name));
-            });
-            return resUrl;
-        }
-        scenePreloadPrefabUrl() {
-            let resUrl = [];
-            let resName = this.scenePreloadPrefabResName();
-            resName && resName.forEach((name) => {
-                resUrl.push(EssentialResUrls.prefab_url(name));
-            });
-            return resUrl;
-        }
-        scenePrefabResName() {
-            let _length = 0;
-            for (let _i in this.sceneNode) {
-                _length++;
-            }
-            if (_length == 0) {
-                console.error(...ConsoleEx.packError('关卡->' + this._lvConfig.key + '<-不存在,或者是没有内容'));
-                return;
-            }
-            if (!this._prefabRes || this._prefabRes.length <= 0) {
-                for (let _i in this.sceneNode) {
-                    this._getPrefabName(this._prefabRes, this.sceneNode[_i]);
-                }
-                if (this.sceneNode_ && this.sceneNode_.length > 0) {
-                    this.sceneNode_.forEach((item) => {
-                        this._getPrefabName(this._prefabRes, item);
-                    });
-                }
-            }
-            return this._prefabRes;
-        }
-        sceneDirectPrefabResName() {
-            let _prefabNames = [];
-            for (let _i in this.sceneNode) {
-                this._getPrefabName(_prefabNames, this.sceneNode[_i]);
-            }
-            return _prefabNames;
-        }
-        scenePreloadPrefabResName() {
-            let _prefabNames = [];
-            this.sceneNode_.forEach((item) => {
-                this._getPrefabName(_prefabNames, item);
-            });
-            return _prefabNames;
-        }
-        _getPrefabName(spArr, node) {
-            if (node) {
-                let prefabName = node['prefabName'];
-                if (prefabName) {
-                    node = node;
-                    if (spArr.indexOf(prefabName) < 0) {
-                        spArr.push(prefabName);
-                    }
-                }
-                else {
-                    node = node;
-                    if (node.child) {
-                        node.child.forEach((nodeChild) => {
-                            this._getPrefabName(spArr, nodeChild);
-                        });
-                    }
-                }
-            }
-        }
-        _buildScene(node, parent) {
-            let prefabName = node["prefabName"];
-            if (prefabName) {
-                node = node;
-                let sprite = ResLoad.Get(EssentialResUrls.prefab_url(prefabName));
-                if (sprite) {
-                    SceneUtils.initNode(sprite, node);
-                    parent.addChild(sprite);
-                    this.prefabs[prefabName] = this.prefabs[prefabName] || [];
-                    this.prefabs[prefabName].push(sprite);
-                    this.sprite3Ds.push(sprite);
-                }
-            }
-            else {
-                node = node;
-                if (node.child) {
-                    let nodeSp = new Laya.Sprite3D();
-                    SceneUtils.initNode(nodeSp, node);
-                    parent.addChild(nodeSp);
-                    node.child.forEach((nodeChild) => {
-                        this._buildScene(nodeChild, nodeSp);
-                    });
-                }
-            }
-        }
-    }
-
-    class SceneManagerProxy {
-        static set sevelConfig(_data) {
-            this.m_sevelConfig = _data;
-        }
-        static initCamera(camera, _sceneName = LevelSceneNameConst.defaultLevelSceneName) {
-            let cameraData = this.m_sevelConfig[_sceneName]["camera"];
-            if (cameraData) {
-                SceneUtils.initNode(camera, cameraData);
-            }
-        }
-        static initLight(light, _sceneName = LevelSceneNameConst.defaultLevelSceneName) {
-            let lightData = this.m_sevelConfig[_sceneName]["light"];
-            if (lightData) {
-                SceneUtils.initNode(light, lightData);
-            }
-        }
-    }
-    SceneManagerProxy.m_sevelConfig = {};
-
-    var LevelConfig;
-    (function (LevelConfig) {
-        class config {
-        }
-        LevelConfig.config = config;
-        LevelConfig.path = "res/config/LevelConfig.json";
-    })(LevelConfig || (LevelConfig = {}));
-
-    class BaseDataProxy {
-        constructor() {
-            this.initData();
-        }
-        initData() {
-        }
-    }
-    class BaseConfigDataProxy extends BaseDataProxy {
-        get dataList() {
-            return this.m_dataList;
-        }
-    }
-    class BaseConstDataProxy extends BaseDataProxy {
-        get data() {
-            return this.m_data;
-        }
-    }
-
-    class LevelConfigProxy extends BaseConfigDataProxy {
-        constructor() { super(); }
-        static get instance() {
-            if (this._instance == null) {
-                this._instance = new LevelConfigProxy();
-            }
-            return this._instance;
-        }
-        initData() {
-            this.m_dataList = LevelConfig.dataList;
-        }
-        getLevelNumber() {
-            let _number = 0;
-            this.m_dataList.forEach((item) => {
-                if (item.id > 0) {
-                    _number++;
-                }
-            });
-            return _number;
-        }
-        byIdGetData(_id) {
-            return this.m_dataList.find((item) => {
-                return item.id == _id;
-            });
-        }
-    }
-
-    var OtherLevelConfig;
-    (function (OtherLevelConfig) {
-        class config {
-        }
-        OtherLevelConfig.config = config;
-        OtherLevelConfig.path = "res/config/OtherLevelConfig.json";
-    })(OtherLevelConfig || (OtherLevelConfig = {}));
-
-    class OtherLevelConfigProxy extends BaseConfigDataProxy {
-        constructor() { super(); }
-        static get instance() {
-            if (this._instance == null) {
-                this._instance = new OtherLevelConfigProxy();
-            }
-            return this._instance;
-        }
-        initData() {
-            this.m_dataList = OtherLevelConfig.dataList;
-        }
-        byIdGetData(_id) {
-            return this.m_dataList.find((item) => {
-                return item.id == _id;
-            });
-        }
-        byNameGetData(_name) {
-            return this.m_dataList.find((item) => {
-                return item.name == _name;
-            });
-        }
-    }
-
-    class FrameLevelConfig {
-        static byLevelIdGetLevelData(_id) {
-            let _levelConfigData = LevelConfigProxy.instance.byIdGetData(_id);
-            return this.getLevelData('ID', _levelConfigData.id, _levelConfigData.sceneName, _levelConfigData.sceneOtherRes, _levelConfigData.rootScene);
-        }
-        static byLevelNameGetOtherLevelData(_name) {
-            let _levelConfigData = OtherLevelConfigProxy.instance.byNameGetData(_name);
-            return this.getLevelData('Name', _levelConfigData.id, _levelConfigData.sceneName, _levelConfigData.sceneOtherRes, _levelConfigData.rootScene);
-        }
-        static getLevelData(_key, _id, _sceneName, _sceneOtherRes, _rootScene) {
-            _sceneName.replace(/\s+/g, '').replace(/^,+/, '').replace(/,+$/, '').replace(/,+/g, ',');
-            _sceneOtherRes.replace(/\s+/g, '').replace(/^,+/, '').replace(/,+$/, '').replace(/,+/g, ',');
-            return {
-                key: '$' + _rootScene + ':' + _key + '-' + _id + '-' + _sceneName,
-                rootScene: _rootScene,
-                sceneName: _sceneName.split(','),
-                sceneOtherRes: _sceneOtherRes.split(','),
-            };
-        }
-    }
-
-    class FrameLevelConst {
-    }
-    FrameLevelConst.PrestrainLeveId = ['prestrain'];
-
-    class SceneManager {
-        constructor() {
-            this._levelConfig = {};
-            this._scenes = {};
-            SceneManagerProxy.sevelConfig = this._levelConfig;
-        }
-        static get instance() {
-            if (this._instance == null) {
-                this._instance = new SceneManager();
-            }
-            return this._instance;
-        }
-        init() { }
-        initConfig() {
-            let url;
-            let config;
-            for (let _i in ELevelSceneName) {
-                url = ELevelSceneName[_i];
-                if (!url) {
-                    continue;
-                }
-                url = EssentialResUrls.levelConfigURL(url);
-                config = ResLoad.Get(url, true);
-                if (config.root) {
-                    this._levelConfig[ELevelSceneName[_i]] = {};
-                    for (let i = 0; i < config.root.length; i++) {
-                        let data = config.root[i];
-                        this._levelConfig[ELevelSceneName[_i]][data.name] = data;
-                    }
-                }
-                ResLoad.Unload(url);
-            }
-        }
-        Preload(urls) {
-            let _preloadUrls = [];
-            FrameLevelConst.PrestrainLeveId.forEach((item) => {
-                _preloadUrls.push(...this.getOtherSceneByName(item).scenePrefabUrl());
-            });
-            urls.push(..._preloadUrls);
-        }
-        preloadSceneRes(id) {
-            console.log(...ConsoleEx.packLog('预加载关卡->', id));
-            this.getSceneByLv(id).loadRes();
-        }
-        preloadOtherSceneRes(name) {
-            console.log(...ConsoleEx.packLog('预加载其它关卡->', name));
-            this.getOtherSceneByName(name).loadRes();
-        }
-        getSceneByLv(id) {
-            let lvConfig = FrameLevelConfig.byLevelIdGetLevelData(id);
-            if (!lvConfig) {
-                console.error(...ConsoleEx.packError("不存在此关卡->", id));
-            }
-            if (!this._scenes[lvConfig.key]) {
-                this._scenes[lvConfig.key] = this.getSceneByData(lvConfig);
-            }
-            return this._scenes[lvConfig.key];
-        }
-        getOtherSceneByName(_name) {
-            let lvConfig = FrameLevelConfig.byLevelNameGetOtherLevelData(_name);
-            if (!lvConfig) {
-                console.error(...ConsoleEx.packError("不存在此关卡->", _name));
-            }
-            if (!this._scenes[lvConfig.key]) {
-                this._scenes[lvConfig.key] = this.getSceneByData(lvConfig);
-            }
-            return this._scenes[lvConfig.key];
-        }
-        getSceneByData(_lvConfig) {
-            let _data = this.getSceneConfig(_lvConfig);
-            return new Scene(_data.sceneNodes, _data.sceneNodes_, _lvConfig);
-        }
-        getSceneConfig(_lvConfig) {
-            let sceneName = _lvConfig.sceneName;
-            let _sceneName_ = _lvConfig.sceneOtherRes;
-            let sceneNodes = {};
-            let sceneNodes_ = [];
-            if (!this._levelConfig[_lvConfig.rootScene]) {
-                console.error(...ConsoleEx.packError('没有找到场景-', _lvConfig.rootScene, ' 请先注册。'));
-            }
-            for (let _i in this._levelConfig[_lvConfig.rootScene]) {
-                if (sceneName.findIndex((item) => { return item == _i; }) != -1) {
-                    sceneNodes[_i] = this._levelConfig[_lvConfig.rootScene][_i];
-                }
-                if (_sceneName_.findIndex((item) => { return item == _i; }) != -1) {
-                    sceneNodes_.push(this._levelConfig[_lvConfig.rootScene][_i]);
-                }
-            }
-            return {
-                sceneNodes: sceneNodes,
-                sceneNodes_: sceneNodes_,
-            };
-        }
-        getLvResName(id) {
-            return this.getSceneByLv(id).scenePrefabResName();
-        }
-        getLvResUrl(id) {
-            return this.getSceneByLv(id).scenePrefabUrl();
-        }
-    }
-
-    class Const {
-    }
-    Const.gravity = -10;
-    Const.ifPreloadCustoms = false;
-
-    class ColorUtils {
-        static RgbToHex(r, g, b) {
-            var color = r << 16 | g << 8 | b;
-            var str = color.toString(16);
-            while (str.length < 6)
-                str = "0" + str;
-            return "#" + str;
-        }
-        static ColorToHex(color) {
-            return this.RgbToHex(color.r * 255, color.g * 255, color.b * 255);
-        }
-        static HexToColor(colorHex, alpha = null) {
-            if (colorHex.startsWith("#")) {
-                colorHex = colorHex.substring(1);
-            }
-            let cr = colorHex.substring(0, 2);
-            let cg = colorHex.substring(2, 4);
-            let cb = colorHex.substring(4, 6);
-            let ca = colorHex.substring(6, 8);
-            let nr = parseInt(cr, 16);
-            let ng = parseInt(cg, 16);
-            let nb = parseInt(cb, 16);
-            let na = alpha ? alpha : parseInt(ca, 16);
-            return new Laya.Color(nr / 255, ng / 255, nb / 255, na);
-        }
-        static ToV3(color) {
-            return new Laya.Vector3(color.r, color.g, color.b);
-        }
-        static ToV4(color) {
-            return new Laya.Vector4(color.r, color.g, color.b, color.a);
-        }
-        static HexToV3(colorHex) {
-            if (colorHex.startsWith("#")) {
-                colorHex = colorHex.substring(1);
-            }
-            let cr = colorHex.substring(0, 2);
-            let cg = colorHex.substring(2, 4);
-            let cb = colorHex.substring(4, 6);
-            let nr = parseInt(cr, 16);
-            let ng = parseInt(cg, 16);
-            let nb = parseInt(cb, 16);
-            return new Laya.Vector3(nr / 255, ng / 255, nb / 255);
-        }
-        static HexToV4(colorHex, alpha = null) {
-            if (colorHex.startsWith("#")) {
-                colorHex = colorHex.substring(1);
-            }
-            let cr = colorHex.substring(0, 2);
-            let cg = colorHex.substring(2, 4);
-            let cb = colorHex.substring(4, 6);
-            let ca = colorHex.substring(6, 8);
-            let nr = parseInt(cr, 16);
-            let ng = parseInt(cg, 16);
-            let nb = parseInt(cb, 16);
-            let na = alpha ? alpha : parseInt(ca, 16);
-            return new Laya.Vector4(nr / 255, ng / 255, nb / 255, na);
-        }
-    }
-
-    class Dictionary {
-        constructor() {
-            this.items = {};
-        }
-        set(key, value) {
-            this.items[key] = value;
-            return true;
-        }
-        has(key) {
-            return this.items.hasOwnProperty(key);
-        }
-        remove(key) {
-            if (!this.has(key))
-                return false;
-            delete this.items[key];
-            return true;
-        }
-        get(key) {
-            return this.has(key) ? this.items[key] : undefined;
-        }
-        keys() {
-            return Object.keys(this.items);
-        }
-        get length() {
-            return this.keys().length;
-        }
-        clear() {
-            this.items = {};
-        }
-    }
-
-    class OimoConst {
-    }
-    OimoConst.timestep = 1 / 60;
-    OimoConst.iterations = 24;
-    OimoConst.broadphase = 2;
-    OimoConst.worldscale = 1;
-    OimoConst.random = true;
-    OimoConst.info = false;
-    OimoConst.gravity = [0, -9.8, 0];
-
-    class OimoManager {
-        constructor() {
-            this._oimoRigDic = new Dictionary();
-            this._transformDic = new Dictionary();
-            this._oimoOffset = new Dictionary();
-            this._oimoRigDicR = new Dictionary();
-            this._transformDicR = new Dictionary();
-            this._oimoOffsetR = new Dictionary();
-            this._tempOimoV3 = new OIMO.Vec3;
-            this._tempOimoQuat = new OIMO.Quat;
-            this._tempQuaternion = new Laya.Quaternion();
-            this._init();
-        }
-        get oimoWorld() {
-            return this._oimoWorld;
-        }
-        static get instance() {
-            if (!OimoManager._instance) {
-                OimoManager._instance = new OimoManager();
-            }
-            return OimoManager._instance;
-        }
-        _init() {
-            this._oimoWorld = this.CreateWolrd();
-            window['oimoWorld'] = this._oimoWorld;
-        }
-        CreateWolrd() {
-            let wolrd = new OIMO.World({
-                timestep: OimoConst.timestep,
-                iterations: OimoConst.iterations,
-                broadphase: OimoConst.broadphase,
-                worldscale: OimoConst.worldscale,
-                random: OimoConst.random,
-                info: OimoConst.info,
-                gravity: OimoConst.gravity,
-            });
-            return wolrd;
-        }
-        _createRigBox(world, pos, eulerRot, size, isMove, type = 'box') {
-            let addRig = world.add({
-                type: type,
-                size: [size.x, size.y, size.z],
-                pos: [pos.x, pos.y, pos.z],
-                rot: [eulerRot.x, eulerRot.y, eulerRot.z],
-                move: isMove,
-                density: 10,
-                belongsTo: 1,
-                collidesWith: 0xffffffff
-            });
-            return addRig;
-        }
-        CreateCompoundRig(ts, shapes, isMove = true, update = true, reverseUpdate = false, isKinematic = false, density = 10, belongsTo = 1, collidesWith = 0xffffffff) {
-            var type = [];
-            var posShape = [];
-            var rotShape = [];
-            var size = [];
-            for (var i = 0; i < shapes.length; i++) {
-                let shape = shapes[i];
-                type.push(shape.type);
-                posShape.push(shape.pos.x, shape.pos.y, shape.pos.z);
-                rotShape.push(shape.eular.x, shape.eular.y, shape.eular.z);
-                size.push(shape.size.x, shape.size.y, shape.size.z);
-            }
-            let rig = this.oimoWorld.add({
-                type: type,
-                pos: [ts.position.x, ts.position.y, ts.position.z],
-                rot: [ts.rotationEuler.x, ts.rotationEuler.y, ts.rotationEuler.z],
-                posShape: posShape,
-                rotShape: rotShape,
-                size: size,
-                move: isMove,
-                density: density,
-                friction: 0.999,
-                restitution: 0.1,
-                isKinematic: isKinematic,
-                belongsTo: belongsTo,
-                collidesWith: collidesWith,
-            });
-            rig.id = OimoManager.m_rigId;
-            OimoManager.m_rigId++;
-            if (update) {
-                this._oimoRigDic.set(rig.id, rig);
-                this._transformDic.set(rig.id, ts);
-                this._oimoOffset.set(rig.id, new Laya.Vector3());
-            }
-            if (reverseUpdate) {
-                this._oimoRigDicR.set(rig.id, rig);
-                this._transformDicR.set(rig.id, ts);
-                this._oimoOffsetR.set(rig.id, new Laya.Vector3());
-            }
-            return rig;
-        }
-        static SetCollideData(rig, belongsTo, collidesWith, restitution, friction) {
-            for (var shape = rig.shapes; shape !== null; shape = shape.next) {
-                if (belongsTo != null)
-                    shape.belongsTo = belongsTo;
-                if (collidesWith != null)
-                    shape.collidesWith = collidesWith;
-                if (restitution != null)
-                    shape.restitution = restitution;
-                if (friction != null)
-                    shape.friction = friction;
-            }
-        }
-        setCanMove(rig, can) {
-            if (can) {
-                rig.setupMass(OIMO.BODY_DYNAMIC, false);
-            }
-            else {
-                rig.setupMass(OIMO.BODY_STATIC, false);
-            }
-        }
-        clearRig() {
-            this._oimoWorld.clear();
-            this._oimoRigDic.clear();
-            this._transformDic.clear();
-            this._oimoOffset.clear();
-            this._oimoRigDicR.clear();
-            this._transformDicR.clear();
-            this._oimoOffsetR.clear();
-        }
-        addRig(rig, world = this._oimoWorld) {
-            if (rig) {
-                world.addRigidBody(rig);
-            }
-        }
-        RemoveRig(rig, world = this._oimoWorld, offList = false) {
-            if (rig) {
-                if (offList) {
-                    this._oimoRigDic.remove(rig.id);
-                    this._transformDic.remove(rig.id);
-                    this._oimoOffset.remove(rig.id);
-                    this._oimoRigDicR.remove(rig.id);
-                    this._transformDicR.remove(rig.id);
-                    this._oimoOffsetR.remove(rig.id);
-                }
-                world.removeRigidBody(rig);
-            }
-        }
-        AddJoint(type, rig1, rig2, pos1, pos2, spring) {
-            return this.oimoWorld.add({
-                type: type,
-                body1: rig1,
-                body2: rig2,
-                pos1: pos1 != null ? [pos1.x, pos1.y, pos1.z] : pos1,
-                pos2: pos2 != null ? [pos2.x, pos2.y, pos2.z] : pos2,
-                spring: spring,
-            });
-        }
-        RemoveJoint(joint) {
-            this.oimoWorld.removeJoint(joint);
-        }
-        updateAllTrans() {
-            let keys = this._oimoRigDic.keys();
-            keys.forEach((key) => {
-                this.UpdateTrans(this._transformDic.get(key), this._oimoRigDic.get(key), this._oimoOffset.get(key));
-            });
-        }
-        updateAllTransReverse() {
-            let keys = this._oimoRigDicR.keys();
-            keys.forEach((key) => {
-                this.UpdateTransReverse(this._transformDicR.get(key), this._oimoRigDicR.get(key));
-            });
-        }
-        UpdateTransReverse(transform, rig) {
-            if (!transform || !rig || !rig.parent)
-                return;
-            let pos = transform.position;
-            this._tempOimoV3.set(pos.x, pos.y, pos.z);
-            rig.awake();
-            rig.setPosition(this._tempOimoV3);
-            let rotate = transform.rotation;
-            this._tempOimoQuat.set(rotate.x, rotate.y, rotate.z, rotate.w);
-            rig.setQuaternion(this._tempOimoQuat);
-        }
-        UpdateTrans(transform, rig, posOffset) {
-            if (!transform || !rig || !rig.parent)
-                return;
-            let getPos = rig.getPosition();
-            transform.position.x = getPos.x;
-            transform.position.y = getPos.y;
-            transform.position.z = getPos.z;
-            if (posOffset && !this.isZero(posOffset)) {
-                let offset = posOffset.clone();
-                Laya.Quaternion.createFromYawPitchRoll(this.deg2rad(transform.rotationEuler.y), this.deg2rad(transform.rotationEuler.x), this.deg2rad(transform.rotationEuler.z), this._tempQuaternion);
-                Laya.Vector3.transformQuat(offset, this._tempQuaternion, offset);
-                Laya.Vector3.subtract(transform.position, offset, transform.position);
-            }
-            transform.position = transform.position;
-            let getRot = rig.getQuaternion();
-            transform.rotation.x = getRot.x;
-            transform.rotation.y = getRot.y;
-            transform.rotation.z = getRot.z;
-            transform.rotation.w = getRot.w;
-            transform.rotation = transform.rotation;
-        }
-        isZero(pos) {
-            return Laya.MathUtils3D.isZero(pos.x) && Laya.MathUtils3D.isZero(pos.y) && Laya.MathUtils3D.isZero(pos.z);
-        }
-        deg2rad(p_y) {
-            return p_y * Math.PI / 180.0;
-        }
-        GetRig(name) {
-            return this._oimoRigDic.get(name);
-        }
-    }
-    OimoManager.m_rigId = 0;
-
-    class OimoSystem extends Laya.Script3D {
-        onUpdate() {
-            OimoManager.instance.oimoWorld.timeStep = Laya.timer.delta / 1000;
-            OimoManager.instance.oimoWorld.step();
-            OimoManager.instance.updateAllTrans();
-            OimoManager.instance.updateAllTransReverse();
-        }
-    }
-
-    class MainConfig {
-    }
-    MainConfig.GameWhatTeam = '小小游戏';
-    MainConfig.GameName = 'LayaMiniGame';
-    MainConfig.GameName_ = 'LayaBox小游戏';
-    MainConfig.GameExplain = 'LayaBox小游戏';
-    MainConfig.versions = '0.0.0';
-    MainConfig.OnLine = false;
-
-    class MainGameConfig {
-    }
-    MainGameConfig.support2D = false;
-    MainGameConfig.support3D = true;
-    MainGameConfig.ifAddOimoSystem = false;
-    MainGameConfig.ifGameTest = (!MainConfig.OnLine) && false;
-    MainGameConfig.ifTest = (!MainConfig.OnLine) && false;
-    MainGameConfig.ifDebug = (!MainConfig.OnLine) && true;
-    MainGameConfig.ifOpenWindowDebug = (!MainConfig.OnLine) && false;
-
-    class DebugWindowCommunication {
-        constructor() {
-            this.m_mesList = [];
-        }
-        onMes(_this, _key, _f) {
-            this.m_mesList.push({
-                this: _this,
-                key: _key,
-                f: _f,
-            });
-        }
-        eventMes(_key, ..._data) {
-            this.m_mesList.forEach((item) => {
-                if (item.key == _key) {
-                    item.f.call(item.this, ..._data);
-                }
-            });
-        }
-        removeMes(_this, _key) {
-            this.m_mesList = this.m_mesList.filter((item) => {
-                if (typeof _key != "undefined") {
-                    return item.this != _this && item.key != _key;
-                }
-                else {
-                    return item.this != _this;
-                }
-            });
-        }
-    }
-
-    const html = `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" href="/favicon.ico"><title>DebugWindow</title><link href="/css/app.d6b301ef.css" rel="preload" as="style"><link href="/css/chunk-vendors.84bb20f7.css" rel="preload" as="style"><link href="/js/app.2e279fb7.js" rel="preload" as="script"><link href="/js/chunk-vendors.ee9c6a8c.js" rel="preload" as="script"><link href="/css/chunk-vendors.84bb20f7.css" rel="stylesheet"><link href="/css/app.d6b301ef.css" rel="stylesheet"></head><body><noscript><strong>We're sorry but DebugWindow doesn't work properly without JavaScript enabled. Please enable it to continue.</strong></noscript><div id="app"></div><script src="/js/chunk-vendors.ee9c6a8c.js"></script><script src="/js/app.2e279fb7.js"></script></body></html>`;
-
-    var EDebugWindow;
-    (function (EDebugWindow) {
-        EDebugWindow["DebugWindow"] = "$DebugWindow";
-        EDebugWindow["Mes"] = "$Mes";
-    })(EDebugWindow || (EDebugWindow = {}));
-
-    class RootDebug {
-        constructor() {
-            this._ifStart = false;
-        }
-        static addItem(_key, _item) {
-            let _rootKey = this.prefix + ':' + _key;
-            if (this[_rootKey]) {
-                console.warn(...ConsoleEx.packWarn('该调试对象已经存在了，将会被第二个覆盖', _rootKey));
-            }
-            this[_rootKey] = _item;
-        }
-        startDebug() {
-            this._ifStart = true;
-            if (window[RootDebug.prefix][this._name]) {
-                console.warn(...ConsoleEx.packWarn('有一个调试对象名字重名了，将会被第二个覆盖', this._name));
-            }
-            window[RootDebug.prefix][this._name] = this;
-            this._startDebug();
-        }
-        addItem(_key, _item) {
-            if (!this._ifStart) {
-                return;
-            }
-            if (this[_key]) {
-                console.warn(...ConsoleEx.packWarn('该调试对象已经存在了，将会被第二个覆盖', this._name, '-', _key));
-            }
-            this[_key] = _item;
-        }
-        _startDebug() { }
-        static openWindowDebug() {
-            let _win = window.open('', MainConfig.GameName);
-            window[EDebugWindow.DebugWindow] = _win;
-            let _url = window.location.href.replace('bin/index.html', 'DebugWindow/dist/');
-            _win.document.getElementsByTagName('html')[0].innerHTML = html.replace(/"\//g, '"' + _url);
-            console.warn(...ConsoleEx.packWarn('打开调式窗口。'));
-            let _HTMLCollection = _win.document.getElementsByTagName('body')[0].getElementsByTagName('script');
-            _win[EDebugWindow.Mes] = new DebugWindowCommunication();
-            let _scriptSrc = [];
-            for (let item of _HTMLCollection) {
-                _scriptSrc.push(item.src);
-            }
-            ;
-            _scriptSrc.forEach((item) => {
-                let script = _win.document.createElement("script");
-                script.async = false;
-                script.src = item;
-                _win.document.body.appendChild(script);
-            });
-        }
-        static fendDebugWindow(_mes, ..._data) {
-            window[EDebugWindow.DebugWindow][EDebugWindow.Mes].eventMes(_mes, ..._data);
-        }
-    }
-    RootDebug.prefix = '$Debug';
-    window[RootDebug.prefix] = {};
-    if (MainGameConfig.ifDebug) {
-        console.warn(...ConsoleEx.packWarn('开启调试模式，通过', RootDebug.prefix, '访问'));
-    }
-
-    class EnvironmentDebug extends RootDebug {
-        constructor() {
-            super();
-            this._name = 'Environment';
-        }
-        static get instance() {
-            if (this._instance) {
-                return this._instance;
-            }
-            else {
-                this._instance = new EnvironmentDebug();
-                return this._instance;
-            }
-        }
-        _startDebug() {
-            console.log('开启环境调试');
-        }
-    }
-
-    class Global3D {
-        static InitAll() {
-            if (MainGameConfig.support3D) {
-                this.s3d = Laya.stage.addChildAt(new Laya.Scene3D(), 0);
-                this.camera = new Laya.Camera();
-                this.s3d.addChild(this.camera);
-                SceneManagerProxy.initCamera(this.camera);
-                this.light = new Laya.DirectionLight;
-                this.s3d.addChild(this.light);
-                SceneManagerProxy.initLight(this.light);
-                if (MainGameConfig.ifAddOimoSystem) {
-                    this.addOimoSystem();
-                }
-                GlobalUnitClassProxy.s3d = this.s3d;
-                GlobalUnitClassProxy.camera = this.camera;
-                GlobalUnitClassProxy.light = this.light;
-                EnvironmentDebug.instance.s3d = this.s3d;
-                EnvironmentDebug.instance.camera = this.camera;
-                EnvironmentDebug.instance.light = this.light;
-            }
-            else {
-                console.log(...ConsoleEx.packLog('请设置支持3D!'));
-            }
-        }
-        static addOimoSystem() {
-            let oimoNode = new Laya.Sprite3D();
-            this.s3d.addChild(oimoNode);
-            oimoNode.addComponent(OimoSystem);
-        }
-    }
-
-    var EEventScene;
-    (function (EEventScene) {
-        EEventScene["GameLevelsBuild"] = "GameLevelsBuild";
-        EEventScene["GameOtherLevelsBuild"] = "GameOtherLevelsBuild";
-        EEventScene["GameLevelsBuildBefore"] = "GameLevelsBuildBefore";
-        EEventScene["GameLevelsOnBuild"] = "GameLevelsOnBuild";
-        EEventScene["GameLevelsDelete"] = "GameLevelsDelete";
-        EEventScene["GameOtherLevelsDelete"] = "GameOtherLevelsDelete";
-        EEventScene["GameLevelsDeleteBefore"] = "GameLevelsDeleteBefore";
-        EEventScene["GameLevelsOnDelete"] = "GameLevelsOnDelete";
-        EEventScene["GameStart"] = "Start";
-        EEventScene["GameSuspend"] = "GameSuspend";
-        EEventScene["GameGoOn"] = "GameGoOn";
-        EEventScene["GameRestart"] = "GameRestart";
-        EEventScene["GameEnd"] = "GameEnd";
-        EEventScene["GameCom"] = "GameCom";
-        EEventScene["GameFail"] = "gameFail";
-        EEventScene["RoleDie"] = "RoleDie";
-        EEventScene["RoleRevive"] = "Revive";
-    })(EEventScene || (EEventScene = {}));
-
-    var EEventAd;
-    (function (EEventAd) {
-        EEventAd["LookAd"] = "LookAd";
-        EEventAd["UnLookAd"] = "UnLookAd";
-    })(EEventAd || (EEventAd = {}));
-
-    var EEventAudio;
-    (function (EEventAudio) {
-        EEventAudio["BGMSuspend"] = "BGMSuspend";
-        EEventAudio["BGMGoOn"] = "BGMGoOn";
-        EEventAudio["SoundSuspend"] = "SoundSuspend";
-        EEventAudio["SoundGoOn"] = "SoundGoOn";
-        EEventAudio["BGMVolumeChange"] = "BGMVolumeChange";
-        EEventAudio["SoundVolumeChange"] = "BGMVolumeChange";
-    })(EEventAudio || (EEventAudio = {}));
-
-    var EEventGlobal;
-    (function (EEventGlobal) {
-        EEventGlobal["GameInit"] = "GameInit";
-        EEventGlobal["GameOnInit"] = "GameOnInit";
-        EEventGlobal["GameLoading"] = "GameLoading";
-        EEventGlobal["GameResLoading"] = "GameResLoading";
-    })(EEventGlobal || (EEventGlobal = {}));
-
-    var EEventUI;
-    (function (EEventUI) {
-        EEventUI["CustomsChange"] = "CustomsChange";
-        EEventUI["GameCoinChange"] = "GameCoinChange";
-        EEventUI["SoundStateChange"] = "SoundStateChange";
-        EEventUI["VibrateStateChange"] = "VibrateStateChange";
-        EEventUI["SceneGameCustomsLoading"] = "SceneGameCustomsLoading";
-        EEventUI["Updata3D"] = "Updata3D";
-    })(EEventUI || (EEventUI = {}));
-
-    class MesManager extends Laya.EventDispatcher {
-        constructor() {
-            super();
-            this.enumerationEegistrationMes();
-        }
-        static get onlyKey() {
-            MesManager._onlyKey++;
-            return '$key' + MesManager._onlyKey;
-        }
-        static get instance() {
-            if (this._instance == null) {
-                this._instance = new MesManager();
-            }
-            return this._instance;
-        }
-        init() { }
-        enumerationEegistrationMes() {
-            this.enumerationEegistrationMes_(EEventAd);
-            this.enumerationEegistrationMes_(EEventGlobal);
-            this.enumerationEegistrationMes_(EEventUI);
-            this.enumerationEegistrationMes_(EEventScene);
-            this.enumerationEegistrationMes_(EEventAudio);
-        }
-        enumerationEegistrationMes_(_mes) {
-            for (let _i in _mes) {
-                _mes[_i] = {
-                    value: _mes[_i],
-                    [MesManager._mesKey]: MesManager.onlyKey,
-                };
-            }
-        }
-        sendEvent(event, data) {
-            if (typeof event[MesManager._mesKey] == 'undefined') {
-                console.log('事件', event, '没有被注册。');
-                return;
-            }
-            MesManager.instance.event(event[MesManager._mesKey], data);
-        }
-        onEvent(type, caller, listener, args) {
-            if (typeof type[MesManager._mesKey] == 'undefined') {
-                console.log('事件', type, '没有被注册。');
-                return;
-            }
-            MesManager.instance.on(type[MesManager._mesKey], caller, listener, args);
-        }
-        offEnent(type, caller, listener) {
-            if (typeof type[MesManager._mesKey] == 'undefined') {
-                console.log('事件', type, '没有被注册。');
-                return;
-            }
-            MesManager.instance.off(type[MesManager._mesKey], caller, listener);
-        }
-    }
-    MesManager._mesKey = Symbol('$MesKey');
-    MesManager._onlyKey = 0;
-
-    var EnvironmentConfig;
-    (function (EnvironmentConfig) {
-        class config {
-        }
-        EnvironmentConfig.config = config;
-        EnvironmentConfig.path = "res/config/EnvironmentConfig.json";
-    })(EnvironmentConfig || (EnvironmentConfig = {}));
-
-    class EnvironmentConfigProxy extends BaseConfigDataProxy {
-        constructor() {
-            super();
-        }
-        static get instance() {
-            if (this._instance == null) {
-                this._instance = new EnvironmentConfigProxy();
-            }
-            return this._instance;
-        }
-        initData() {
-            this.m_dataList = EnvironmentConfig.dataList;
-        }
-        byLevelIdGetData(_id) {
-            return this.m_dataList.find((item) => {
-                return item.id == _id;
-            });
-        }
-    }
-
-    var OtherEnvironmentConfig;
-    (function (OtherEnvironmentConfig) {
-        class config {
-        }
-        OtherEnvironmentConfig.config = config;
-        OtherEnvironmentConfig.path = "res/config/OtherEnvironmentConfig.json";
-    })(OtherEnvironmentConfig || (OtherEnvironmentConfig = {}));
-
-    class OtherEnvironmentConfigProxy extends BaseConfigDataProxy {
-        constructor() {
-            super();
-        }
-        static get instance() {
-            if (this._instance == null) {
-                this._instance = new OtherEnvironmentConfigProxy();
-            }
-            return this._instance;
-        }
-        initData() {
-            this.m_dataList = OtherEnvironmentConfig.dataList;
-        }
-        byLevelIdGetData(_id) {
-            return this.m_dataList.find((item) => {
-                return item.id == _id;
-            });
-        }
-        byLevelNameGetData(_name) {
-            return this.m_dataList.find((item) => {
-                return item.name == _name;
-            });
-        }
-    }
-
-    var EDebugWindowEvent;
-    (function (EDebugWindowEvent) {
-        EDebugWindowEvent["SetEnvironment"] = "setEnvironment";
-    })(EDebugWindowEvent || (EDebugWindowEvent = {}));
-
-    var ECommonLeve;
-    (function (ECommonLeve) {
-        ECommonLeve[ECommonLeve["MinLeveNumber"] = 3] = "MinLeveNumber";
-        ECommonLeve[ECommonLeve["DefaultLeveId"] = 1] = "DefaultLeveId";
-        ECommonLeve[ECommonLeve["DebugLeveId"] = 0] = "DebugLeveId";
-        ECommonLeve[ECommonLeve["NewHandLeveId"] = 1] = "NewHandLeveId";
-    })(ECommonLeve || (ECommonLeve = {}));
-
-    class RootDataProxyShell {
-        constructor() {
-            this.initData();
-        }
-        initData() { }
-    }
-
-    class StringUtils {
-        static SplitToIntArray(str, splitStr) {
-            var splits = str.split(splitStr);
-            var result = [];
-            for (var i = 0; i < splits.length; ++i) {
-                var parseNum = parseInt(splits[i]);
-                if (isNaN(parseNum)) {
-                    parseNum = 0;
-                }
-                result.push(parseNum);
-            }
-            return result;
-        }
-        static IntArrToStr(arr) {
-            var str = "";
-            for (var i = 0; i < arr.length; ++i) {
-                str += arr[i].toFixed(0);
-                if (i < arr.length - 1) {
-                    str += ",";
-                }
-            }
-            return str;
-        }
-        static IsNullOrEmpty(str) {
-            if (str == null)
-                return true;
-            if (str == "")
-                return true;
-            return false;
-        }
-    }
-
-    class Md5 {
-        constructor() {
-            this._state = new Int32Array(4);
-            this._buffer = new ArrayBuffer(68);
-            this._buffer8 = new Uint8Array(this._buffer, 0, 68);
-            this._buffer32 = new Uint32Array(this._buffer, 0, 17);
-            this.start();
-        }
-        static hashStr(str, raw = false) {
-            return this.onePassHasher
-                .start()
-                .appendStr(str)
-                .end(raw);
-        }
-        static hashAsciiStr(str, raw = false) {
-            return this.onePassHasher
-                .start()
-                .appendAsciiStr(str)
-                .end(raw);
-        }
-        static _hex(x) {
-            const hc = Md5.hexChars;
-            const ho = Md5.hexOut;
-            let n;
-            let offset;
-            let j;
-            let i;
-            for (i = 0; i < 4; i += 1) {
-                offset = i * 8;
-                n = x[i];
-                for (j = 0; j < 8; j += 2) {
-                    ho[offset + 1 + j] = hc.charAt(n & 0x0F);
-                    n >>>= 4;
-                    ho[offset + 0 + j] = hc.charAt(n & 0x0F);
-                    n >>>= 4;
-                }
-            }
-            return ho.join('');
-        }
-        static _md5cycle(x, k) {
-            let a = x[0];
-            let b = x[1];
-            let c = x[2];
-            let d = x[3];
-            a += (b & c | ~b & d) + k[0] - 680876936 | 0;
-            a = (a << 7 | a >>> 25) + b | 0;
-            d += (a & b | ~a & c) + k[1] - 389564586 | 0;
-            d = (d << 12 | d >>> 20) + a | 0;
-            c += (d & a | ~d & b) + k[2] + 606105819 | 0;
-            c = (c << 17 | c >>> 15) + d | 0;
-            b += (c & d | ~c & a) + k[3] - 1044525330 | 0;
-            b = (b << 22 | b >>> 10) + c | 0;
-            a += (b & c | ~b & d) + k[4] - 176418897 | 0;
-            a = (a << 7 | a >>> 25) + b | 0;
-            d += (a & b | ~a & c) + k[5] + 1200080426 | 0;
-            d = (d << 12 | d >>> 20) + a | 0;
-            c += (d & a | ~d & b) + k[6] - 1473231341 | 0;
-            c = (c << 17 | c >>> 15) + d | 0;
-            b += (c & d | ~c & a) + k[7] - 45705983 | 0;
-            b = (b << 22 | b >>> 10) + c | 0;
-            a += (b & c | ~b & d) + k[8] + 1770035416 | 0;
-            a = (a << 7 | a >>> 25) + b | 0;
-            d += (a & b | ~a & c) + k[9] - 1958414417 | 0;
-            d = (d << 12 | d >>> 20) + a | 0;
-            c += (d & a | ~d & b) + k[10] - 42063 | 0;
-            c = (c << 17 | c >>> 15) + d | 0;
-            b += (c & d | ~c & a) + k[11] - 1990404162 | 0;
-            b = (b << 22 | b >>> 10) + c | 0;
-            a += (b & c | ~b & d) + k[12] + 1804603682 | 0;
-            a = (a << 7 | a >>> 25) + b | 0;
-            d += (a & b | ~a & c) + k[13] - 40341101 | 0;
-            d = (d << 12 | d >>> 20) + a | 0;
-            c += (d & a | ~d & b) + k[14] - 1502002290 | 0;
-            c = (c << 17 | c >>> 15) + d | 0;
-            b += (c & d | ~c & a) + k[15] + 1236535329 | 0;
-            b = (b << 22 | b >>> 10) + c | 0;
-            a += (b & d | c & ~d) + k[1] - 165796510 | 0;
-            a = (a << 5 | a >>> 27) + b | 0;
-            d += (a & c | b & ~c) + k[6] - 1069501632 | 0;
-            d = (d << 9 | d >>> 23) + a | 0;
-            c += (d & b | a & ~b) + k[11] + 643717713 | 0;
-            c = (c << 14 | c >>> 18) + d | 0;
-            b += (c & a | d & ~a) + k[0] - 373897302 | 0;
-            b = (b << 20 | b >>> 12) + c | 0;
-            a += (b & d | c & ~d) + k[5] - 701558691 | 0;
-            a = (a << 5 | a >>> 27) + b | 0;
-            d += (a & c | b & ~c) + k[10] + 38016083 | 0;
-            d = (d << 9 | d >>> 23) + a | 0;
-            c += (d & b | a & ~b) + k[15] - 660478335 | 0;
-            c = (c << 14 | c >>> 18) + d | 0;
-            b += (c & a | d & ~a) + k[4] - 405537848 | 0;
-            b = (b << 20 | b >>> 12) + c | 0;
-            a += (b & d | c & ~d) + k[9] + 568446438 | 0;
-            a = (a << 5 | a >>> 27) + b | 0;
-            d += (a & c | b & ~c) + k[14] - 1019803690 | 0;
-            d = (d << 9 | d >>> 23) + a | 0;
-            c += (d & b | a & ~b) + k[3] - 187363961 | 0;
-            c = (c << 14 | c >>> 18) + d | 0;
-            b += (c & a | d & ~a) + k[8] + 1163531501 | 0;
-            b = (b << 20 | b >>> 12) + c | 0;
-            a += (b & d | c & ~d) + k[13] - 1444681467 | 0;
-            a = (a << 5 | a >>> 27) + b | 0;
-            d += (a & c | b & ~c) + k[2] - 51403784 | 0;
-            d = (d << 9 | d >>> 23) + a | 0;
-            c += (d & b | a & ~b) + k[7] + 1735328473 | 0;
-            c = (c << 14 | c >>> 18) + d | 0;
-            b += (c & a | d & ~a) + k[12] - 1926607734 | 0;
-            b = (b << 20 | b >>> 12) + c | 0;
-            a += (b ^ c ^ d) + k[5] - 378558 | 0;
-            a = (a << 4 | a >>> 28) + b | 0;
-            d += (a ^ b ^ c) + k[8] - 2022574463 | 0;
-            d = (d << 11 | d >>> 21) + a | 0;
-            c += (d ^ a ^ b) + k[11] + 1839030562 | 0;
-            c = (c << 16 | c >>> 16) + d | 0;
-            b += (c ^ d ^ a) + k[14] - 35309556 | 0;
-            b = (b << 23 | b >>> 9) + c | 0;
-            a += (b ^ c ^ d) + k[1] - 1530992060 | 0;
-            a = (a << 4 | a >>> 28) + b | 0;
-            d += (a ^ b ^ c) + k[4] + 1272893353 | 0;
-            d = (d << 11 | d >>> 21) + a | 0;
-            c += (d ^ a ^ b) + k[7] - 155497632 | 0;
-            c = (c << 16 | c >>> 16) + d | 0;
-            b += (c ^ d ^ a) + k[10] - 1094730640 | 0;
-            b = (b << 23 | b >>> 9) + c | 0;
-            a += (b ^ c ^ d) + k[13] + 681279174 | 0;
-            a = (a << 4 | a >>> 28) + b | 0;
-            d += (a ^ b ^ c) + k[0] - 358537222 | 0;
-            d = (d << 11 | d >>> 21) + a | 0;
-            c += (d ^ a ^ b) + k[3] - 722521979 | 0;
-            c = (c << 16 | c >>> 16) + d | 0;
-            b += (c ^ d ^ a) + k[6] + 76029189 | 0;
-            b = (b << 23 | b >>> 9) + c | 0;
-            a += (b ^ c ^ d) + k[9] - 640364487 | 0;
-            a = (a << 4 | a >>> 28) + b | 0;
-            d += (a ^ b ^ c) + k[12] - 421815835 | 0;
-            d = (d << 11 | d >>> 21) + a | 0;
-            c += (d ^ a ^ b) + k[15] + 530742520 | 0;
-            c = (c << 16 | c >>> 16) + d | 0;
-            b += (c ^ d ^ a) + k[2] - 995338651 | 0;
-            b = (b << 23 | b >>> 9) + c | 0;
-            a += (c ^ (b | ~d)) + k[0] - 198630844 | 0;
-            a = (a << 6 | a >>> 26) + b | 0;
-            d += (b ^ (a | ~c)) + k[7] + 1126891415 | 0;
-            d = (d << 10 | d >>> 22) + a | 0;
-            c += (a ^ (d | ~b)) + k[14] - 1416354905 | 0;
-            c = (c << 15 | c >>> 17) + d | 0;
-            b += (d ^ (c | ~a)) + k[5] - 57434055 | 0;
-            b = (b << 21 | b >>> 11) + c | 0;
-            a += (c ^ (b | ~d)) + k[12] + 1700485571 | 0;
-            a = (a << 6 | a >>> 26) + b | 0;
-            d += (b ^ (a | ~c)) + k[3] - 1894986606 | 0;
-            d = (d << 10 | d >>> 22) + a | 0;
-            c += (a ^ (d | ~b)) + k[10] - 1051523 | 0;
-            c = (c << 15 | c >>> 17) + d | 0;
-            b += (d ^ (c | ~a)) + k[1] - 2054922799 | 0;
-            b = (b << 21 | b >>> 11) + c | 0;
-            a += (c ^ (b | ~d)) + k[8] + 1873313359 | 0;
-            a = (a << 6 | a >>> 26) + b | 0;
-            d += (b ^ (a | ~c)) + k[15] - 30611744 | 0;
-            d = (d << 10 | d >>> 22) + a | 0;
-            c += (a ^ (d | ~b)) + k[6] - 1560198380 | 0;
-            c = (c << 15 | c >>> 17) + d | 0;
-            b += (d ^ (c | ~a)) + k[13] + 1309151649 | 0;
-            b = (b << 21 | b >>> 11) + c | 0;
-            a += (c ^ (b | ~d)) + k[4] - 145523070 | 0;
-            a = (a << 6 | a >>> 26) + b | 0;
-            d += (b ^ (a | ~c)) + k[11] - 1120210379 | 0;
-            d = (d << 10 | d >>> 22) + a | 0;
-            c += (a ^ (d | ~b)) + k[2] + 718787259 | 0;
-            c = (c << 15 | c >>> 17) + d | 0;
-            b += (d ^ (c | ~a)) + k[9] - 343485551 | 0;
-            b = (b << 21 | b >>> 11) + c | 0;
-            x[0] = a + x[0] | 0;
-            x[1] = b + x[1] | 0;
-            x[2] = c + x[2] | 0;
-            x[3] = d + x[3] | 0;
-        }
-        start() {
-            this._dataLength = 0;
-            this._bufferLength = 0;
-            this._state.set(Md5.stateIdentity);
-            return this;
-        }
-        appendStr(str) {
-            const buf8 = this._buffer8;
-            const buf32 = this._buffer32;
-            let bufLen = this._bufferLength;
-            let code;
-            let i;
-            for (i = 0; i < str.length; i += 1) {
-                code = str.charCodeAt(i);
-                if (code < 128) {
-                    buf8[bufLen++] = code;
-                }
-                else if (code < 0x800) {
-                    buf8[bufLen++] = (code >>> 6) + 0xC0;
-                    buf8[bufLen++] = code & 0x3F | 0x80;
-                }
-                else if (code < 0xD800 || code > 0xDBFF) {
-                    buf8[bufLen++] = (code >>> 12) + 0xE0;
-                    buf8[bufLen++] = (code >>> 6 & 0x3F) | 0x80;
-                    buf8[bufLen++] = (code & 0x3F) | 0x80;
-                }
-                else {
-                    code = ((code - 0xD800) * 0x400) + (str.charCodeAt(++i) - 0xDC00) + 0x10000;
-                    if (code > 0x10FFFF) {
-                        throw new Error('Unicode standard supports code points up to U+10FFFF');
-                    }
-                    buf8[bufLen++] = (code >>> 18) + 0xF0;
-                    buf8[bufLen++] = (code >>> 12 & 0x3F) | 0x80;
-                    buf8[bufLen++] = (code >>> 6 & 0x3F) | 0x80;
-                    buf8[bufLen++] = (code & 0x3F) | 0x80;
-                }
-                if (bufLen >= 64) {
-                    this._dataLength += 64;
-                    Md5._md5cycle(this._state, buf32);
-                    bufLen -= 64;
-                    buf32[0] = buf32[16];
-                }
-            }
-            this._bufferLength = bufLen;
-            return this;
-        }
-        appendAsciiStr(str) {
-            const buf8 = this._buffer8;
-            const buf32 = this._buffer32;
-            let bufLen = this._bufferLength;
-            let i;
-            let j = 0;
-            for (;;) {
-                i = Math.min(str.length - j, 64 - bufLen);
-                while (i--) {
-                    buf8[bufLen++] = str.charCodeAt(j++);
-                }
-                if (bufLen < 64) {
-                    break;
-                }
-                this._dataLength += 64;
-                Md5._md5cycle(this._state, buf32);
-                bufLen = 0;
-            }
-            this._bufferLength = bufLen;
-            return this;
-        }
-        appendByteArray(input) {
-            const buf8 = this._buffer8;
-            const buf32 = this._buffer32;
-            let bufLen = this._bufferLength;
-            let i;
-            let j = 0;
-            for (;;) {
-                i = Math.min(input.length - j, 64 - bufLen);
-                while (i--) {
-                    buf8[bufLen++] = input[j++];
-                }
-                if (bufLen < 64) {
-                    break;
-                }
-                this._dataLength += 64;
-                Md5._md5cycle(this._state, buf32);
-                bufLen = 0;
-            }
-            this._bufferLength = bufLen;
-            return this;
-        }
-        getState() {
-            const self = this;
-            const s = self._state;
-            return {
-                buffer: String.fromCharCode.apply(null, self._buffer8),
-                buflen: self._bufferLength,
-                length: self._dataLength,
-                state: [s[0], s[1], s[2], s[3]]
-            };
-        }
-        setState(state) {
-            const buf = state.buffer;
-            const x = state.state;
-            const s = this._state;
-            let i;
-            this._dataLength = state.length;
-            this._bufferLength = state.buflen;
-            s[0] = x[0];
-            s[1] = x[1];
-            s[2] = x[2];
-            s[3] = x[3];
-            for (i = 0; i < buf.length; i += 1) {
-                this._buffer8[i] = buf.charCodeAt(i);
-            }
-        }
-        end(raw = false) {
-            const bufLen = this._bufferLength;
-            const buf8 = this._buffer8;
-            const buf32 = this._buffer32;
-            const i = (bufLen >> 2) + 1;
-            let dataBitsLen;
-            this._dataLength += bufLen;
-            buf8[bufLen] = 0x80;
-            buf8[bufLen + 1] = buf8[bufLen + 2] = buf8[bufLen + 3] = 0;
-            buf32.set(Md5.buffer32Identity.subarray(i), i);
-            if (bufLen > 55) {
-                Md5._md5cycle(this._state, buf32);
-                buf32.set(Md5.buffer32Identity);
-            }
-            dataBitsLen = this._dataLength * 8;
-            if (dataBitsLen <= 0xFFFFFFFF) {
-                buf32[14] = dataBitsLen;
-            }
-            else {
-                const matches = dataBitsLen.toString(16).match(/(.*?)(.{0,8})$/);
-                if (matches === null) {
-                    return;
-                }
-                const lo = parseInt(matches[2], 16);
-                const hi = parseInt(matches[1], 16) || 0;
-                buf32[14] = lo;
-                buf32[15] = hi;
-            }
-            Md5._md5cycle(this._state, buf32);
-            return raw ? this._state : Md5._hex(this._state);
-        }
-    }
-    Md5.ifUse = true;
-    Md5.stateIdentity = new Int32Array([1732584193, -271733879, -1732584194, 271733878]);
-    Md5.buffer32Identity = new Int32Array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
-    Md5.hexChars = '0123456789abcdef';
-    Md5.hexOut = [];
-    Md5.onePassHasher = new Md5();
-    if (Md5.hashStr('hello') !== '5d41402abc4b2a76b9719d911017c592') {
-        Md5.ifUse = false;
-        console.warn('Md5 self test failed.');
-    }
-
-    class RootDataManger {
-    }
-
-    class Base64 {
-        static encode(input) {
-            let output = '';
-            let chr1, chr2, chr3, enc1, enc2, enc3, enc4;
-            let i = 0;
-            input = this._utf8_encode(input);
-            while (i < input.length) {
-                chr1 = input.charCodeAt(i++);
-                chr2 = input.charCodeAt(i++);
-                chr3 = input.charCodeAt(i++);
-                enc1 = chr1 >> 2;
-                enc2 = ((chr1 & 3) << 4) | (chr2 >> 4);
-                enc3 = ((chr2 & 15) << 2) | (chr3 >> 6);
-                enc4 = chr3 & 63;
-                if (isNaN(chr2)) {
-                    enc3 = enc4 = 64;
-                }
-                else if (isNaN(chr3)) {
-                    enc4 = 64;
-                }
-                output = output +
-                    this._keyStr.charAt(enc1) + this._keyStr.charAt(enc2) +
-                    this._keyStr.charAt(enc3) + this._keyStr.charAt(enc4);
-            }
-            return output;
-        }
-        static decode(input) {
-            let output = '';
-            let chr1, chr2, chr3;
-            let enc1, enc2, enc3, enc4;
-            let i = 0;
-            input = input.replace(/[^A-Za-z0-9\+\/\=]/g, '');
-            while (i < input.length) {
-                enc1 = this._keyStr.indexOf(input.charAt(i++));
-                enc2 = this._keyStr.indexOf(input.charAt(i++));
-                enc3 = this._keyStr.indexOf(input.charAt(i++));
-                enc4 = this._keyStr.indexOf(input.charAt(i++));
-                chr1 = (enc1 << 2) | (enc2 >> 4);
-                chr2 = ((enc2 & 15) << 4) | (enc3 >> 2);
-                chr3 = ((enc3 & 3) << 6) | enc4;
-                output = output + String.fromCharCode(chr1);
-                if (enc3 !== 64) {
-                    output = output + String.fromCharCode(chr2);
-                }
-                if (enc4 !== 64) {
-                    output = output + String.fromCharCode(chr3);
-                }
-            }
-            output = this._utf8_decode(output);
-            return output;
-        }
-        static _utf8_encode(string) {
-            string = string.replace(/\r\n/g, '\n');
-            let utftext = '';
-            for (let n = 0; n < string.length; n++) {
-                const c = string.charCodeAt(n);
-                if (c < 128) {
-                    utftext += String.fromCharCode(c);
-                }
-                else if ((c > 127) && (c < 2048)) {
-                    utftext += String.fromCharCode((c >> 6) | 192);
-                    utftext += String.fromCharCode((c & 63) | 128);
-                }
-                else {
-                    utftext += String.fromCharCode((c >> 12) | 224);
-                    utftext += String.fromCharCode(((c >> 6) & 63) | 128);
-                    utftext += String.fromCharCode((c & 63) | 128);
-                }
-            }
-            return utftext;
-        }
-        static _utf8_decode(utftext) {
-            let string = '';
-            let i = 0;
-            let c = 0, c2 = 0, c3 = 0;
-            while (i < utftext.length) {
-                c = utftext.charCodeAt(i);
-                if (c < 128) {
-                    string += String.fromCharCode(c);
-                    i++;
-                }
-                else if ((c > 191) && (c < 224)) {
-                    c2 = utftext.charCodeAt(i + 1);
-                    string += String.fromCharCode(((c & 31) << 6) | (c2 & 63));
-                    i += 2;
-                }
-                else {
-                    c2 = utftext.charCodeAt(i + 1);
-                    c3 = utftext.charCodeAt(i + 2);
-                    string += String.fromCharCode(((c & 15) << 12) | ((c2 & 63) << 6) | (c3 & 63));
-                    i += 3;
-                }
-            }
-            return string;
-        }
-    }
-    Base64._keyStr = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
-
-    class DataDebug extends RootDebug {
-        constructor() {
-            super();
-            this._name = 'Data';
-        }
-        static get instance() {
-            if (this._instance) {
-                return this._instance;
-            }
-            else {
-                this._instance = new DataDebug();
-                return this._instance;
-            }
-        }
-        _startDebug() {
-            console.log('开启数据调试');
-        }
-    }
-
-    class RootLocalStorageProxy extends RootDataManger {
-        constructor() {
-            super(...arguments);
-            this._ifSetDataProxy = true;
-            this._dataSetMonitor = [];
-            this._ifDifferData = true;
-            this.m_saveToDiskQueue = 0;
-        }
-        get saveName() {
-            return MainConfig.GameName + '->' + this._saveName + '->' + MainConfig.versions;
-        }
-        get differName() {
-            return this.encrypt(this.saveName + '__verify');
-        }
-        get saveData() {
-            return this._saveData;
-        }
-        get rootData() {
-            return this._rootData;
-        }
-        addDataSetMonitor(_this, _dataSetMonitor, _rootData, _key) {
-            if (!this._ifSetDataProxy) {
-                console.warn(...ConsoleEx.packWarn('没有设置数据代理，数据被设置时不会被监听！'));
-            }
-            else {
-                if (_key && typeof _key == 'object') {
-                    if (_key[RootLocalStorageProxy.$RootParentDataKey] != _rootData) {
-                        console.error(...ConsoleEx.packError('监听的对象属性不存在该对象属性列表中！'));
-                    }
-                    _key = _key[RootLocalStorageProxy.$RootDataCruxKey];
-                }
-                this._dataSetMonitor.push({
-                    _this: _this,
-                    _f: _dataSetMonitor,
-                    _rootData: _rootData,
-                    _key: _key,
-                });
-            }
-        }
-        offDataSetMonitor(_this, _dataSetMonitor) {
-            this._dataSetMonitor = this._dataSetMonitor.filter((item) => {
-                return item._this !== _this && item._f !== _dataSetMonitor;
-            });
-        }
-        offAllDataSetMonitor(_this) {
-            this._dataSetMonitor = this._dataSetMonitor.filter((item) => {
-                return item._this !== _this;
-            });
-        }
-        InitData() {
-            this._saveData = this._ReadFromFile();
-            this._rootData = this._saveData;
-            if (this._ifSetDataProxy) {
-                this._saveData = this.getProxyData(this._saveData);
-            }
-            DataDebug.instance.addItem(this._saveName, this);
-            this._initData();
-        }
-        getProxyData(_obj) {
-            let _rootObj = {};
-            if (typeof _obj == 'object' && _obj) {
-                if (!Array.prototype.isPrototypeOf(_obj)) {
-                    for (let _i in _obj) {
-                        if (typeof _obj[_i] == 'object' && _obj[_i]) {
-                            _rootObj[_i] = this.getProxyData(_obj[_i]);
-                        }
-                        else {
-                            _rootObj[_i] = _obj[_i];
-                            _obj[_i] = {
-                                [RootLocalStorageProxy.$RootDataCruxKey]: Symbol('$key'),
-                                [RootLocalStorageProxy.$RootParentDataKey]: _obj,
-                                value: _obj[_i],
-                            };
-                        }
-                    }
-                }
-                else {
-                    _rootObj = _obj;
-                }
-            }
-            else {
-                return _obj;
-            }
-            _rootObj[RootLocalStorageProxy.$RootObjectKey] = _obj;
-            return new Proxy(_rootObj, {
-                set: (target, key, value) => {
-                    this.proxyDataSet(target, key, value);
-                    return true;
-                },
-            });
-        }
-        proxyDataSet(target, key, value) {
-            if (key == RootLocalStorageProxy.$RootObjectKey) {
-                console.warn('试图更改数据的原始对象，被阻止', target, key, value);
-                return;
-            }
-            let _rotValue = target[key];
-            if (typeof value == 'object' && value && !Array.prototype.isPrototypeOf(target)) {
-                target[key] = this.getProxyData(value);
-            }
-            else {
-                target[key] = value;
-                if (Array.prototype.isPrototypeOf(target) && key == 'length') {
-                    return;
-                }
-            }
-            for (let item of this._dataSetMonitor) {
-                if (item._rootData && item._rootData != target[RootLocalStorageProxy.$RootObjectKey]) {
-                    continue;
-                }
-                if (typeof item._key != 'undefined') {
-                    if (typeof item._key == 'symbol') {
-                        if (item._key != target[RootLocalStorageProxy.$RootObjectKey][key][RootLocalStorageProxy.$RootDataCruxKey]) {
-                            continue;
-                        }
-                    }
-                    else if (item._key != key) {
-                        continue;
-                    }
-                }
-                item._f.call(item._this, target, key, value, _rotValue, target[RootLocalStorageProxy.$RootObjectKey]);
-            }
-            this.SaveToDisk(this._saveData);
-        }
-        _initData() { }
-        SaveToDisk(_saveData, _ifCl = true) {
-            if (!_ifCl) {
-                this._SaveToDisk(_saveData);
-            }
-            else {
-                this.m_saveToDiskQueue++;
-                setTimeout(() => {
-                    this.m_saveToDiskQueue--;
-                    if (this.m_saveToDiskQueue == 0) {
-                        this._SaveToDisk(_saveData);
-                    }
-                }, 0);
-            }
-        }
-        _SaveToDisk(_saveData) {
-            let json = JSON.stringify(_saveData);
-            Laya.LocalStorage.setJSON(this.saveName, json);
-            if (MainConfig.OnLine && this._ifDifferData) {
-                let _differJson = this.getDifferData(json);
-                Laya.LocalStorage.setJSON(this.differName, _differJson);
-            }
-        }
-        _ReadFromFile() {
-            let readStr = Laya.LocalStorage.getJSON(this.saveName);
-            if (MainConfig.OnLine && this._ifDifferData) {
-                let _differ = Laya.LocalStorage.getJSON(this.differName);
-                if (this.getDifferData(readStr) != _differ) {
-                    return this._saveNewData();
-                }
-            }
-            let _saveData = this.getNewData();
-            try {
-                if (!StringUtils.IsNullOrEmpty(readStr)) {
-                    let jsonData = JSON.parse(readStr);
-                    for (let key in _saveData) {
-                        _saveData[key] = jsonData[key];
-                    }
-                }
-                else {
-                    return this._saveNewData();
-                }
-            }
-            catch (_a) {
-                return this._saveNewData();
-            }
-            return _saveData;
-        }
-        _saveNewData() {
-            let _saveData = this.getNewData();
-            this.SaveToDisk(_saveData, false);
-            return _saveData;
-        }
-        getDifferData(_string) {
-            if (StringUtils.IsNullOrEmpty(_string))
-                return '';
-            return this.encrypt(_string);
-        }
-        encrypt(_string) {
-            let _encryptStr = 'LayaMiniGame-(-' + _string + '-)-ModifiedWithout-' + this.saveName;
-            if (Md5.ifUse) {
-                return Md5.hashStr(_encryptStr).toString();
-            }
-            else {
-                return Base64.encode(_encryptStr);
-            }
-        }
-    }
-    RootLocalStorageProxy.$RootObjectKey = Symbol('$RootObjectKey');
-    RootLocalStorageProxy.$RootDataCruxKey = Symbol('$RootDataCruxKey');
-    RootLocalStorageProxy.$RootParentDataKey = Symbol('$RootParentDataKey');
-
-    class RootGameData {
-    }
-
-    class RootLocalStorageData extends RootGameData {
-        static clone(_data) {
-            return JSON.parse(JSON.stringify(_data));
-        }
-    }
-
-    class GameData extends RootLocalStorageData {
-        constructor() {
-            super(...arguments);
-            this.maxCustoms = 0;
-            this.ifOpenBgm = true;
-            this.ifOpenSound = true;
-            this.ifOpenVibrate = true;
-            this.onCustoms = ECommonLeve.DebugLeveId;
-            this.maxCustomsRecord = 1;
-        }
-    }
-
-    class GameDataProxy extends RootLocalStorageProxy {
-        constructor() {
-            super();
-        }
-        static get instance() {
-            if (this._instance == null) {
-                this._instance = new GameDataProxy();
-            }
-            return this._instance;
-        }
-        get _saveName() {
-            return "Game";
-        }
-        getNewData() {
-            return new GameData();
-        }
-    }
-
-    class GameDataProxyShell extends RootDataProxyShell {
-        constructor() { super(); }
-        static get instance() {
-            if (!this.m_instance) {
-                this.m_instance = new GameDataProxyShell();
-            }
-            return this.m_instance;
-        }
-        get gameData() {
-            return this.m_gameData;
-        }
-        initData() {
-            this.m_gameData = GameDataProxy.instance.saveData;
-        }
-        initCustoms(_maxCustoms) {
-            _maxCustoms = Math.floor(_maxCustoms);
-            if (this.m_gameData.maxCustoms == _maxCustoms) {
-                return;
-            }
-            this.m_gameData.maxCustoms = _maxCustoms;
-            if (this.m_gameData.maxCustomsRecord > _maxCustoms) {
-                this.m_gameData.maxCustomsRecord = _maxCustoms;
-            }
-            if (this.m_gameData.onCustoms > _maxCustoms) {
-                this.m_gameData.onCustoms = ECommonLeve.DefaultLeveId;
-            }
-        }
-        ifNewHandCustoms() {
-            return this.m_gameData.onCustoms == ECommonLeve.NewHandLeveId && this.m_gameData.maxCustomsRecord <= ECommonLeve.NewHandLeveId;
-        }
-        setIfOpenBGM(_b) {
-            this.m_gameData.ifOpenBgm = _b;
-        }
-        setIfOpenSound(_b) {
-            this.m_gameData.ifOpenSound = _b;
-        }
-        setIfOpenVibrate(_b) {
-            this.m_gameData.ifOpenVibrate = _b;
-        }
-        setCustoms(_number = 1) {
-            _number = Math.floor(_number);
-            let _sum = this.m_gameData.onCustoms + _number;
-            let _win = false;
-            if (_sum <= this.m_gameData.maxCustoms) {
-                this.m_gameData.onCustoms = _sum;
-                if (_sum > this.m_gameData.maxCustomsRecord) {
-                    this.m_gameData.maxCustomsRecord = _sum;
-                }
-                _win = true;
-            }
-            else {
-                this.m_gameData.onCustoms = ECommonLeve.DefaultLeveId;
-                _win = true;
-            }
-            MesManager.instance.sendEvent(EEventUI.CustomsChange);
-            return _win;
-        }
-        getDefaultCustoms() {
-            if (this.m_gameData.onCustoms > this.m_gameData.maxCustoms) {
-                this.m_gameData.onCustoms = ECommonLeve.DefaultLeveId;
-            }
-            return this.m_gameData.onCustoms;
-        }
-        getPreloadCustoms() {
-            return this.getNextCustoms();
-        }
-        getNextCustoms() {
-            let _customs = this.m_gameData.onCustoms + 1;
-            if (_customs > this.m_gameData.maxCustoms) {
-                _customs = ECommonLeve.DefaultLeveId;
-            }
-            return _customs;
-        }
-    }
-
-    class EnvironmentManager {
-        constructor() { }
-        static get instance() {
-            if (!this.m_instance) {
-                this.m_instance = new EnvironmentManager();
-            }
-            return this.m_instance;
-        }
-        init() {
-            this.m_s3d = Global3D.s3d;
-            this.m_camera = Global3D.camera;
-            this.m_light = Global3D.light;
-        }
-        setEnvironment(_scene) {
-            this.m_scene = _scene;
-            let _lv = GameDataProxyShell.instance.gameData.onCustoms;
-            this.m_enviromentConfig = EnvironmentConfigProxy.instance.byLevelIdGetData(_lv);
-            console.log('关卡环境配置参数->' + _lv + '->', this.m_enviromentConfig);
-            this.setS3D(this.m_s3d);
-            this.setCamera(this.m_camera, this.m_enviromentConfig.clear_color);
-            this.setLight(this.light, this.m_enviromentConfig.light_color, this.m_enviromentConfig.light_intensity);
-            this.addAmbient(this.s3d, this.m_enviromentConfig.ambient_color);
-            MesManager.instance.onEvent(EEventScene.GameLevelsDelete, this, this.gameLevelsDelete);
-            if (MainGameConfig.ifDebug && MainGameConfig.ifOpenWindowDebug) {
-                RootDebug.fendDebugWindow(EDebugWindowEvent.SetEnvironment);
-            }
-        }
-        setOtherEnvironment(_name, _scene, _s3d = this.m_s3d, _camera = this.m_camera, _light = this.m_light) {
-            let _enviromentConfig = OtherEnvironmentConfigProxy.instance.byLevelNameGetData(_name);
-            console.log('关卡环境配置参数->' + _name + '->', _enviromentConfig);
-            this.setCamera(_camera, _enviromentConfig.clear_color);
-            this.setLight(_light, _enviromentConfig.light_color, _enviromentConfig.light_intensity);
-            this.addAmbient(_s3d, _enviromentConfig.ambient_color);
-        }
-        get s3d() {
-            return this.m_s3d;
-        }
-        get camera() {
-            return this.m_camera;
-        }
-        get scene() {
-            return this.m_scene;
-        }
-        get light() {
-            return this.m_light;
-        }
-        setS3D(_s3d) {
-            if (this.m_ifSetS3D)
-                return;
-            this.m_ifSetS3D = true;
-        }
-        setCamera(_camera, _clear_color) {
-            _camera.clearColor = ColorUtils.HexToV4(_clear_color);
-        }
-        setLight(_light, _color, _instensity) {
-            _light.color = ColorUtils.HexToV3(_color);
-            _light.intensity = _instensity;
-            _light.shadowMode = Laya.ShadowMode.SoftLow;
-            _light.shadowResolution = 2500;
-            _light.shadowNormalBias = 0.5;
-        }
-        addAmbient(_s3d, _color) {
-            _s3d.ambientMode = Laya.AmbientMode.SolidColor;
-            _s3d.ambientColor = ColorUtils.HexToV3(_color);
-        }
-        addFog(_scene, _color, _fogRange, _fogStart) {
-            _scene.enableFog = true;
-            _scene.fogColor = ColorUtils.HexToV3(_color);
-            _scene.fogRange = _fogRange;
-            _scene.fogStart = _fogStart;
-        }
-        gameLevelsDelete() {
-        }
-    }
-
-    class CustomsManager {
-        constructor() {
-            this.m_ifInit = false;
-            this.m_otherScene = {};
-        }
-        static get instance() {
-            if (!this.m_instance) {
-                this.m_instance = new CustomsManager();
-            }
-            return this.m_instance;
-        }
-        get ifSceneBuild() {
-            return this.m_ifSceneBuild;
-        }
-        init() {
-            this.m_ifSceneBuild = false;
-            GameDataProxyShell.instance.initCustoms(LevelConfigProxy.instance.getLevelNumber());
-            MesManager.instance.onEvent(EEventScene.GameLevelsBuild, this, this.gameLevelsBuild);
-            MesManager.instance.onEvent(EEventScene.GameLevelsDelete, this, this.gameLevelsDelete);
-            MesManager.instance.onEvent(EEventScene.GameOtherLevelsBuild, this, this.gameOtherLevelsBuild);
-            MesManager.instance.onEvent(EEventScene.GameOtherLevelsDelete, this, this.gameOtherLevelsDelete);
-        }
-        initLevelBuild() {
-            this.gameLevelsBuild();
-        }
-        gameLevelsBuild(_handler) {
-            if (this.m_ifSceneBuild) {
-                console.warn('有场景正在构建！');
-                return;
-            }
-            let lvId;
-            if (this.m_ifInit) {
-                lvId = GameDataProxyShell.instance.gameData.onCustoms;
-            }
-            else {
-                this.m_ifInit = true;
-                lvId = GameDataProxyShell.instance.getDefaultCustoms();
-            }
-            let scene = SceneManager.instance.getSceneByLv(lvId);
-            this.m_scene = scene;
-            this.m_ifSceneBuild = true;
-            MesManager.instance.sendEvent(EEventScene.GameLevelsBuildBefore);
-            MesManager.instance.sendEvent(EEventUI.SceneGameCustomsLoading, [-1]);
-            scene.buildScene(Laya.Handler.create(this, this.customsProgress, null, false)).then((_sceneSpr) => {
-                this.m_ifSceneBuild = false;
-                EnvironmentManager.instance.setEnvironment(this.m_scene.scene);
-                ConManager.addScrCon(scene.scene);
-                ConManager.addCommonCon();
-                if (Const.ifPreloadCustoms) {
-                    let _preloadCustoms = GameDataProxyShell.instance.getPreloadCustoms();
-                    SceneManager.instance.preloadSceneRes(_preloadCustoms);
-                }
-                this.onCustomsInit(lvId);
-                if (_handler) {
-                    _handler.run();
-                }
-                MesManager.instance.sendEvent(EEventScene.GameLevelsOnBuild);
-            });
-        }
-        onCustomsInit(_lvId) {
-        }
-        customsProgress(_number) {
-            if (!this.m_ifSceneBuild)
-                return;
-            if (typeof _number == 'undefined') {
-                _number = 1;
-            }
-            MesManager.instance.sendEvent(EEventUI.SceneGameCustomsLoading, [_number * 100]);
-        }
-        gameLevelsDelete() {
-            MesManager.instance.sendEvent(EEventScene.GameLevelsDeleteBefore);
-            if (this.m_scene && this.m_scene.scene) {
-                this.m_scene.clearScene();
-            }
-            this.m_scene = null;
-            MesManager.instance.sendEvent(EEventScene.GameLevelsOnDelete);
-        }
-        gameOtherLevelsBuild(_name, _handler) {
-            if (this.m_ifSceneBuild) {
-                console.warn('有场景正在构建！');
-                return;
-            }
-            let _scene = SceneManager.instance.getOtherSceneByName(_name);
-            this.m_otherScene[_name] = _scene;
-            this.m_ifSceneBuild = true;
-            MesManager.instance.sendEvent(EEventScene.GameLevelsBuildBefore);
-            MesManager.instance.sendEvent(EEventUI.SceneGameCustomsLoading, [-1]);
-            _scene.buildScene(Laya.Handler.create(this, this.customsProgress, null, false)).then((_sceneSpr) => {
-                this.m_ifSceneBuild = false;
-                EnvironmentManager.instance.setOtherEnvironment(_name, _sceneSpr);
-                if (_handler) {
-                    _handler.run();
-                }
-            });
-        }
-        gameOtherLevelsDelete(_name) {
-            let _scene = this.m_otherScene[_name];
-            if (_scene) {
-                _scene.clearScene();
-                this.m_otherScene[_name] = undefined;
-            }
-            else {
-                console.warn('试图清除不存在的场景！');
-            }
-        }
-    }
-
-    var ESpecialUIIndex;
-    (function (ESpecialUIIndex) {
-        ESpecialUIIndex["anim_enter"] = "m_anim_enter";
-        ESpecialUIIndex["anim_exit"] = "m_anim_exit";
-    })(ESpecialUIIndex || (ESpecialUIIndex = {}));
-
-    var EUILayer;
-    (function (EUILayer) {
-        EUILayer["Bg"] = "EUILayer_Bg";
-        EUILayer["Main"] = "EUILayer_Main";
-        EUILayer["OneUI"] = "EUILayer_OneUI";
-        EUILayer["Panel"] = "EUILayer_Panel";
-        EUILayer["Popup"] = "EUILayer_Popup";
-        EUILayer["Prop"] = "EUILayer_Prop";
-        EUILayer["Tip"] = "EUILayer_Tip";
-        EUILayer["Pause"] = "EUILayer_Pause";
-        EUILayer["Set"] = "EUILayer_Set";
-        EUILayer["Top"] = "EUILayer_Top";
-        EUILayer["Loading"] = "EUILayer_Loading";
-        EUILayer["Native"] = "EUILayer_Native";
-    })(EUILayer || (EUILayer = {}));
-
-    class FGuiData {
-        constructor() {
-            this.ifUpdate = true;
-            this.top = 0;
-            this.bottom = 0;
-            this.tweenTime = 0;
-        }
-    }
-
-    class FGuiRootManager {
-        static getLayer(layerType) {
-            return this.LayerList[layerType];
-        }
-        static Init() {
-            fgui.UIConfig.packageFileExtension = "bin";
-            Laya.stage.addChild(fgui.GRoot.inst.displayObject);
-            this.LayerList = {};
-            for (let _i in EUILayer) {
-                this.LayerList[EUILayer[_i]] = fgui.GRoot.inst.addChild(new fgui.GComponent());
-            }
-            this.UpdateAllUI();
-            Laya.stage.on(Laya.Event.RESIZE, this, this.UpdateAllUI);
-        }
-        static AddUI(uiType, fguiData, layer) {
-            let ui = uiType.createInstance();
-            if (layer == EUILayer.OneUI) {
-                let oneUIs = FGuiRootManager.oneUIs;
-                if (oneUIs.length > 0) {
-                    oneUIs.forEach((panel) => {
-                        panel && panel.Hide();
-                    });
-                }
-                FGuiRootManager.oneUIs = [];
-            }
-            this.getLayer(layer).addChild(ui);
-            let _key = Symbol('fguiData');
-            this._cacheFguiData[_key] = fguiData;
-            ui[this.m_uiDataKey] = _key;
-            this.setUIData(ui, fguiData);
-            return ui;
-        }
-        static setUIToTopShow(_ui, _layer) {
-            let _layerCom = this.getLayer(_layer);
-            let _index = _layerCom.getChildIndex(_ui);
-            if (_index == -1) {
-                console.warn(...ConsoleEx.packWarn('设置ui到最顶层失败，因为该层级里面没有该UI！'));
-                return;
-            }
-            _ui.removeFromParent();
-            _layerCom.addChild(_ui);
-        }
-        static UpdateAllUI() {
-            let setWidth = Laya.stage.width;
-            let setHeight = Laya.stage.height;
-            fgui.GRoot.inst.setSize(setWidth, setHeight);
-            let ui;
-            let _ui;
-            for (let i = 0, length = fgui.GRoot.inst.numChildren; i < length; ++i) {
-                ui = fgui.GRoot.inst.getChildAt(i);
-                ui.setSize(setWidth, setHeight);
-                ui.y = 0;
-                for (let _i = 0, _length = ui.numChildren; _i < _length; _i++) {
-                    _ui = ui.getChildAt(_i);
-                    let getData = this._cacheFguiData[_ui[this.m_uiDataKey]];
-                    if (getData.ifUpdate) {
-                        this.setUIData(_ui, getData);
-                    }
-                }
-            }
-        }
-        static setUIData(_ui, _uiData = new FGuiData()) {
-            _ui.setSize(fgui.GRoot.inst.width, fgui.GRoot.inst.height - _uiData.top - _uiData.bottom);
-            _ui.y = _uiData.top;
-        }
-        static CheckIn(ui, x, y) {
-            if (x > ui.x && x < ui.x + ui.width && y > ui.y && y < ui.y + ui.height) {
-                return true;
-            }
-            return false;
-        }
-    }
-    FGuiRootManager.m_uiDataKey = Symbol('$UIData');
-    FGuiRootManager._cacheFguiData = {};
-    FGuiRootManager.oneUIs = [];
-
-    class BaseUIMediator {
-        constructor() {
-            this._layer = EUILayer.Panel;
-            this._ifBelongUIMediator = false;
-            this._belongDownUIMediator = [];
-            this._belongUpUIMediator = [];
-            this._isShow = false;
-            this.m_serialNumber = BaseUIMediatorGlobalSerialNumber.GlobalSerialNumber;
-        }
-        get ui() {
-            return this._ui;
-        }
-        get serialNumber() {
-            return this.m_serialNumber;
-        }
-        get layer() {
-            return this._layer;
-        }
-        get _fguiData() {
-            return new FGuiData;
-        }
-        get ifBelongUIMediator() {
-            return this._ifBelongUIMediator;
-        }
-        get belongDownUIMediator() {
-            return this._belongDownUIMediator;
-        }
-        get belongUpUIMediator() {
-            return this._belongUpUIMediator;
-        }
-        get isShow() {
-            return this._isShow;
-        }
-        get isDispose() {
-            return this.ui.isDisposed;
-        }
-        set keyId(_s) {
-            this.m_keyId = _s;
-        }
-        get keyId() {
-            return this.m_keyId;
-        }
-        setUIToTopShow() {
-            if (this._ui) {
-                FGuiRootManager.setUIToTopShow(this._ui, this._layer);
-            }
-        }
-        Show() {
-            if (this._isShow) {
-                this.setUIToTopShow();
-                return;
-            }
-            this.OnshowBefore();
-            this._isShow = true;
-            if (!this._ui || (this._ui && this._ui.isDisposed)) {
-                this._ui = FGuiRootManager.AddUI(this._classDefine, this._fguiData, this._layer);
-                if (this._layer == EUILayer.OneUI) {
-                    FGuiRootManager.oneUIs.push(this);
-                }
-            }
-            else {
-                this.ui.visible = true;
-            }
-            this.setUIToTopShow();
-            this._OnShow();
-            if (this._ui[ESpecialUIIndex.anim_enter]) {
-                let anim = this._ui[ESpecialUIIndex.anim_enter];
-                anim.play(Laya.Handler.create(this, this._CallEnterAnimEnd));
-            }
-            else {
-                this.OnEnterAnimEnd();
-            }
-        }
-        _CallEnterAnimEnd() {
-            this.OnEnterAnimEnd();
-        }
-        OnEnterAnimEnd() { }
-        OnshowBefore() { }
-        _OnShow() { }
-        Hide(dispose = true) {
-            if (this._ui == null)
-                return;
-            if (this._ui.isDisposed)
-                return;
-            if (!this._isShow)
-                return;
-            this._isShow = false;
-            this.OnHideBefore();
-            if (this._ui[ESpecialUIIndex.anim_exit]) {
-                let anim = this._ui[ESpecialUIIndex.anim_exit];
-                anim.play(Laya.Handler.create(this, this._DoHide, [dispose]));
-            }
-            else {
-                this._DoHide(dispose);
-            }
-        }
-        _DoHide(dispose) {
-            if (dispose) {
-                this._ui.dispose();
-            }
-            else {
-                this._ui.visible = false;
-            }
-            this._OnHide();
-        }
-        OnHideBefore() { }
-        _OnHide() { }
-    }
-    class BaseUIMediatorGlobalSerialNumber {
-        static get GlobalSerialNumber() {
-            this.m_GlobalSerialNumber++;
-            return this.m_GlobalSerialNumber;
-        }
-    }
-    BaseUIMediatorGlobalSerialNumber.m_GlobalSerialNumber = 0;
-
-    class FGUI_PGameLoading extends fairygui.GComponent {
-        constructor() {
-            super();
-        }
-        static createInstance() {
-            return (fairygui.UIPackage.createObject("GameMain", "PGameLoading"));
-        }
-        onConstruct() {
-            this.m_shade = (this.getChildAt(0));
-            this.m_text = (this.getChildAt(1));
-            this.m_progress = (this.getChildAt(2));
-        }
-    }
-    FGUI_PGameLoading.URL = "ui://kk7g5mmmg7a1o";
-
-    class PGameLoadingMediator extends BaseUIMediator {
-        constructor() {
-            super();
-            this._layer = EUILayer.Loading;
-        }
-        static get instance() {
-            if (!this.m_instance) {
-                this.m_instance = new PGameLoadingMediator();
-                this.m_instance._classDefine = FGUI_PGameLoading;
-            }
-            return this.m_instance;
-        }
-        _OnShow() {
-            MesManager.instance.onEvent(EEventGlobal.GameLoading, this, this.gameLoading);
-        }
-        gameLoading(_number) {
-            this.ui.m_progress.value = _number;
-        }
-        _OnHide() {
-            MesManager.instance.offEnent(EEventGlobal.GameLoading, this, this.gameLoading);
-        }
-    }
-
-    class FGUI_PGameMain extends fairygui.GComponent {
-        constructor() {
-            super();
-        }
-        static createInstance() {
-            return (fairygui.UIPackage.createObject("GameMain", "PGameMain"));
-        }
-        onConstruct() {
-            this.m_text = (this.getChildAt(0));
-        }
-    }
-    FGUI_PGameMain.URL = "ui://kk7g5mmmsyta9f";
-
-    class PGameMainMediator extends BaseUIMediator {
-        constructor() {
-            super();
-            this._layer = EUILayer.Main;
-        }
-        static get instance() {
-            if (!this.m_instance) {
-                this.m_instance = new PGameMainMediator();
-                this.m_instance._classDefine = FGUI_PGameMain;
-            }
-            return this.m_instance;
-        }
-        _OnShow() {
-        }
-        _OnHide() { }
-    }
-
-    class FGUI_PGamePlay extends fairygui.GComponent {
-        constructor() {
-            super();
-        }
-        static createInstance() {
-            return (fairygui.UIPackage.createObject("GameMain", "PGamePlay"));
-        }
-        onConstruct() {
-            this.m_text = (this.getChildAt(0));
-        }
-    }
-    FGUI_PGamePlay.URL = "ui://kk7g5mmmg7a1r";
-
-    class PGamePlayMediator extends BaseUIMediator {
-        constructor() { super(); }
-        static get instance() {
-            if (!this.m_instance) {
-                this.m_instance = new PGamePlayMediator();
-                this.m_instance._classDefine = FGUI_PGamePlay;
-            }
-            return this.m_instance;
-        }
-        _OnShow() {
-        }
-        _OnHide() { }
-    }
-
-    class FGUI_PGameStart extends fairygui.GComponent {
-        constructor() {
-            super();
-        }
-        static createInstance() {
-            return (fairygui.UIPackage.createObject("GameMain", "PGameStart"));
-        }
-        onConstruct() {
-            this.m_text = (this.getChildAt(0));
-        }
-    }
-    FGUI_PGameStart.URL = "ui://kk7g5mmmg7a1v";
-
-    class PGameStartMediator extends BaseUIMediator {
-        constructor() { super(); }
-        static get instance() {
-            if (!this.m_instance) {
-                this.m_instance = new PGameStartMediator();
-                this.m_instance._classDefine = FGUI_PGameStart;
-            }
-            return this.m_instance;
-        }
-        _OnShow() {
-        }
-        _OnHide() { }
-    }
-
-    var EUI;
-    (function (EUI) {
-        EUI["GameLoading"] = "EUI_GameLoading";
-        EUI["CustomsLoading"] = "EUI_CustomsLoading";
-        EUI["TestMain"] = "EUI_TestMain";
-        EUI["TestPlatform"] = "EUI_TestPlatform";
-        EUI["Main"] = "EUI_Main";
-        EUI["Set"] = "EUI_Set";
-        EUI["Pause"] = "EUI_Pause";
-        EUI["Play"] = "EUI_Play";
-        EUI["Start"] = "EUI_Start";
-        EUI["Com"] = "EUI_Com";
-        EUI["End"] = "EUI_End";
-    })(EUI || (EUI = {}));
-
-    class RootUIStateManagerProxy extends RootClassProxy {
-        constructor() {
-            super(...arguments);
-            this.m_UIMediator = {};
-            this.m_onShowUI = [];
-            this.m_ifSetMediatroList = false;
-        }
-        setProxyMediatroList(_UIMediator) {
-            this.m_UIMediator = _UIMediator;
-            this.m_onShowUI = [];
-            this.m_ifSetMediatroList = true;
-            this.Init();
-        }
-        Init() { }
-        get ifSetMediatroList() {
-            return this.m_ifSetMediatroList;
-        }
-        get onShowUIs() {
-            return this.m_onShowUI;
-        }
-        getUIMeiatro(_eui) {
-            return this.m_UIMediator[_eui];
-        }
-        closeUI(_uiMeiatro) {
-            this.setUIState([
-                { typeIndex: _uiMeiatro.keyId, state: false },
-            ], false);
-        }
-        setUIState(_uiStates, _ifUnify = true, _unifyState = { state: false, dispose: true }, _showAffectLayer, _hideAffectLayer) {
-            if (!this.m_ifSetMediatroList) {
-                console.error(...ConsoleEx.packError('还没有为UI代理类设置代理UI调度者列表！'));
-                return;
-            }
-            for (let _o of _uiStates) {
-                if (typeof _o.state == 'undefined') {
-                    _o.state = true;
-                }
-                if (typeof _o.dispose == 'undefined') {
-                    _o.dispose = true;
-                }
-            }
-            if (typeof _unifyState.dispose == 'undefined') {
-                _unifyState.dispose = true;
-            }
-            let _showUI = [];
-            let _hideUI = [];
-            _uiStates = ArrayUtils.ObjUnique(_uiStates, (item) => {
-                return item.typeIndex;
-            });
-            _uiStates = this.statesFilter(_uiStates);
-            let _i;
-            for (let _o of _uiStates) {
-                if (_o.state) {
-                    _i = this.m_onShowUI.findIndex((item) => { return item.typeIndex == _o.typeIndex; });
-                    if (_i != -1) {
-                        this.m_onShowUI.splice(_i, 1);
-                    }
-                    _showUI.push(_o);
-                }
-                else {
-                    _i = this.m_onShowUI.findIndex((item) => { return item.typeIndex == _o.typeIndex; });
-                    if (_i != -1) {
-                        this.m_onShowUI.splice(_i, 1);
-                        _hideUI.push(_o);
-                    }
-                }
-            }
-            if (_ifUnify) {
-                let _differS = [];
-                for (let _index in this.m_UIMediator) {
-                    if (_showUI.findIndex((item) => { return item.typeIndex == _index; }) == -1 &&
-                        _hideUI.findIndex((item) => { return item.typeIndex == _index; }) == -1) {
-                        _differS.push({
-                            typeIndex: _index,
-                            state: _unifyState.state,
-                            dispose: _unifyState.dispose,
-                        });
-                    }
-                }
-                if (_unifyState.state) {
-                    _showUI.unshift(..._differS);
-                }
-                else {
-                    _hideUI.push(..._differS);
-                }
-            }
-            else {
-                _showUI.unshift(...this.m_onShowUI);
-            }
-            if (typeof _showAffectLayer != 'undefined') {
-                _showAffectLayer = ArrayUtils.Unique(_showAffectLayer);
-                _showUI = _showUI.filter((item) => {
-                    return _showAffectLayer.findIndex((layer) => { return layer == this.m_UIMediator[item.typeIndex].layer; }) != -1;
-                });
-            }
-            if (typeof _hideAffectLayer != 'undefined') {
-                _hideAffectLayer = ArrayUtils.Unique(_hideAffectLayer);
-                _hideUI = _hideUI.filter((item) => {
-                    return _hideAffectLayer.findIndex((layer) => { return layer == this.m_UIMediator[item.typeIndex].layer; }) != -1;
-                });
-            }
-            for (let _o of _hideUI) {
-                if (this.m_UIMediator[_o.typeIndex].ifBelongUIMediator) {
-                    console.warn(...ConsoleEx.packWarn('有一个附属UI的UI调度者试图被隐藏，KEY为', this.m_UIMediator[_o.typeIndex].keyId));
-                    continue;
-                }
-                this.hideUIMediator(this.m_UIMediator[_o.typeIndex], _o.dispose);
-            }
-            for (let _o of _showUI) {
-                if (this.m_UIMediator[_o.typeIndex].ifBelongUIMediator) {
-                    console.warn(...ConsoleEx.packWarn('有一个附属UI的UI调度者试图被显示，KEY为', this.m_UIMediator[_o.typeIndex].keyId));
-                    continue;
-                }
-                this.showUIMediator(this.m_UIMediator[_o.typeIndex]);
-            }
-            this.m_onShowUI = _showUI;
-        }
-        statesFilter(_states) {
-            return _states.filter((_o) => {
-                return typeof this.m_UIMediator[_o.typeIndex] != 'undefined';
-            });
-        }
-        hideUIMediator(_UIMed, _dispose, _ifR = false) {
-            if (_UIMed.belongUpUIMediator.length > 0) {
-                _UIMed.belongUpUIMediator.forEach((item) => {
-                    this.hideUIMediator(item, _dispose, true);
-                });
-            }
-            if (!_ifR || _UIMed.ifBelongUIMediator) {
-                _UIMed.Hide(_dispose);
-            }
-            else {
-                console.warn(...ConsoleEx.packWarn('有一个不是附属UI的UI调度者试图被隐藏，KEY为', _UIMed.keyId));
-            }
-            if (_UIMed.belongDownUIMediator.length > 0) {
-                _UIMed.belongDownUIMediator.forEach((item) => {
-                    this.hideUIMediator(item, _dispose, true);
-                });
-            }
-        }
-        showUIMediator(_UIMed, _ifR = false) {
-            if (_UIMed.belongDownUIMediator.length > 0) {
-                _UIMed.belongDownUIMediator.forEach((item) => {
-                    this.showUIMediator(item, true);
-                });
-            }
-            if (!_ifR || _UIMed.ifBelongUIMediator) {
-                _UIMed.Show();
-            }
-            else {
-                console.warn(...ConsoleEx.packWarn('有一个不是附属UI的UI调度者试图被显示，KEY为', _UIMed.keyId));
-            }
-            if (_UIMed.belongUpUIMediator.length > 0) {
-                _UIMed.belongUpUIMediator.forEach((item) => {
-                    this.showUIMediator(item, true);
-                });
-            }
-        }
-    }
-
-    class UIManagerProxy extends RootUIStateManagerProxy {
-        constructor() { super(); }
-        static get instance() {
-            if (!this.m_instance) {
-                this.m_instance = new UIManagerProxy();
-            }
-            return this.m_instance;
-        }
-        get gameMainMediator() {
-            return this.getUIMeiatro(EUI.Main);
-        }
-        Init() {
-            MesManager.instance.onEvent(EEventGlobal.GameLoading, this, this.gameLoading);
-            MesManager.instance.onEvent(EEventGlobal.GameResLoading, this, this.gameResLoading);
-            MesManager.instance.onEvent(EEventUI.SceneGameCustomsLoading, this, this.gameCustomsLoading);
-        }
-        Start() {
-            this.setUIState([
-                { typeIndex: EUI.Main, },
-                { typeIndex: EUI.Start, },
-                { typeIndex: EUI.TestMain, },
-            ]);
-        }
-        gameLoading() { }
-        gameResLoading() { }
-        gameCustomsLoading(_n) {
-            if (_n == -1) {
-                this.setUIState([
-                    { typeIndex: EUI.CustomsLoading, },
-                ], false);
-            }
-        }
-    }
-
-    class FGUI_PGameCustomsLoading extends fairygui.GComponent {
-        constructor() {
-            super();
-        }
-        static createInstance() {
-            return (fairygui.UIPackage.createObject("GameMain", "PGameCustomsLoading"));
-        }
-        onConstruct() {
-            this.m_shade = (this.getChildAt(0));
-            this.m_text = (this.getChildAt(1));
-            this.m_progress = (this.getChildAt(2));
-        }
-    }
-    FGUI_PGameCustomsLoading.URL = "ui://kk7g5mmmdbmi13";
-
-    class PGameCustomsLoadingMediator extends BaseUIMediator {
-        constructor() {
-            super();
-            this._layer = EUILayer.Loading;
-        }
-        static get instance() {
-            if (!this.m_instance) {
-                this.m_instance = new PGameCustomsLoadingMediator();
-                this.m_instance._classDefine = FGUI_PGameCustomsLoading;
-            }
-            return this.m_instance;
-        }
-        _OnShow() {
-            MesManager.instance.onEvent(EEventUI.SceneGameCustomsLoading, this, this.CustomsLoading);
-        }
-        CustomsLoading(_number) {
-            this.ui.m_progress.value = _number;
-            if (_number == 100) {
-                UIManagerProxy.instance.setUIState([
-                    { typeIndex: EUI.CustomsLoading, state: false },
-                ], false);
-            }
-        }
-        _OnHide() {
-            MesManager.instance.offEnent(EEventUI.SceneGameCustomsLoading, this, this.CustomsLoading);
-        }
-    }
-
-    class FGUI_PGamePause extends fairygui.GComponent {
-        constructor() {
-            super();
-        }
-        static createInstance() {
-            return (fairygui.UIPackage.createObject("GameMain", "PGamePause"));
-        }
-        onConstruct() {
-            this.m_text = (this.getChildAt(0));
-        }
-    }
-    FGUI_PGamePause.URL = "ui://kk7g5mmm6vcq5g";
-
-    class PGamePauseMediator extends BaseUIMediator {
-        constructor() {
-            super();
-            this._layer = EUILayer.Pause;
-        }
-        static get instance() {
-            if (!this.m_instance) {
-                this.m_instance = new PGamePauseMediator();
-                this.m_instance._classDefine = FGUI_PGamePause;
-            }
-            return this.m_instance;
-        }
-        _OnShow() {
-        }
-        _OnHide() { }
-    }
-
-    class FGUI_PGameSet extends fairygui.GComponent {
-        constructor() {
-            super();
-        }
-        static createInstance() {
-            return (fairygui.UIPackage.createObject("GameMain", "PGameSet"));
-        }
-        onConstruct() {
-            this.m_text = (this.getChildAt(0));
-        }
-    }
-    FGUI_PGameSet.URL = "ui://kk7g5mmm6vcq4u";
-
-    class PGameSetMediator extends BaseUIMediator {
-        constructor() {
-            super();
-            this._layer = EUILayer.Set;
-        }
-        static get instance() {
-            if (!this.m_instance) {
-                this.m_instance = new PGameSetMediator();
-                this.m_instance._classDefine = FGUI_PGameSet;
-            }
-            return this.m_instance;
-        }
-        _OnShow() {
-        }
-        _OnHide() { }
-    }
-
-    class FGUI_PGameCom extends fairygui.GComponent {
-        constructor() {
-            super();
-        }
-        static createInstance() {
-            return (fairygui.UIPackage.createObject("GameMain", "PGameCom"));
-        }
-        onConstruct() {
-            this.m_text = (this.getChildAt(0));
-        }
-    }
-    FGUI_PGameCom.URL = "ui://kk7g5mmmq3ng9w";
-
-    class PGameComMediator extends BaseUIMediator {
-        constructor() { super(); }
-        static get instance() {
-            if (!this.m_instance) {
-                this.m_instance = new PGameComMediator();
-                this.m_instance._classDefine = FGUI_PGameCom;
-            }
-            return this.m_instance;
-        }
-        _OnShow() {
-        }
-        _OnHide() { }
-    }
-
-    class FGUI_PGameEnd extends fairygui.GComponent {
-        constructor() {
-            super();
-        }
-        static createInstance() {
-            return (fairygui.UIPackage.createObject("GameMain", "PGameEnd"));
-        }
-        onConstruct() {
-            this.m_text = (this.getChildAt(0));
-        }
-    }
-    FGUI_PGameEnd.URL = "ui://kk7g5mmmlaxd19";
-
-    class PGameEndMediator extends BaseUIMediator {
-        constructor() { super(); }
-        static get instance() {
-            if (!this.m_instance) {
-                this.m_instance = new PGameEndMediator();
-                this.m_instance._classDefine = FGUI_PGameEnd;
-            }
-            return this.m_instance;
-        }
-        _OnShow() {
-        }
-        _OnHide() { }
-    }
-
-    class FGUI_PGameTestMain extends fairygui.GComponent {
-        constructor() {
-            super();
-        }
-        static createInstance() {
-            return (fairygui.UIPackage.createObject("GameMain", "PGameTestMain"));
-        }
-        onConstruct() {
-            this.m_UIButton = (this.getChildAt(0));
-            this.m_UI = (this.getChildAt(1));
-            this.m_test = (this.getChildAt(3));
-            this.m_testText = (this.getChildAt(4));
-            this.m__test = (this.getChildAt(6));
-        }
-    }
-    FGUI_PGameTestMain.URL = "ui://kk7g5mmmo9js9x";
-
-    class FGUI_PGameTestUI extends fairygui.GComponent {
-        constructor() {
-            super();
-        }
-        static createInstance() {
-            return (fairygui.UIPackage.createObject("GameMain", "PGameTestUI"));
-        }
-        onConstruct() {
-            this.m_bg = (this.getChildAt(0));
-        }
-    }
-    FGUI_PGameTestUI.URL = "ui://kk7g5mmmh66e9z";
-
-    class PGameUITestMediator extends BaseUIMediator {
-        constructor() { super(); }
-        static get instance() {
-            if (!this.m_instance) {
-                this.m_instance = new PGameUITestMediator();
-                this.m_instance._classDefine = FGUI_PGameTestUI;
-            }
-            return this.m_instance;
-        }
-        get _fguiData() {
-            let _fguiData = new FGuiData();
-            _fguiData.top = 100;
-            _fguiData.bottom = 50;
-            return _fguiData;
-        }
-        _OnShow() {
-            this.ui.m_bg.onClick(this, this.close);
-        }
-        close() {
-            this.Hide();
-        }
-        _OnHide() { }
-    }
-
-    class PGameTestMainMediator extends BaseUIMediator {
-        constructor() { super(); }
-        static get instance() {
-            if (!this.m_instance) {
-                this.m_instance = new PGameTestMainMediator();
-                this.m_instance._classDefine = FGUI_PGameTestMain;
-            }
-            return this.m_instance;
-        }
-        _OnShow() {
-            this.ui.m_test.onClick(this, this.Test);
-            this.ui.m_UIButton.onClick(this, this.UITest);
-        }
-        Test() {
-            UIManagerProxy.instance.setUIState([
-                { typeIndex: EUI.TestPlatform },
-            ], false);
-        }
-        UITest() {
-            PGameUITestMediator.instance.Show();
-        }
-        _OnHide() { }
-    }
-
-    class PlatformData {
-        constructor() {
-            this.appId = '';
-            this.appKey = '';
-            this.bannerId = '';
-            this.rewardVideoId = '';
-            this.interstitialId = '';
-            this.nativeId = '';
-            this.nativeBannerIds = [];
-            this.nativeIconIds = [];
-            this.nativeinterstitialIds = [];
-            this.nativeinpageIds = [];
-            this.shareId = '';
-        }
-    }
-
-    class BDData extends PlatformData {
-        constructor() {
-            super(...arguments);
-            this.appId = '';
-            this.appKey = '';
-            this.bannerId = '';
-            this.rewardVideoId = '';
-            this.interstitialId = '';
-            this.nativeId = '';
-            this.nativeBannerIds = [];
-            this.nativeIconIds = [];
-            this.nativeinterstitialIds = [];
-            this.nativeinpageIds = [];
-            this.shareId = '';
-        }
-    }
-
-    class OPPOData extends PlatformData {
-        constructor() {
-            super(...arguments);
-            this.appId = '';
-            this.appKey = '';
-            this.bannerId = '';
-            this.rewardVideoId = '';
-            this.interstitialId = '';
-            this.nativeId = '';
-            this.nativeBannerIds = [];
-            this.nativeIconIds = [];
-            this.nativeinterstitialIds = [];
-            this.nativeinpageIds = [];
-            this.shareId = '';
-        }
-    }
-
-    class QQData extends PlatformData {
-        constructor() {
-            super(...arguments);
-            this.appId = '';
-            this.appKey = '';
-            this.bannerId = '';
-            this.rewardVideoId = '';
-            this.interstitialId = '';
-            this.nativeId = '';
-            this.nativeBannerIds = [];
-            this.nativeIconIds = [];
-            this.nativeinterstitialIds = [];
-            this.nativeinpageIds = [];
-            this.shareId = '';
-        }
-    }
-
-    class QTTData extends PlatformData {
-        constructor() {
-            super(...arguments);
-            this.appId = '';
-            this.appKey = '';
-            this.bannerId = '';
-            this.rewardVideoId = '';
-            this.interstitialId = '';
-            this.nativeId = '';
-            this.nativeBannerIds = [];
-            this.nativeIconIds = [];
-            this.nativeinterstitialIds = [];
-            this.nativeinpageIds = [];
-            this.shareId = '';
-        }
-    }
-
-    class TTData extends PlatformData {
-        constructor() {
-            super(...arguments);
-            this.appId = '';
-            this.appKey = '';
-            this.bannerId = '';
-            this.rewardVideoId = '';
-            this.interstitialId = '';
-            this.nativeId = '';
-            this.nativeBannerIds = [];
-            this.nativeIconIds = [];
-            this.nativeinterstitialIds = [];
-            this.nativeinpageIds = [];
-            this.shareId = '';
-        }
-    }
-
-    class WXData extends PlatformData {
-        constructor() {
-            super(...arguments);
-            this.appId = '';
-            this.appKey = '';
-            this.bannerId = '';
-            this.rewardVideoId = '';
-            this.interstitialId = '';
-            this.nativeId = '';
-            this.nativeBannerIds = [];
-            this.nativeIconIds = [];
-            this.nativeinterstitialIds = [];
-            this.nativeinpageIds = [];
-            this.shareId = '';
-        }
-    }
-
-    var PlatformCommonEvent;
-    (function (PlatformCommonEvent) {
-        PlatformCommonEvent["PAUSE_AUDIO"] = "PAUSE_AUDIO";
-        PlatformCommonEvent["RESUM_AUDIO"] = "RESUM_AUDIO";
-        PlatformCommonEvent["AD_CONFIG_GETTED"] = "AD_CONFIG_GETTED";
-        PlatformCommonEvent["SELF_AD_INITED"] = "SELF_AD_INITED";
-    })(PlatformCommonEvent || (PlatformCommonEvent = {}));
-
-    var EPlatformType;
-    (function (EPlatformType) {
-        EPlatformType["None"] = "EPlatformType_None";
-        EPlatformType["Web"] = "EPlatformType_Web";
-        EPlatformType["WX"] = "EPlatformType_WX";
-        EPlatformType["TT"] = "EPlatformType_TT";
-        EPlatformType["QQ"] = "EPlatformType_QQ";
-        EPlatformType["VIVO"] = "EPlatformType_VIVO";
-        EPlatformType["OPPO"] = "EPlatformType_OPPO";
-        EPlatformType["BD"] = "EPlatformType_BD";
-        EPlatformType["KG"] = "EPlatformType_KG";
-        EPlatformType["Alipay"] = "EPlatformType_Alipay";
-        EPlatformType["HW"] = "EPlatformType_HW";
-        EPlatformType["QTT"] = "EPlatformType_QTT";
-    })(EPlatformType || (EPlatformType = {}));
-
-    class Awaiters {
-        static NextFrame() {
-            return this.Frames(2);
-        }
-        static Frames(num) {
-            return new Promise(function (resolve) {
-                Laya.timer.frameOnce(num, null, () => {
-                    resolve();
-                });
-            });
-        }
-        static Seconds(num) {
-            return new Promise(function (resolve) {
-                Laya.timer.once(num * 1000, null, () => {
-                    resolve();
-                });
-            });
-        }
-    }
-
-    class DefaultDevice {
-        Vibrate(isLong) {
-            console.log("调用震动", isLong);
-            if (!navigator.vibrate) {
-                console.log("不支持设备震动！");
-                return;
-            }
-            if (isLong) {
-                navigator.vibrate(400);
-            }
-            else {
-                navigator.vibrate(15);
-            }
-        }
-    }
-
-    class WXDevice extends DefaultDevice {
-        Vibrate(isLong) {
-            console.log("调用震动", isLong);
-            if (window['wx']) {
-                if (isLong) {
-                    Laya.timer.callLater(wx, wx.vibrateLong, [null]);
-                }
-                else {
-                    Laya.timer.callLater(wx, wx.vibrateShort, [null]);
-                }
-            }
-        }
-    }
-
-    class PlatformManagerProxy extends RootClassProxy {
-        static get instance() {
-            if (this._instance == null) {
-                this._instance = new PlatformManagerProxy();
-            }
-            return this._instance;
-        }
-        get PlatformInstance() {
-            if (!this.m_platformInstance) {
-                console.error(...ConsoleEx.packError('还没有设置过平台实例代理！'));
-            }
-            return this.m_platformInstance;
-        }
-        set PlatformInstance(_instance) {
-            this.m_platformInstance = _instance;
-        }
-        static get platformStr() {
-            return PlatformManagerProxy.GetPlatformStr(this._instance.m_platformInstance.platform);
-        }
-        static GetPlatformStr(platformEnum) {
-            switch (platformEnum) {
-                case EPlatformType.None:
-                    return "未识别";
-                case EPlatformType.Web:
-                    return "网页";
-                case EPlatformType.BD:
-                    return "百度";
-                case EPlatformType.OPPO:
-                    return "Oppo";
-                case EPlatformType.QQ:
-                    return "QQ";
-                case EPlatformType.TT:
-                    return "头条";
-                case EPlatformType.VIVO:
-                    return "Vivo";
-                case EPlatformType.WX:
-                    return "微信";
-                case EPlatformType.QTT:
-                    return "趣头条";
-                default:
-                    return "未定义" + platformEnum;
-            }
-        }
-    }
-
-    class DefaultRecordManager {
-        constructor() {
-            this.supportRecord = false;
-            this.isRecording = false;
-            this.isPausing = false;
-            this.isRecordSuccess = false;
-        }
-        StartRecord(onStart, onOverTime) {
-            console.log("该平台" + PlatformManagerProxy.platformStr + "不支持录制视频");
-        }
-        StopRecord(onStop) {
-            console.log("该平台" + PlatformManagerProxy.platformStr + "不支持录制视频");
-        }
-        Pause(onPause) {
-            console.log("该平台" + PlatformManagerProxy.platformStr + "不支持录制视频");
-        }
-        Resume(onReume) {
-            console.log("该平台" + PlatformManagerProxy.platformStr + "不支持录制视频");
-        }
-        RecordClip(timeRange) {
-            console.log("该平台" + PlatformManagerProxy.platformStr + "不支持录制视频");
-        }
-        ShareVideo(onSuccess, onCancel, onFailed) {
-            if (onFailed) {
-                onFailed.run();
-            }
-        }
-    }
-
-    class MathUtils {
-        static ToHex(num) {
-            return num.toString(16);
-        }
-        static RandomFromArrayUtilscept(numArr, except) {
-            let fakeRandomList = [];
-            for (let i = 0; i < numArr.length; ++i) {
-                if (except == numArr[i])
-                    continue;
-                fakeRandomList.push(numArr[i]);
-            }
-            return this.RandomFromArray(fakeRandomList);
-        }
-        static RandomFromArray(numArr) {
-            let randomIndex = MathUtils.RandomInt(0, numArr.length);
-            return numArr[randomIndex];
-        }
-        static RandomArrayFromArray(arr, count) {
-            let result = [];
-            let indexList = [];
-            for (let i = 0; i < arr.length; ++i) {
-                indexList.push(i);
-            }
-            for (let i = 0; i < count; ++i) {
-                let randomIndex = MathUtils.RandomInt(0, indexList.length);
-                let getIndex = indexList[randomIndex];
-                ArrayUtils.RemoveAt(indexList, randomIndex);
-                result.push(arr[getIndex]);
-            }
-            return result;
-        }
-        static RandomFromWithWeight(numArr, weightArr) {
-            if (numArr == null || numArr.length == 0) {
-                return null;
-            }
-            var totalWeight = 0;
-            for (var weight of weightArr) {
-                totalWeight += weight;
-            }
-            var randomWeight = MathUtils.Random(0, totalWeight);
-            var currentWeight = 0;
-            for (var i = 0; i < numArr.length; ++i) {
-                currentWeight += weightArr[i];
-                if (randomWeight < currentWeight) {
-                    return numArr[i];
-                }
-            }
-            return numArr[numArr.length - 1];
-        }
-        static RandomInt(min, maxAddOne) {
-            return Math.floor(this.Random(min, maxAddOne));
-        }
-        static Random(min, maxAddOne) {
-            return (maxAddOne - min) * Math.random() + min;
-        }
-        static randomRangeInt(min, max) {
-            return Math.floor(Math.random() * (max - min) + min);
-        }
-        static RandomRatio(ratio) {
-            let v = MathUtils.RandomInt(0, 10000) * 0.01;
-            if (ratio > v) {
-                return true;
-            }
-            return false;
-        }
-        static Clamp(value, min, max) {
-            if (value < min)
-                return min;
-            if (value > max)
-                return max;
-            return value;
-        }
-        static Clamp01(value) {
-            return this.Clamp(value, 0, 1);
-        }
-        static Sign(value) {
-            if (value == 0)
-                return 1;
-            return value > 0 ? 1 : -1;
-        }
-        static GetNumCount(num) {
-            var numberCount = 0;
-            var newNumber = num;
-            while (newNumber / 10 > 0) {
-                newNumber = Math.floor(newNumber / 10);
-                numberCount++;
-            }
-            return numberCount;
-        }
-        static Lerp(from, to, progress) {
-            return from + (to - from) * MathUtils.Clamp01(progress);
-        }
-        static MoveTowardsAngle(current, target, maxDelta) {
-            var num = MathUtils.DeltaAngle(current, target);
-            if (0 - maxDelta < num && num < maxDelta) {
-                return target;
-            }
-            target = current + num;
-            return MathUtils.MoveTowards(current, target, maxDelta);
-        }
-        static MoveTowards(current, target, maxDelta) {
-            if (Math.abs(target - current) <= maxDelta) {
-                return target;
-            }
-            return current + Math.sign(target - current) * maxDelta;
-        }
-        static DeltaAngle(current, target) {
-            var num = MathUtils.Repeat(target - current, 360);
-            if (num > 180) {
-                num -= 360;
-            }
-            return num;
-        }
-        static Repeat(t, length) {
-            return MathUtils.Clamp(t - Math.floor(t / length) * length, 0, length);
-        }
-        static IsSimilar(n1, n2) {
-            return n1 == n2;
-        }
-    }
-    MathUtils.Deg2Rad = 0.0175;
-    MathUtils.Rad2Deg = 57.2958;
-
-    class ShareInfo {
-    }
-
-    class ShareManager {
-        constructor() {
-            this._shareInfoList = [];
-        }
-        static get instance() {
-            if (this._instance == null) {
-                this._instance = new ShareManager();
-            }
-            return this._instance;
-        }
-        AddShareInfo(shareInfo) {
-            for (let getInfo of this._shareInfoList) {
-                if (getInfo.shareId == shareInfo.shareId)
-                    return;
-            }
-            this._shareInfoList.push(shareInfo);
-        }
-        GetShareInfo(id = null) {
-            if (this._shareInfoList.length == 0) {
-                let fakeShareInfo = new ShareInfo();
-                return fakeShareInfo;
-            }
-            if (id != null) {
-                for (let shareInfo of this._shareInfoList) {
-                    if (shareInfo.shareId == id)
-                        return shareInfo;
-                }
-            }
-            let randomShare = MathUtils.RandomFromArray(this._shareInfoList);
-            return randomShare;
-        }
-        ShareAppMessage(shareInfo) {
-            PlatformManagerProxy.instance.PlatformInstance.ShareAppMessage(shareInfo, Laya.Handler.create(this, () => {
-                console.log("分享成功");
-            }), null);
-        }
-    }
-
-    class WXPlatform {
-        constructor() {
-            this.platform = EPlatformType.WX;
-            this.safeArea = null;
-            this.recordManager = new DefaultRecordManager();
-            this.device = new WXDevice();
-            this.loginCode = null;
-            this.isSupportJumpOther = true;
-            this._isBannerLoaded = false;
-            this._isVideoLoaded = false;
-            this._isInterstitialLoaded = false;
-            this._cacheVideoAD = false;
-            this.NavigateToAppSuccess = null;
-        }
-        Init(platformData) {
-            this._base = window["wx"];
-            if (this._base == null) {
-                console.error(...ConsoleEx.packError("平台初始化错误", PlatformManagerProxy.platformStr));
-                return;
-            }
-            this.platformData = platformData;
-            this.recordManager.Platform = this;
-            this._InitLauchOption();
-            this._Login();
-            this._InitShareInfo();
-            this._InitSystemInfo();
-            this._CreateBannerAd();
-            this._CreateVideoAd();
-            this._CreateInterstitalAd();
-            window["iplatform"] = this;
-        }
-        _CheckUpdate() {
-            let updateManager = this._base.getUpdateManager();
-            if (updateManager == null)
-                return;
-            updateManager.onCheckForUpdate(function (res) {
-                console.log("onCheckForUpdate", res.hasUpdate);
-                if (res.hasUpdate) {
-                    this._base.showToast({
-                        title: "即将有更新请留意"
-                    });
-                }
-            });
-            updateManager.onUpdateReady(() => {
-                this._base.showModal({
-                    title: "更新提示",
-                    content: "新版本已经准备好，是否立即使用？",
-                    success: function (res) {
-                        if (res.confirm) {
-                            updateManager.applyUpdate();
-                        }
-                        else {
-                            this._base.showToast({
-                                icon: "none",
-                                title: "小程序下一次「冷启动」时会使用新版本"
-                            });
-                        }
-                    }
-                });
-            });
-            updateManager.onUpdateFailed(() => {
-                this._base.showToast({
-                    title: "更新失败，下次启动继续..."
-                });
-            });
-        }
-        _Login() {
-            this.loginState = {
-                isLogin: false,
-                code: ""
-            };
-            let loginData = {};
-            loginData.success = (res) => {
-                this.loginCode = res.code;
-                this._OnLoginSuccess(res);
-                console.error(this.loginState);
-            };
-            loginData.fail = (res) => {
-                console.error(PlatformManagerProxy.platformStr, "登录失败", res);
-                this.loginState.isLogin = false;
-                this.loginState.code = "";
-            };
-            loginData.complete = () => {
-                if (this.onLoginEnd != null) {
-                    this.onLoginEnd.run();
-                }
-            };
-            this._base.login(loginData);
-        }
-        GetStorage(key) {
-            if (this.base && this.base.getStorageSync && key) {
-                try {
-                    return this.base.getStorageSync(key);
-                }
-                catch (error) {
-                    console.log('getStorageSync error: ', JSON.stringify(error));
-                    return null;
-                }
-            }
-        }
-        SetStorage(key, data) {
-            if (this.base && this.base.getStorageSync && key) {
-                try {
-                    return this.base.setStorageSync(key, data);
-                }
-                catch (error) {
-                    console.log('setStorageSync error: ', JSON.stringify(error));
-                }
-            }
-        }
-        _OnLoginSuccess(res) {
-            console.log(PlatformManagerProxy.platformStr, "登录成功", res);
-            this.loginState.isLogin = true;
-            this.loginState.code = res.code;
-        }
-        _InitLauchOption() {
-            this._base.onShow(this._OnShow);
-            this._base.onHide(this._OnHide);
-            let res = this._base.getLaunchOptionsSync();
-            this._OnShow(res);
-        }
-        _InitShareInfo() {
-            this._base.showShareMenu({
-                withShareTicket: true,
-                success: (res) => {
-                    console.log("InitShareSuccess", res);
-                },
-                fail: (res) => {
-                    console.log("InitShareFailed", res);
-                },
-                complete: (res) => {
-                    console.log("InitShareComplete", res);
-                }
-            });
-            this._base.onShareAppMessage(() => {
-                let shareInfo = ShareManager.instance.GetShareInfo();
-                return WXPlatform._WrapShareInfo(shareInfo);
-            });
-        }
-        static _WrapShareInfo(shareInfo) {
-            let shareObj = {};
-            if (shareInfo.shareTitle) {
-                shareObj["title"] = shareInfo.shareTitle;
-            }
-            if (shareInfo.shareImg) {
-                shareObj["imageUrl"] = shareInfo.shareImg;
-            }
-            if (shareInfo.sharePath) {
-                shareObj["query"] = {};
-                let pathSplit = shareInfo.sharePath.split("?");
-                let params = pathSplit[1].split("&");
-                for (let getParam of params) {
-                    let splitParam = getParam.split("=");
-                    shareObj["query"][splitParam[0]] = splitParam[1];
-                }
-            }
-            return shareObj;
-        }
-        _InitSystemInfo() {
-            this.base = this._base;
-            try {
-                this.systemInfo = this._base.getSystemInfoSync();
-                console.log("系统信息已获取", this.systemInfo);
-                this.safeArea = this.systemInfo.safeArea;
-                this._cacheScreenScale = this.systemInfo.screenWidth / Laya.stage.width;
-            }
-            catch (e) {
-                console.error(e);
-                console.error("获取设备信息失败,执行默认初始化");
-                this.safeArea = null;
-            }
-        }
-        _CreateInterstitalAd() {
-            if (StringUtils.IsNullOrEmpty(this.platformData.interstitialId)) {
-                console.log("无有效的插页广告ID,取消加载");
-                return;
-            }
-            this._interstitalFailedCount = 0;
-            let intAdObj = {};
-            intAdObj["adUnitId"] = this.platformData.interstitialId;
-            this._intersitialAd = this._base.createInterstitialAd(intAdObj);
-            if (!this._intersitialAd)
-                return;
-            this._intersitialAd.onLoad(() => {
-                console.log("插页广告加载成功");
-                this._isInterstitialLoaded = true;
-            });
-            this._intersitialAd.onError((err) => {
-                this._interstitalFailedCount++;
-                console.error("插页广告加载失败", err);
-                if (this._interstitalFailedCount > 10) {
-                    console.log("第", this._interstitalFailedCount, "次重新加载插页广告");
-                    this._intersitialAd.load();
-                }
-            });
-        }
-        _CreateVideoAd() {
-            console.log('vedio ad id', this.platformData.rewardVideoId);
-            if (!this._cacheVideoAD) {
-                console.log("当前策略为不缓存视频广告");
-                return;
-            }
-            let createRewardedVideoAd = this._base["createRewardedVideoAd"];
-            if (createRewardedVideoAd == null) {
-                console.error("无createRewardedVideoAd方法,跳过初始化");
-                return;
-            }
-            if (StringUtils.IsNullOrEmpty(this.platformData.rewardVideoId)) {
-                console.log("无有效的视频广告ID,取消加载");
-                return;
-            }
-            this._videoFailedCount = 0;
-            let videoObj = {};
-            videoObj["adUnitId"] = this.platformData.rewardVideoId;
-            this._rewardVideo = createRewardedVideoAd(videoObj);
-            this._rewardVideo.onLoad(() => {
-                console.log("视频广告加载成功");
-                this._isVideoLoaded = true;
-            });
-            this._rewardVideo.onError((res) => {
-                this._videoFailedCount++;
-                console.error("视频广告加载失败", res);
-                if (this._videoFailedCount > 10) {
-                    console.log("第", this._videoFailedCount, "次重新加载视频广告");
-                    this._rewardVideo.load();
-                }
-            });
-            this._rewardVideo.onClose((res) => {
-                Laya.stage.event(PlatformCommonEvent.RESUM_AUDIO);
-                console.log("视频回调", res);
-                let isEnd = res["isEnded"];
-                Awaiters.NextFrame().then(() => {
-                    if (isEnd) {
-                        if (this._rewardSuccessed)
-                            this._rewardSuccessed.run();
-                    }
-                    else {
-                        if (this._rewardSkipped)
-                            this._rewardSkipped.run();
-                    }
-                });
-            });
-        }
-        _CreateBannerAd() {
-            if (StringUtils.IsNullOrEmpty(this.platformData.bannerId)) {
-                console.log("无有效的banner广告ID,取消加载");
-                return;
-            }
-            let windowWidth = this._base.getSystemInfoSync().windowWidth;
-            let windowHeight = this._base.getSystemInfoSync().windowHeight;
-            let bannerObj = {};
-            bannerObj["adUnitId"] = this.platformData.bannerId;
-            bannerObj["adIntervals"] = 30;
-            let styleObj = {};
-            styleObj["left"] = 0;
-            styleObj["top"] = 0;
-            styleObj["width"] = 300;
-            bannerObj["style"] = styleObj;
-            this._bannerAd = this._base.createBannerAd(bannerObj);
-            this._isBannerLoaded = false;
-            this._bannerAd.onLoad(() => {
-                console.log("banner加载成功");
-                this._isBannerLoaded = true;
-                this._bannerAd.style.top = windowHeight - this._bannerAd.style.realHeight;
-                this._bannerAd.style.left = (windowWidth - this._bannerAd.style.realWidth) / 2;
-            });
-            this._bannerAd.onError((res) => {
-                console.error("banner广告加载失败", res);
-            });
-        }
-        IsBannerAvaliable() {
-            return this._isBannerLoaded;
-        }
-        IsVideoAvaliable() {
-            return this._isVideoLoaded;
-        }
-        IsInterstitalAvaliable() {
-            return this._isInterstitialLoaded;
-        }
-        ShowBannerAd() {
-            if (!this.IsBannerAvaliable()) {
-                return;
-            }
-            this._bannerAd.show();
-        }
-        HideBannerAd() {
-            this._bannerAd.hide();
-        }
-        _DoCacheShowVideo(onSuccess, onSkipped) {
-            if (!this._isVideoLoaded) {
-                console.error("视频广告尚未加载好");
-                return;
-            }
-            this._rewardSuccessed = onSuccess;
-            this._rewardSkipped = onSkipped;
-            this._isVideoLoaded = false;
-            Laya.stage.event(PlatformCommonEvent.PAUSE_AUDIO);
-            this._rewardVideo.show();
-        }
-        _DoNoCacheShowVideo(onSuccess, onSkipped) {
-            this._rewardSuccessed = onSuccess;
-            this._rewardSkipped = onSkipped;
-            if (StringUtils.IsNullOrEmpty(this.platformData.rewardVideoId)) {
-                console.log("无有效的视频广告ID,取消加载");
-                onSkipped.run();
-                return;
-            }
-            let createRewardedVideoAd = this._base["createRewardedVideoAd"];
-            if (createRewardedVideoAd == null) {
-                console.error("无createRewardedVideoAd方法,跳过初始化");
-                onSkipped.run();
-                return;
-            }
-            this._videoFailedCount = 0;
-            let videoObj = {};
-            videoObj["adUnitId"] = this.platformData.rewardVideoId;
-            if (this._rewardVideo) {
-                this._rewardVideo.offClose(this.onVideoClose);
-            }
-            this._rewardVideo = createRewardedVideoAd(videoObj);
-            this._rewardVideo.onLoad(() => {
-                console.log("视频广告加载成功");
-                this._isVideoLoaded = true;
-            });
-            this._rewardVideo.onError((res) => {
-                this._videoFailedCount++;
-                console.error("视频广告加载失败", res, this._videoFailedCount);
-            });
-            this._rewardVideo.onClose((res) => {
-                Laya.stage.event(PlatformCommonEvent.RESUM_AUDIO);
-                console.log("视频回调", res);
-                let isEnd = res["isEnded"];
-                Awaiters.NextFrame().then(() => {
-                    if (isEnd) {
-                        if (this._rewardSuccessed)
-                            this._rewardSuccessed.run();
-                    }
-                    else {
-                        if (this._rewardSkipped)
-                            this._rewardSkipped.run();
-                    }
-                });
-            });
-            this._rewardVideo.load().then(() => {
-                console.log("激励视频 加载成功");
-                return this._rewardVideo.show().then(() => {
-                }).catch((err) => {
-                    console.error(err);
-                });
-                ;
-            });
-        }
-        onVideoClose(res) {
-            Laya.stage.event(PlatformCommonEvent.RESUM_AUDIO);
-            console.log("视频回调", res);
-            let isEnd = res["isEnded"];
-            Awaiters.NextFrame().then(() => {
-                if (isEnd) {
-                    if (this._rewardSuccessed)
-                        this._rewardSuccessed.run();
-                }
-                else {
-                    if (this._rewardSkipped)
-                        this._rewardSkipped.run();
-                }
-            });
-        }
-        ShowRewardVideoAd(onSuccess, onSkipped) {
-            if (this._cacheVideoAD) {
-                this._DoCacheShowVideo(onSuccess, onSkipped);
-            }
-            else {
-                this._DoNoCacheShowVideo(onSuccess, onSkipped);
-            }
-        }
-        ShowRewardVideoAdAsync() {
-            return new Promise(function (resolve) {
-                PlatformManagerProxy.instance.PlatformInstance.ShowRewardVideoAd(Laya.Handler.create(this, () => {
-                    resolve(true);
-                }), Laya.Handler.create(this, () => {
-                    resolve(false);
-                }));
-            });
-        }
-        ShowInterstitalAd() {
-            if (!this._isInterstitialLoaded) {
-                console.error("插页广告尚未加载好");
-                return;
-            }
-            this._intersitialAd.show();
-        }
-        GetFromAppId() {
-            if (this.lauchOption.referrerInfo == null) {
-                return null;
-            }
-            if (StringUtils.IsNullOrEmpty(this.lauchOption.referrerInfo.appId)) {
-                return null;
-            }
-            return this.lauchOption.referrerInfo.appId;
-        }
-        _OnShow(res) {
-            console.log(PlatformManagerProxy.platformStr, "OnShow", res);
-            PlatformManagerProxy.instance.PlatformInstance.lauchOption = res;
-            PlatformManagerProxy.instance.PlatformInstance._CheckUpdate();
-            this.NavigateToAppSuccess = null;
-            Awaiters.NextFrame().then(() => {
-                if (PlatformManagerProxy.instance.PlatformInstance.onResume) {
-                    PlatformManagerProxy.instance.PlatformInstance.onResume.runWith(res);
-                }
-            });
-        }
-        _OnHide(res) {
-            console.log(PlatformManagerProxy.platformStr, "OnHide", res);
-            if (PlatformManagerProxy.instance.PlatformInstance.onPause) {
-                PlatformManagerProxy.instance.PlatformInstance.onPause.runWith(res);
-            }
-            if (this.NavigateToAppSuccess) {
-                this.NavigateToAppSuccess();
-            }
-        }
-        ShareAppMessage(shareInfo, onSuccess, onFailed) {
-            console.log("分享消息", shareInfo);
-            let shareObj = WXPlatform._WrapShareInfo(shareInfo);
-            this._base.shareAppMessage(shareObj);
-            if (onSuccess) {
-                onSuccess.run();
-            }
-        }
-        LoadSubpackage(name, onSuccess, onFailed, onProgress) {
-            if (this._base['loadSubpackage'] == null) {
-                console.log("无加载子包方法,跳过加载子包", name);
-                if (onSuccess) {
-                    onSuccess.run();
-                }
-                return;
-            }
-            let loadObj = {};
-            loadObj["name"] = name;
-            loadObj["success"] = () => {
-                console.log("分包加载成功", name);
-                if (onSuccess) {
-                    onSuccess.run();
-                }
-            };
-            loadObj["fail"] = () => {
-                console.error("分包加载失败", name);
-                if (onFailed) {
-                    onFailed.run();
-                }
-            };
-            let loadTask = this._base.loadSubpackage(loadObj);
-            loadTask.onProgressUpdate((res) => {
-                if (Laya.Browser.onMobile) {
-                    console.log("分包加载进度", res);
-                }
-                if (onProgress) {
-                    onProgress.runWith(res.progress / 100);
-                }
-            });
-        }
-        RecordEvent(eventId, param) {
-            console.log("记录事件", eventId, param);
-            let aldSendEvent = this._base["aldSendEvent"];
-            if (aldSendEvent == null) {
-                console.error("阿拉丁sdk尚未接入,请检查配置");
-                return;
-            }
-            if (param != null) {
-                aldSendEvent(eventId, param);
-            }
-            else {
-                aldSendEvent(eventId);
-            }
-        }
-        CreateShareVideoBtn(x, y, width, height) {
-            let btnObj = {};
-            btnObj.style = {
-                left: x * this._cacheScreenScale,
-                top: y * this._cacheScreenScale,
-                height: height * this._cacheScreenScale,
-                width: width * this._cacheScreenScale
-            };
-            btnObj.share = {
-                query: {
-                    tick: 1
-                },
-                bgm: "",
-                timeRange: [0, 60 * 1000]
-            };
-            if (this._shareVideoBtn == null) {
-                this._shareVideoBtn = this._base.createGameRecorderShareButton(btnObj);
-            }
-            else {
-                this._shareVideoBtn.show();
-            }
-        }
-        HideShareVideoBtn() {
-            if (this._shareVideoBtn != null) {
-                this._shareVideoBtn.hide();
-            }
-        }
-        ShowToast(str) {
-            this._base.showToast({
-                title: str,
-                duration: 2000
-            });
-        }
-        OpenGameBox(appIds) {
-            console.error("当前平台", PlatformManagerProxy.platformStr, "暂不支持互推游戏盒子");
-        }
-        NavigateToApp(appid, path, extra, showGC, isbanner, adid) {
-            return new Promise((resolve, reject) => {
-                if (showGC) {
-                }
-                wx.navigateToMiniProgram({
-                    appId: appid,
-                    path: path,
-                    extraData: extra,
-                    envVersion: '',
-                    success: (res) => {
-                        console.log('小游戏跳转成功', res);
-                        resolve(true);
-                    },
-                    fail: () => {
-                        console.log('小游戏跳转失败：');
-                        reject(false);
-                        if (showGC) {
-                        }
-                    },
-                    complete: () => { }
-                });
-            });
-        }
-        createShortcut() {
-            console.log('暂未实现');
-        }
-    }
-
-    class BDPlatform extends WXPlatform {
-        constructor() {
-            super(...arguments);
-            this.platform = EPlatformType.BD;
-            this._showVideoLoad = false;
-        }
-        Init(platformData) {
-            this._base = window["swan"];
-            if (this._base == null) {
-                console.error(...ConsoleEx.packError("平台初始化错误"));
-                return;
-            }
-            this.platformData = platformData;
-            this.recordManager.Platform = this;
-            this._InitLauchOption();
-            this._InitShareInfo();
-            this._InitSystemInfo();
-            this._isBannerLoaded = false;
-            this._isBannerShowed = false;
-            this._CreateVideoAd();
-            this._CreateInterstitalAd();
-            window["iplatform"] = this;
-        }
-        _CreateBannerAd() {
-            if (StringUtils.IsNullOrEmpty(this.platformData.bannerId)) {
-                console.log("无有效的banner广告ID,取消加载");
-                return;
-            }
-            let windowWidth = this._base.getSystemInfoSync().windowWidth;
-            let windowHeight = this._base.getSystemInfoSync().windowHeight;
-            let bannerObj = {};
-            bannerObj["adUnitId"] = this.platformData.bannerId;
-            bannerObj["appSid"] = this.platformData.sid;
-            let styleObj = {};
-            styleObj["left"] = 0;
-            styleObj["top"] = 0;
-            styleObj["width"] = windowWidth;
-            bannerObj["style"] = styleObj;
-            this._bannerAd = this._base.createBannerAd(bannerObj);
-            this._bannerAd.onLoad(() => {
-                console.log("banner加载成功");
-                this._isBannerLoaded = true;
-                this._bannerAd.style.top = windowHeight - this._bannerAd.style.height;
-                this._bannerAd.show();
-            });
-            this._bannerAd.onError((res) => {
-                console.error("banner广告加载失败", res);
-            });
-        }
-        _CreateVideoAd() {
-            if (StringUtils.IsNullOrEmpty(this.platformData.rewardVideoId)) {
-                console.log("无有效的视频广告ID,取消加载");
-                return;
-            }
-            this._videoFailedCount = 0;
-            let videoObj = {};
-            videoObj["adUnitId"] = this.platformData.rewardVideoId;
-            videoObj["appSid"] = this.platformData.sid;
-            this._rewardVideo = this._base.createRewardedVideoAd(videoObj);
-            this._rewardVideo.onLoad(() => {
-                console.log("视频广告加载成功");
-                this._isVideoLoaded = true;
-            });
-            this._rewardVideo.onError((res) => {
-                this._videoFailedCount++;
-                console.error("视频广告加载失败", res);
-                if (this._videoFailedCount > 10) {
-                    console.log("第", this._videoFailedCount, "次重新加载视频广告");
-                    this._rewardVideo.load();
-                }
-            });
-            this._rewardVideo.onClose((res) => {
-                this._base.hideLoading();
-                Laya.stage.event(PlatformCommonEvent.RESUM_AUDIO);
-                console.log("视频回调", res);
-                let isEnd = res["isEnded"];
-                if (isEnd) {
-                    if (this._rewardSuccessed)
-                        this._rewardSuccessed.run();
-                }
-                else {
-                    if (this._rewardSkipped)
-                        this._rewardSkipped.run();
-                }
-                this._rewardVideo.load();
-            });
-        }
-        _CreateInterstitalAd() {
-        }
-        LoadSubpackage(name, onSuccess, onFailed, onProgress) {
-            let loadObj = {};
-            loadObj["name"] = name;
-            loadObj["success"] = () => {
-                console.log("分包加载成功", name);
-                if (onSuccess) {
-                    onSuccess.run();
-                }
-            };
-            loadObj["fail"] = () => {
-                console.error("分包加载失败", name);
-                if (onFailed) {
-                    onFailed.run();
-                }
-            };
-            let loadTask = this._base.loadSubpackage(loadObj);
-            loadTask.onProgressUpdate((res) => {
-                if (onProgress) {
-                    let value = res.progress / 100;
-                    if (isNaN(value)) {
-                        value = res.loaded / res.total;
-                    }
-                    onProgress.runWith(value);
-                }
-            });
-        }
-        RecordEvent(eventId, param) {
-            this._base.reportAnalytics(eventId, param);
-        }
-        ShowBannerAd() {
-            if (this._isBannerLoaded) {
-                return;
-            }
-            this._CreateBannerAd();
-        }
-        HideBannerAd() {
-            if (!this._isBannerLoaded)
-                return;
-            this._isBannerLoaded = false;
-            if (this._bannerAd) {
-                this._bannerAd.destroy();
-            }
-        }
-    }
-
-    class WebRecordManager extends DefaultRecordManager {
-        constructor() {
-            super(...arguments);
-            this.supportRecord = false;
-        }
-        ShareVideo(onSuccess, onCancel, onFailed) {
-            if (this.supportRecord) {
-                console.log("强制模拟成功");
-                if (onSuccess) {
-                    onSuccess.run();
-                }
-            }
-            else {
-                console.log("强制模拟失败");
-                if (onFailed) {
-                    onFailed.run();
-                }
-            }
-        }
-    }
-
-    class DefaultPlatform {
-        constructor() {
-            this.platform = EPlatformType.Web;
-            this.safeArea = null;
-            this.recordManager = new WebRecordManager();
-            this.device = new DefaultDevice();
-            this.systemInfo = null;
-            this.isSupportJumpOther = true;
-        }
-        Init(platformData) {
-            this.loginState = {
-                isLogin: false,
-                code: null
-            };
-            this.recordManager.Platform = this;
-            Laya.timer.once(500, this, this._FakeLoginEnd);
-        }
-        _FakeLoginEnd() {
-            if (this.onLoginEnd)
-                this.onLoginEnd.run();
-        }
-        IsBannerAvaliable() {
-            return false;
-        }
-        IsVideoAvaliable() {
-            return true;
-        }
-        IsInterstitalAvaliable() {
-            return false;
-        }
-        ShowBannerAd() {
-            console.log("调用ShowBannerAd");
-        }
-        HideBannerAd() {
-            console.log("调用HideBannerAd");
-        }
-        ShowRewardVideoAd(onSuccess, onSkipped) {
-            console.log("调用ShowRewardVideoAd");
-            onSuccess.run();
-        }
-        ShowRewardVideoAdAsync() {
-            return new Promise(function (resolve) {
-                PlatformManagerProxy.instance.PlatformInstance.ShowRewardVideoAd(Laya.Handler.create(this, () => {
-                    resolve(true);
-                }), Laya.Handler.create(this, () => {
-                    resolve(false);
-                }));
-            });
-        }
-        ShowInterstitalAd() {
-            console.log("调用ShowInterstitalAd");
-        }
-        GetFromAppId() {
-            return null;
-        }
-        ShareAppMessage(obj, onSuccess = null, onFailed = null) {
-            console.log("分享消息", obj);
-            if (onSuccess) {
-                onSuccess.run();
-            }
-        }
-        LoadSubpackage(name, onSuccess, onFailed) {
-            if (onSuccess) {
-                onSuccess.run();
-            }
-        }
-        RecordEvent(eventId, param) {
-            console.log("记录事件", eventId, param);
-        }
-        ShareVideoInfo() {
-            console.log(PlatformManagerProxy.platformStr, "暂未实现录屏功能");
-        }
-        _CheckUpdate() {
-        }
-        ShowToast(str) {
-            console.log('显示消息：', str);
-        }
-        OpenGameBox() {
-            console.error("当前平台", PlatformManagerProxy.platformStr, "暂不支持互推游戏盒子");
-        }
-        NavigateToApp(appid, path, extra) {
-            return new Promise((resolve, reject) => {
-                console.error("当前平台", PlatformManagerProxy.platformStr, `暂不支持小程序跳转appid:${appid}`);
-                resolve(false);
-            });
-        }
-        createShortcut() {
-            console.log('创建桌面图标');
-        }
-        GetStorage(key) {
-            console.log('读本地存储');
-            return Laya.LocalStorage.getItem(key);
-        }
-        SetStorage(key, data) {
-            console.log('写本地存储');
-            Laya.LocalStorage.setItem(key, data);
-        }
-    }
-
-    /*! *****************************************************************************
-    Copyright (c) Microsoft Corporation. All rights reserved.
-    Licensed under the Apache License, Version 2.0 (the "License"); you may not use
-    this file except in compliance with the License. You may obtain a copy of the
-    License at http://www.apache.org/licenses/LICENSE-2.0
-
-    THIS CODE IS PROVIDED ON AN *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-    KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY IMPLIED
-    WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-    MERCHANTABLITY OR NON-INFRINGEMENT.
-
-    See the Apache Version 2.0 License for specific language governing permissions
-    and limitations under the License.
-    ***************************************************************************** */
-    /* global Reflect, Promise */
-
-    var extendStatics = function(d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-
-    function __extends(d, b) {
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    }
-
-    var __assign = function() {
-        __assign = Object.assign || function __assign(t) {
-            for (var s, i = 1, n = arguments.length; i < n; i++) {
-                s = arguments[i];
-                for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p)) t[p] = s[p];
-            }
-            return t;
-        };
-        return __assign.apply(this, arguments);
-    };
-
-    function __rest(s, e) {
-        var t = {};
-        for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0)
-            t[p] = s[p];
-        if (s != null && typeof Object.getOwnPropertySymbols === "function")
-            for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) {
-                if (e.indexOf(p[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p[i]))
-                    t[p[i]] = s[p[i]];
-            }
-        return t;
-    }
-
-    function __decorate(decorators, target, key, desc) {
-        var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
-        if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
-        else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
-        return c > 3 && r && Object.defineProperty(target, key, r), r;
-    }
-
-    function __param(paramIndex, decorator) {
-        return function (target, key) { decorator(target, key, paramIndex); }
-    }
-
-    function __metadata(metadataKey, metadataValue) {
-        if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(metadataKey, metadataValue);
-    }
-
-    function __awaiter(thisArg, _arguments, P, generator) {
-        return new (P || (P = Promise))(function (resolve, reject) {
-            function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-            function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-            function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
-            step((generator = generator.apply(thisArg, _arguments || [])).next());
-        });
-    }
-
-    function __generator(thisArg, body) {
-        var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
-        return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
-        function verb(n) { return function (v) { return step([n, v]); }; }
-        function step(op) {
-            if (f) throw new TypeError("Generator is already executing.");
-            while (_) try {
-                if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
-                if (y = 0, t) op = [op[0] & 2, t.value];
-                switch (op[0]) {
-                    case 0: case 1: t = op; break;
-                    case 4: _.label++; return { value: op[1], done: false };
-                    case 5: _.label++; y = op[1]; op = [0]; continue;
-                    case 7: op = _.ops.pop(); _.trys.pop(); continue;
-                    default:
-                        if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
-                        if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
-                        if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
-                        if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
-                        if (t[2]) _.ops.pop();
-                        _.trys.pop(); continue;
-                }
-                op = body.call(thisArg, _);
-            } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
-            if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
-        }
-    }
-
-    function __exportStar(m, exports) {
-        for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
-    }
-
-    function __values(o) {
-        var m = typeof Symbol === "function" && o[Symbol.iterator], i = 0;
-        if (m) return m.call(o);
-        return {
-            next: function () {
-                if (o && i >= o.length) o = void 0;
-                return { value: o && o[i++], done: !o };
-            }
-        };
-    }
-
-    function __read(o, n) {
-        var m = typeof Symbol === "function" && o[Symbol.iterator];
-        if (!m) return o;
-        var i = m.call(o), r, ar = [], e;
-        try {
-            while ((n === void 0 || n-- > 0) && !(r = i.next()).done) ar.push(r.value);
-        }
-        catch (error) { e = { error: error }; }
-        finally {
-            try {
-                if (r && !r.done && (m = i["return"])) m.call(i);
-            }
-            finally { if (e) throw e.error; }
-        }
-        return ar;
-    }
-
-    function __spread() {
-        for (var ar = [], i = 0; i < arguments.length; i++)
-            ar = ar.concat(__read(arguments[i]));
-        return ar;
-    }
-
-    function __spreadArrays() {
-        for (var s = 0, i = 0, il = arguments.length; i < il; i++) s += arguments[i].length;
-        for (var r = Array(s), k = 0, i = 0; i < il; i++)
-            for (var a = arguments[i], j = 0, jl = a.length; j < jl; j++, k++)
-                r[k] = a[j];
-        return r;
-    };
-
-    function __await(v) {
-        return this instanceof __await ? (this.v = v, this) : new __await(v);
-    }
-
-    function __asyncGenerator(thisArg, _arguments, generator) {
-        if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
-        var g = generator.apply(thisArg, _arguments || []), i, q = [];
-        return i = {}, verb("next"), verb("throw"), verb("return"), i[Symbol.asyncIterator] = function () { return this; }, i;
-        function verb(n) { if (g[n]) i[n] = function (v) { return new Promise(function (a, b) { q.push([n, v, a, b]) > 1 || resume(n, v); }); }; }
-        function resume(n, v) { try { step(g[n](v)); } catch (e) { settle(q[0][3], e); } }
-        function step(r) { r.value instanceof __await ? Promise.resolve(r.value.v).then(fulfill, reject) : settle(q[0][2], r); }
-        function fulfill(value) { resume("next", value); }
-        function reject(value) { resume("throw", value); }
-        function settle(f, v) { if (f(v), q.shift(), q.length) resume(q[0][0], q[0][1]); }
-    }
-
-    function __asyncDelegator(o) {
-        var i, p;
-        return i = {}, verb("next"), verb("throw", function (e) { throw e; }), verb("return"), i[Symbol.iterator] = function () { return this; }, i;
-        function verb(n, f) { i[n] = o[n] ? function (v) { return (p = !p) ? { value: __await(o[n](v)), done: n === "return" } : f ? f(v) : v; } : f; }
-    }
-
-    function __asyncValues(o) {
-        if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
-        var m = o[Symbol.asyncIterator], i;
-        return m ? m.call(o) : (o = typeof __values === "function" ? __values(o) : o[Symbol.iterator](), i = {}, verb("next"), verb("throw"), verb("return"), i[Symbol.asyncIterator] = function () { return this; }, i);
-        function verb(n) { i[n] = o[n] && function (v) { return new Promise(function (resolve, reject) { v = o[n](v), settle(resolve, reject, v.done, v.value); }); }; }
-        function settle(resolve, reject, d, v) { Promise.resolve(v).then(function(v) { resolve({ value: v, done: d }); }, reject); }
-    }
-
-    function __makeTemplateObject(cooked, raw) {
-        if (Object.defineProperty) { Object.defineProperty(cooked, "raw", { value: raw }); } else { cooked.raw = raw; }
-        return cooked;
-    };
-
-    function __importStar(mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-        result.default = mod;
-        return result;
-    }
-
-    function __importDefault(mod) {
-        return (mod && mod.__esModule) ? mod : { default: mod };
-    }
-
-    class OppoPlatform extends WXPlatform {
-        constructor() {
-            super(...arguments);
-            this.platform = EPlatformType.OPPO;
-            this.safeArea = null;
-            this.recordManager = new DefaultRecordManager();
-            this.device = new DefaultDevice();
-            this.isSupportJumpOther = true;
-            this._isBannerLoaded = false;
-            this._isVideoLoaded = false;
-            this._isInterstitialLoaded = false;
-            this._isInterstitialCanShow = true;
-            this._nativeAdLoaded = false;
-            this._cacheVideoAD = false;
-        }
-        Init(platformData) {
-            this._base = window["qg"];
-            if (this._base == null) {
-                console.error(...ConsoleEx.packError("平台初始化错误", PlatformManagerProxy.platformStr));
-                return;
-            }
-            this.platformData = platformData;
-            this.recordManager.Platform = this;
-            this._InitLauchOption();
-            this._Login();
-            this._InitSystemInfo();
-            this.getSystemInfo();
-            if (this.systemInfo.platformVersion >= 1051) {
-            }
-            else {
-                this._base.initAdService({
-                    appId: platformData.appId,
-                    isDebug: true,
-                    success: () => {
-                        console.log("oppo广告", "初始化广告服务成功", platformData);
-                        this._CreateVideoAd();
-                    },
-                    fail: () => {
-                        console.error("oppo广告", "初始化广告服务失败");
-                    }
-                });
-            }
-            window["iplatform"] = this;
-        }
-        getSystemInfo() {
-            this._base.getSystemInfo({
-                success: (res) => {
-                    this.systemInfo = res;
-                    console.log(this.systemInfo);
-                },
-                fail: () => { },
-                complete: () => { }
-            });
-        }
-        reportMonitor() {
-            console.log('oppo上报数据', this.systemInfo);
-            if (this.systemInfo && this.systemInfo.platformVersion >= 1060) {
-                this._base.reportMonitor('game_scene', 0);
-            }
-        }
-        _CheckUpdate() {
-        }
-        _Login() {
-            this.loginState = {
-                isLogin: false,
-                code: ""
-            };
-            let loginData = {};
-            loginData.success = (res) => {
-                this._OnLoginSuccess(res);
-            };
-            loginData.fail = (res) => {
-                console.error(PlatformManagerProxy.platformStr, "登录失败", res);
-                this.loginState.isLogin = false;
-                this.loginState.code = "";
-            };
-            loginData.complete = (res) => {
-                if (this.onLoginEnd != null) {
-                    this.onLoginEnd.run();
-                }
-            };
-            this._base.login(loginData);
-        }
-        _OnLoginSuccess(res) {
-            console.log(PlatformManagerProxy.platformStr, "登录成功", res);
-            this.loginState.isLogin = true;
-            this.loginState.code = res.token;
-        }
-        ShareAppMessage(obj, onSuccess, onFailed) {
-        }
-        _InitLauchOption() {
-            this._base.onShow(this._OnShow);
-            this._base.onHide(this._OnHide);
-            let res = this._base.getLaunchOptionsSync();
-            this._OnShow(res);
-        }
-        canCreateShortcut() {
-            return new Promise((resolve, reject) => {
-                qg['hasShortcutInstalled']({
-                    success: function (res) {
-                        resolve(res);
-                    },
-                    fail: function (err) {
-                        reject();
-                    },
-                    complete: function () {
-                    }
-                });
-            });
-        }
-        createShortcut() {
-            return new Promise((resolve, reject) => {
-                qg['hasShortcutInstalled']({
-                    success: function (res) {
-                        if (res == false) {
-                            qg['installShortcut']({
-                                success: function () {
-                                    resolve();
-                                },
-                                fail: function (err) {
-                                    reject();
-                                },
-                                complete: function () { }
-                            });
-                        }
-                        else {
-                            resolve();
-                        }
-                    },
-                    fail: function (err) {
-                        reject();
-                    },
-                    complete: function () { }
-                });
-            });
-        }
-        _CreateInterstitalAd() {
-        }
-        _CreateVideoAd() {
-            if (!this._cacheVideoAD) {
-                console.log("当前策略为不缓存视频广告");
-                return;
-            }
-            let createRewardedVideoAd = this._base["createRewardedVideoAd"];
-            if (createRewardedVideoAd == null) {
-                console.error("无createRewardedVideoAd方法,跳过初始化");
-                return;
-            }
-            if (StringUtils.IsNullOrEmpty(this.platformData.rewardVideoId)) {
-                console.log("无有效的视频广告ID,取消加载");
-                return;
-            }
-            this._videoFailedCount = 0;
-            let videoObj = {};
-            videoObj["adUnitId"] = this.platformData.rewardVideoId;
-            this._rewardVideo = createRewardedVideoAd(videoObj);
-            this._rewardVideo.onLoad(() => {
-                console.log("视频广告加载成功");
-                this._isVideoLoaded = true;
-            });
-            this._rewardVideo.onError((res) => {
-                this._videoFailedCount++;
-                console.error("视频广告加载失败", res);
-                if (this._videoFailedCount > 10) {
-                    console.log("第", this._videoFailedCount, "次重新加载视频广告");
-                    this._rewardVideo.load();
-                }
-            });
-            this._rewardVideo.onClose((res) => {
-                Laya.stage.event(PlatformCommonEvent.RESUM_AUDIO);
-                console.log("视频回调", res);
-                let isEnd = res["isEnded"];
-                Awaiters.NextFrame().then(() => {
-                    if (isEnd) {
-                        if (this._rewardSuccessed)
-                            this._rewardSuccessed.run();
-                    }
-                    else {
-                        if (this._rewardSkipped)
-                            this._rewardSkipped.run();
-                    }
-                });
-            });
-        }
-        IsBannerAvaliable() {
-            return this._isBannerLoaded;
-        }
-        IsVideoAvaliable() {
-            return this._isVideoLoaded;
-        }
-        IsInterstitalAvaliable() {
-            return false;
-        }
-        IsNativeAvaliable() {
-            return this._nativeAdLoaded;
-        }
-        ShowBannerAd() {
-            return __awaiter(this, void 0, void 0, function* () {
-                if (StringUtils.IsNullOrEmpty(this.platformData.bannerId)) {
-                    console.log("无有效的banner广告ID,取消加载");
-                    return;
-                }
-                if (this._bannerAd) {
-                    this._bannerAd.show();
-                    console.log('展示已有banner');
-                    return;
-                }
-                this.HideBannerAd();
-                this._bannerAd = this._base.createBannerAd({
-                    adUnitId: this.platformData.bannerId
-                });
-                let isBannerLoading = true;
-                let loadSuccess = false;
-                this._bannerAd.show().then((res) => {
-                    console.log("banner加载成功", res);
-                    if (res['code'] == 0) {
-                        loadSuccess = true;
-                    }
-                    isBannerLoading = false;
-                }).catch((res) => {
-                    console.error("banner加载失败", res);
-                    isBannerLoading = false;
-                });
-                while (isBannerLoading) {
-                    yield Awaiters.NextFrame();
-                }
-                if (loadSuccess)
-                    return;
-                console.log("banner展示失败,展示native广告");
-                if (this._bannerAd) {
-                    this._bannerAd.destroy();
-                    this._bannerAd = null;
-                }
-                for (let i = 0; i < this.platformData.nativeIconIds.length; ++i) {
-                    let ret = yield this._ShowNativeBanner(i);
-                    if (ret) {
-                        break;
-                    }
-                    this._bannerAd.destroy();
-                }
-            });
-        }
-        _ShowNativeBanner(index) {
-            return __awaiter(this, void 0, void 0, function* () {
-                let nativeBanner = this.base.createNativeAd({
-                    adUnitId: this.platformData.nativeBannerIds[index]
-                });
-                this._bannerAd = nativeBanner;
-                let loadRet = yield nativeBanner.load();
-                if (loadRet["code"] == 0) {
-                    let adList = loadRet['adList'];
-                    if (adList == null || adList.length == 0) {
-                        console.error("native banner加载失败", loadRet);
-                        return false;
-                    }
-                    let adData = adList[0];
-                    if (adData == null) {
-                        console.error("native banner加载失败", loadRet);
-                        return false;
-                    }
-                    return true;
-                }
-                else {
-                    console.error("native banner加载失败", loadRet);
-                    return false;
-                }
-            });
-        }
-        HideBannerAd() {
-            if (this._bannerAd) {
-                this._bannerAd.destroy();
-                this._bannerAd = null;
-            }
-        }
-        ShowNativeAd() {
-            return __awaiter(this, void 0, void 0, function* () {
-                if (!this.IsNativeAvaliable()) {
-                    return;
-                }
-            });
-        }
-        HideNativeAd() {
-            if (!this.IsNativeAvaliable()) {
-                return;
-            }
-        }
-        _DoCacheShowVideo(onSuccess, onSkipped) {
-            if (!this._isVideoLoaded) {
-                console.error("视频广告尚未加载好");
-                return;
-            }
-            this._rewardSuccessed = onSuccess;
-            this._rewardSkipped = onSkipped;
-            this._isVideoLoaded = false;
-            Laya.stage.event(PlatformCommonEvent.PAUSE_AUDIO);
-            this._rewardVideo.show();
-        }
-        _DoNoCacheShowVideo(onSuccess, onSkipped) {
-            this._rewardSuccessed = onSuccess;
-            this._rewardSkipped = onSkipped;
-            if (StringUtils.IsNullOrEmpty(this.platformData.rewardVideoId)) {
-                console.log("无有效的视频广告ID,取消加载");
-                this._rewardSkipped && this._rewardSkipped.run();
-                return;
-            }
-            let createRewardedVideoAd = this._base["createRewardedVideoAd"];
-            if (createRewardedVideoAd == null) {
-                console.error("无createRewardedVideoAd方法,跳过初始化");
-                this._rewardSkipped && this._rewardSkipped.run();
-                return;
-            }
-            if (this._rewardVideo) {
-                this._rewardVideo.destroy();
-            }
-            let videoObj = {};
-            videoObj["adUnitId"] = this.platformData.rewardVideoId;
-            this._rewardVideo = createRewardedVideoAd(videoObj);
-            console.log("广告创建完成", videoObj);
-            this._rewardVideo.onClose((res) => {
-                Laya.stage.event(PlatformCommonEvent.RESUM_AUDIO);
-                console.log("视频回调", res);
-                let isEnd = res["isEnded"];
-                Awaiters.NextFrame().then(() => {
-                    if (isEnd) {
-                        if (this._rewardSuccessed)
-                            this._rewardSuccessed.run();
-                    }
-                    else {
-                        if (this._rewardSkipped)
-                            this._rewardSkipped.run();
-                    }
-                });
-            });
-            this._rewardVideo.onError((err) => {
-                console.log("广告组件出现问题", err);
-                if (this._rewardSkipped)
-                    this._rewardSkipped.run();
-            });
-            this._rewardVideo.onLoad((res) => {
-                console.log("广告加载成功", res);
-            });
-            this._rewardVideo.load().then(() => {
-                this._rewardVideo.show();
-            });
-        }
-        ShowRewardVideoAd(onSuccess, onSkipped) {
-            if (this._cacheVideoAD) {
-                this._DoCacheShowVideo(onSuccess, onSkipped);
-            }
-            else {
-                this._DoNoCacheShowVideo(onSuccess, onSkipped);
-            }
-        }
-        ShowRewardVideoAdAsync() {
-            return new Promise(function (resolve) {
-                PlatformManagerProxy.instance.PlatformInstance.ShowRewardVideoAd(Laya.Handler.create(this, () => {
-                    resolve(true);
-                }), Laya.Handler.create(this, () => {
-                    resolve(false);
-                }));
-            });
-        }
-        _DisableInterstitalAd() {
-            return __awaiter(this, void 0, void 0, function* () {
-                this._isInterstitialCanShow = false;
-                yield Awaiters.Seconds(60);
-                this._isInterstitialCanShow = true;
-            });
-        }
-        GetFromAppId() {
-            if (this.lauchOption.referrerInfo == null) {
-                return null;
-            }
-            if (StringUtils.IsNullOrEmpty(this.lauchOption.referrerInfo.appId)) {
-                return null;
-            }
-            return this.lauchOption.referrerInfo.appId;
-        }
-        CreatShortcut() {
-            return new Promise((resolve, reject) => {
-                qg['hasShortcutInstalled']({
-                    success: function (res) {
-                        if (res == false) {
-                            qg['installShortcut']({
-                                success: function () {
-                                    resolve();
-                                },
-                                fail: function (err) {
-                                    reject();
-                                },
-                                complete: function () { }
-                            });
-                        }
-                        else {
-                            resolve();
-                        }
-                    },
-                    fail: function (err) {
-                        reject();
-                    },
-                    complete: function () { }
-                });
-            });
-        }
-        LoadSubpackage(name, onSuccess, onFailed, onProgress) {
-            let loadObj = {};
-            loadObj["name"] = name;
-            loadObj["success"] = () => {
-                console.log("分包加载成功", name);
-                if (onSuccess) {
-                    onSuccess.run();
-                }
-            };
-            loadObj["fail"] = () => {
-                console.error("分包加载失败", name);
-                if (onFailed) {
-                    onFailed.run();
-                }
-            };
-            let loadTask = this._base.loadSubpackage(loadObj);
-            loadTask.onProgressUpdate((res) => {
-                console.log("分包加载进度", res);
-                if (onProgress) {
-                    onProgress.runWith(res.progress / 100);
-                }
-            });
-        }
-        RecordEvent(eventId, param) {
-            console.log("[记录事件]", eventId, param);
-        }
-        CreateShareVideoBtn(x, y, width, height) {
-        }
-        HideShareVideoBtn() {
-            if (this._shareVideoBtn != null) {
-                this._shareVideoBtn.hide();
-            }
-        }
-        ShowToast(str) {
-            this._base.showToast({
-                title: str,
-                duration: 2000
-            });
-        }
-        OpenGameBox(appIds) {
-            console.error("当前平台", PlatformManagerProxy.platformStr, "暂不支持互推游戏盒子");
-        }
-        NavigateToApp(appId, path, extra) {
-            return new Promise((resolve, reject) => {
-                Laya.Browser.window.qg.navigateToMiniGame({
-                    pkgName: appId,
-                    path: path,
-                    extraData: extra,
-                    success: function () {
-                        resolve(true);
-                        console.log('oppo小游戏跳转成功');
-                    },
-                    fail: function (res) {
-                        reject(false);
-                        console.log('oppo小游戏跳转失败：', JSON.stringify(res));
-                    }
-                });
-            });
-        }
-    }
-
-    class QQPlatform extends WXPlatform {
-        constructor() {
-            super(...arguments);
-            this.platform = EPlatformType.QQ;
-            this.isBannerShowing = false;
-        }
-        Init(platformData) {
-            this._base = window["qq"];
-            if (this._base == null) {
-                console.error(...ConsoleEx.packError("平台初始化错误", PlatformManagerProxy.platformStr));
-                return;
-            }
-            this.platformData = platformData;
-            this.recordManager.Platform = this;
-            this._InitLauchOption();
-            this._Login();
-            this._InitShareInfo();
-            this._InitSystemInfo();
-            this._CreateBannerAd();
-            this._CreateVideoAd();
-            this._CreateInterstitalAd();
-            window["iplatform"] = this;
-            console.error("平台初始化完成", PlatformManagerProxy.platformStr);
-        }
-        _InitSystemInfo() {
-            try {
-                let systemInfo = this._base.getSystemInfoSync();
-                this._cacheScreenScale = systemInfo.screenWidth / Laya.stage.width;
-                this.safeArea = {};
-                this.safeArea.width = systemInfo.windowWidth;
-                this.safeArea.height = systemInfo.windowHeight;
-                this.safeArea.top = systemInfo.statusBarHeight;
-                this.safeArea.bottom = 0;
-                console.log("QQ覆写_InitSystemInfo", this.safeArea);
-            }
-            catch (e) {
-                console.error(e);
-                console.error("获取设备信息失败,执行默认初始化");
-                this.safeArea = null;
-            }
-        }
-        _CreateBannerAd(show) {
-            if (StringUtils.IsNullOrEmpty(this.platformData.bannerId)) {
-                console.log("无有效的banner广告ID,取消加载");
-                return;
-            }
-            let windowWidth = this._base.getSystemInfoSync().windowWidth;
-            let windowHeight = this._base.getSystemInfoSync().windowHeight;
-            let bannerObj = {};
-            bannerObj["adUnitId"] = this.platformData.bannerId;
-            let styleObj = {};
-            styleObj["top"] = windowHeight - 80;
-            styleObj["width"] = 300;
-            styleObj["left"] = (windowWidth - styleObj["width"]) / 2;
-            bannerObj["style"] = styleObj;
-            this._bannerAd = this._base.createBannerAd(bannerObj);
-            this._isBannerLoaded = false;
-            this._bannerAd.onLoad(() => {
-                console.log("qq banner加载成功", this._bannerAd);
-                this._isBannerLoaded = true;
-                if (show) {
-                    this._bannerAd.show();
-                }
-            });
-            this._bannerAd.onError((res) => {
-                console.error("banner广告加载失败", res);
-            });
-            this._bannerAd.onResize((size) => {
-                console.log("onResize", size);
-                this._bannerAd.style.top = windowHeight - 80;
-                this._bannerAd.style.left = (windowWidth - 300) / 2;
-                console.log("onResize", this._bannerAd);
-            });
-        }
-        IsBannerAvaliable() {
-            return this._isBannerLoaded;
-        }
-        IsVideoAvaliable() {
-            return this._isVideoLoaded;
-        }
-        IsInterstitalAvaliable() {
-            return this._isInterstitialLoaded;
-        }
-        ShowBannerAd() {
-            if (!this.IsBannerAvaliable()) {
-                return;
-            }
-            this._bannerAd.show();
-            this.isBannerShowing = true;
-            Laya.timer.loop(15 * 1000, this, this.refreshBanner);
-        }
-        refreshBanner() {
-            if (this.isBannerShowing) {
-                console.log('refresh banner');
-                this._bannerAd.hide();
-                this._CreateBannerAd(true);
-            }
-        }
-        HideBannerAd() {
-            if (!this.IsBannerAvaliable())
-                return;
-            if (this._bannerAd) {
-                this._bannerAd.hide();
-                Laya.timer.clear(this, this.refreshBanner);
-                this.isBannerShowing = false;
-            }
-            this._CreateBannerAd();
-        }
-        _DoCacheShowVideo(onSuccess, onSkipped) {
-            if (!this._isVideoLoaded) {
-                console.error("视频广告尚未加载好");
-                return;
-            }
-            this._rewardSuccessed = onSuccess;
-            this._rewardSkipped = onSkipped;
-            this._isVideoLoaded = false;
-            Laya.stage.event(PlatformCommonEvent.PAUSE_AUDIO);
-            this._rewardVideo.show();
-        }
-        _DoNoCacheShowVideo(onSuccess, onSkipped) {
-            this._rewardSuccessed = onSuccess;
-            this._rewardSkipped = onSkipped;
-            if (!this._isVideoLoaded || !this._rewardVideo) {
-                if (StringUtils.IsNullOrEmpty(this.platformData.rewardVideoId)) {
-                    console.log("无有效的视频广告ID,取消加载");
-                    onSkipped.run();
-                    return;
-                }
-                let createRewardedVideoAd = this._base["createRewardedVideoAd"];
-                if (createRewardedVideoAd == null) {
-                    console.error("无createRewardedVideoAd方法,跳过初始化");
-                    onSkipped.run();
-                    return;
-                }
-                this._videoFailedCount = 0;
-                let videoObj = {};
-                videoObj["adUnitId"] = this.platformData.rewardVideoId;
-                this._rewardVideo = createRewardedVideoAd(videoObj);
-                this._rewardVideo.onLoad(() => {
-                    console.log("视频广告加载成功");
-                    this._isVideoLoaded = true;
-                });
-                this._rewardVideo.onError((res) => {
-                    this._videoFailedCount++;
-                    console.error("视频广告加载失败", res, this._videoFailedCount);
-                });
-                this._rewardVideo.onClose((res) => {
-                    Laya.stage.event(PlatformCommonEvent.RESUM_AUDIO);
-                    console.log(" NoCache - 视频回调", res);
-                    let isEnd = res["isEnded"];
-                    console.log("noCache---", isEnd, "----", !!this._rewardSuccessed, "-----", !!this._rewardSkipped);
-                    if (isEnd) {
-                        if (this._rewardSuccessed)
-                            this._rewardSuccessed.run();
-                    }
-                    else {
-                        if (this._rewardSkipped)
-                            this._rewardSkipped.run();
-                    }
-                });
-            }
-            this._rewardVideo.show().then(() => {
-            }).catch(err => {
-                console.log("广告组件出现问题", err);
-                this._rewardVideo.load().then(() => {
-                    console.log("手动加载成功");
-                    return this._rewardVideo.show().then(() => {
-                    });
-                });
-            });
-            ;
-        }
-        ShowRewardVideoAd(onSuccess, onSkipped) {
-            if (this._cacheVideoAD) {
-                this._DoCacheShowVideo(onSuccess, onSkipped);
-            }
-            else {
-                this._DoNoCacheShowVideo(onSuccess, onSkipped);
-            }
-        }
-        ShowRewardVideoAdAsync() {
-            return new Promise(function (resolve) {
-                PlatformManagerProxy.instance.PlatformInstance.ShowRewardVideoAd(Laya.Handler.create(this, () => {
-                    resolve(true);
-                }, null, true), Laya.Handler.create(this, () => {
-                    resolve(false);
-                }, null, true));
-            });
-        }
-        ShowInterstitalAd() {
-            if (!this._isInterstitialLoaded) {
-                console.error("插页广告尚未加载好");
-                return;
-            }
-            this._intersitialAd.show();
-        }
-        OpenGameBox(appIds = []) {
-            this.showAppBox();
-        }
-        showAppBox() {
-            if (this.appBox) {
-                this.appBox.show();
-            }
-        }
-        createAppBox(show) {
-            if (!this.appBox) {
-                this.appBox = this._base.createAppBox({
-                    adUnitId: ''
-                });
-            }
-            this.appBox.load().then(() => {
-                if (show) {
-                    this.appBox.show();
-                }
-            });
-            this.appBox.onClose(() => {
-                console.log('关闭盒子');
-            });
-        }
-        hideAppBox() {
-            if (this.appBox) {
-                this.appBox.destroy();
-            }
-        }
-        showBlockAd(count = 1) {
-            let obj = {
-                adUnitId: "",
-                style: { left: 55, top: Laya.stage.height / 2 },
-                size: count,
-                orientation: 'vertical'
-            };
-            this.blockAd = this._base.createBlockAd(obj);
-            this.blockAd.onLoad(() => {
-                console.log('积木广告加载完成');
-                this.blockAd.show().then(() => { console.log('积木展示成功'); }).catch(e => {
-                    console.error('积木展示失败', e);
-                });
-            });
-            this.blockAd.onError((err) => {
-                console.error('积木广告加载错误', err);
-            });
-            this.blockAd.onResize((res) => {
-                console.log('积木resize', res);
-            });
-        }
-        hideBlockAd() {
-            if (this.blockAd) {
-                this.blockAd.hide();
-                this.blockAd.destroy();
-            }
-        }
-    }
-
-    class QTTPlatform extends WXPlatform {
-        constructor() {
-            super(...arguments);
-            this.platform = EPlatformType.QTT;
-        }
-        Init(platformData) {
-            this._base = window["qttGame"];
-            if (this._base == null) {
-                console.error(...ConsoleEx.packError("平台初始化错误"));
-                return;
-            }
-            this.platformData = platformData;
-            this.recordManager.Platform = this;
-            window["iplatform"] = this;
-        }
-        IsBannerAvaliable() {
-            return true;
-        }
-        ShowBannerAd() {
-            this._base.showBanner({ index: 1 });
-        }
-        HideBannerAd() {
-            this._base.hideBanner();
-        }
-        IsVideoAvaliable() {
-            return true;
-        }
-        ShowRewardVideoAd(onSuccess, onSkipped) {
-            let options = {};
-            options.index = 1;
-            options.gametype = 1;
-            options.rewardtype = 1;
-            options.data = {};
-            options.data.title = "获得奖励";
-            Laya.stage.event(PlatformCommonEvent.PAUSE_AUDIO);
-            this._base.showVideo((res) => {
-                Laya.stage.event(PlatformCommonEvent.RESUM_AUDIO);
-                if (res == 1) {
-                    if (onSuccess) {
-                        onSuccess.run();
-                    }
-                }
-                else {
-                    if (onSkipped) {
-                        onSkipped.run();
-                    }
-                }
-            }, options);
-        }
-        ShowInterstitalAd() {
-            this.ShowHDReward();
-        }
-        ShowHDReward() {
-            let options = {};
-            options.index = 1;
-            options.rewardtype = 1;
-            this._base.showHDReward(options);
-        }
-        RecordEvent(eventId, param) {
-            console.log("记录事件", eventId, param);
-        }
-    }
-
-    class TTDevice extends DefaultDevice {
-        constructor(base) {
-            super();
-            this._base = base;
-        }
-        Vibrate(isLong) {
-            console.log("调用震动", isLong);
-            if (isLong) {
-                this._base.vibrateLong({
-                    success(res) { },
-                    fail(res) {
-                        console.error("调用震动失败", res);
-                    },
-                    complete(res) { }
-                });
-            }
-            else {
-                this._base.vibrateShort({
-                    success(res) { },
-                    fail(res) {
-                        console.error("调用震动失败", res);
-                    },
-                    complete(res) { }
-                });
-            }
-        }
-    }
-
-    class TTRecordManager extends DefaultRecordManager {
-        constructor(base) {
-            super();
-            this.supportRecord = true;
-            this._base = base;
-            this.isRecording = false;
-            this.isRecordSuccess = false;
-            this.isPausing = false;
-            this._nativeManager = this._base.getGameRecorderManager();
-            this._nativeManager.onStart((res) => {
-                console.log("平台开始录制", res);
-                this.isRecording = true;
-                this.isRecordSuccess = false;
-                this._cacheStartHandle && this._cacheStartHandle.run();
-            });
-            this._nativeManager.onStop((res) => {
-                console.log("平台停止录制", res);
-                this.videoSavePath = res.videoPath;
-                this.isRecording = false;
-                this.isRecordSuccess = true;
-                if (this._cacheStopHandle) {
-                    this._cacheStopHandle.run();
-                }
-                else if (this._cacheOverTimeHandle) {
-                    this._cacheOverTimeHandle.run();
-                }
-            });
-            this._nativeManager.onError((err) => {
-                console.log("录制发生错误", err);
-                this.isRecordSuccess = false;
-                this.isRecording = false;
-            });
-            this._nativeManager.onPause((res) => {
-                console.log("暂停录制视频", res);
-                this.isPausing = true;
-                this._cachePauseHandle && this._cachePauseHandle.run();
-            });
-            this._nativeManager.onResume((res) => {
-                console.log("暂停录制视频", res);
-                this.isPausing = false;
-                this._cacheResumeHandle && this._cacheResumeHandle.run();
-            });
-        }
-        StartRecord(onStart, onOverTime) {
-            console.log("调用开始录屏");
-            this._cacheStartHandle = onStart;
-            this._cacheOverTimeHandle = onOverTime;
-            this._cacheStopHandle = null;
-            this._nativeManager.start({ duration: 300 });
-        }
-        Pause(onPause) {
-            if (!this.isRecording) {
-                console.error("当前未开始录制,无法暂停录制");
-                return;
-            }
-            if (this.isPausing) {
-                console.log("当前录制状态已暂停");
-                return;
-            }
-            console.log("调用暂停录制");
-            this._cachePauseHandle = onPause;
-            this._nativeManager.pause();
-        }
-        Resume(onReume) {
-            if (!this.isRecording) {
-                console.error("当前未开始录制,无法恢复录制");
-                return;
-            }
-            if (!this.isPausing) {
-                console.log("当前录制状态正在进行中");
-                return;
-            }
-            console.log("调用恢复录制");
-            this._cacheResumeHandle = onReume;
-            this._nativeManager.resume();
-        }
-        RecordClip(timeRange) {
-            if (!this.isRecording) {
-                console.error("当前未开始录制,无法记录精彩时刻");
-                return;
-            }
-            if (this.isPausing) {
-                console.log("当前录制状态已暂停,无法记录精彩时刻");
-                return;
-            }
-            if (timeRange == null) {
-                this._nativeManager.recordClip({});
-            }
-            else {
-                this._nativeManager.recordClip({ timeRange: timeRange });
-            }
-        }
-        StopRecord(onStop) {
-            console.log("调用结束录屏");
-            this._cacheStopHandle = onStop;
-            this._nativeManager.stop();
-        }
-        ShareVideo(onSuccess, onCancel, onFailed) {
-            if (this.isRecordSuccess) {
-                let shareData = {
-                    channel: "video",
-                    title: "",
-                    desc: "",
-                    imageUrl: "",
-                    templateId: this.Platform.platformData.shareId,
-                    query: "",
-                    extra: {
-                        videoPath: this.videoSavePath,
-                        videoTopics: ['抖音小游戏', '猫眼金币跑酷']
-                    },
-                    success() {
-                        if (onSuccess) {
-                            onSuccess.run();
-                        }
-                    },
-                    fail(e) {
-                        if (onCancel) {
-                            onCancel.run();
-                        }
-                    }
-                };
-                this._base.shareAppMessage(shareData);
-            }
-            else {
-                console.log("无视频可以分享");
-                if (onFailed) {
-                    onFailed.run();
-                }
-            }
-        }
-    }
-
-    class TTPlatform extends WXPlatform {
-        constructor() {
-            super(...arguments);
-            this.platform = EPlatformType.TT;
-            this._showVideoLoad = false;
-        }
-        Init(platformData) {
-            this._base = window["tt"];
-            if (this._base == null) {
-                console.error(...ConsoleEx.packError("平台初始化错误"));
-                return;
-            }
-            this.platformData = platformData;
-            let tt = this._base;
-            let systemInfo = tt.getSystemInfoSync();
-            if (systemInfo.platform == "ios") {
-                this.isSupportJumpOther = false;
-            }
-            let [major, minor] = systemInfo.SDKVersion.split(".");
-            if (major >= 1 && minor >= 33) {
-            }
-            else {
-                this.isSupportJumpOther = false;
-            }
-            this._InitLauchOption();
-            this._InitShareInfo();
-            this._InitSystemInfo();
-            this._CreateBannerAd();
-            this._CreateVideoAd();
-            this._CreateInterstitalAd();
-            this.recordManager = new TTRecordManager(this._base);
-            this.recordManager.Platform = this;
-            this.device = new TTDevice(this._base);
-            window["iplatform"] = this;
-        }
-        _CreateBannerAd() {
-            if (StringUtils.IsNullOrEmpty(this.platformData.bannerId)) {
-                console.log("无有效的banner广告ID,取消加载");
-                return;
-            }
-            let windowWidth = this._base.getSystemInfoSync().windowWidth;
-            let windowHeight = this._base.getSystemInfoSync().windowHeight;
-            let bannerObj = {};
-            bannerObj["adUnitId"] = this.platformData.bannerId;
-            bannerObj["adIntervals"] = 30;
-            let styleObj = {};
-            styleObj["left"] = 0;
-            styleObj["top"] = 0;
-            styleObj["width"] = windowWidth;
-            bannerObj["style"] = styleObj;
-            this._bannerAd = this._base.createBannerAd(bannerObj);
-            this._isBannerLoaded = false;
-            if (this._bannerAd) {
-                this._bannerAd.onLoad(() => {
-                    console.log("banner加载成功", this._bannerAd);
-                    this._isBannerLoaded = true;
-                });
-                this._bannerAd.onError((res) => {
-                    console.error("banner广告加载失败", res);
-                    this._bannerAd == null;
-                });
-                this._bannerAd.onResize((size) => {
-                    this._bannerAd.style.top = windowHeight - size.height;
-                    this._bannerAd.style.left = (windowWidth - size.width) / 2;
-                });
-            }
-        }
-        RecordEvent(eventId, param) {
-            let reportAnalytics = this._base["reportAnalytics"];
-            if (reportAnalytics) {
-                if (param == null) {
-                    param = {};
-                }
-                reportAnalytics(eventId, param);
-            }
-            else {
-                console.error("reportAnalytics 方法不存在");
-            }
-        }
-        ShowBannerAd() {
-            if (!this.IsBannerAvaliable()) {
-                return;
-            }
-            this._bannerAd.show();
-        }
-        ShareAppMessage(shareInfo, onSuccess, onFailed) {
-            console.log("分享消息", shareInfo);
-            let shareObj = WXPlatform._WrapShareInfo(shareInfo);
-            shareObj["success"] = () => {
-                if (onSuccess) {
-                    onSuccess.run();
-                }
-            };
-            shareObj["fail"] = () => {
-                if (onFailed) {
-                    onFailed.run();
-                }
-            };
-            this._base.shareAppMessage(shareObj);
-        }
-        OpenGameBox(appIds) {
-            let openData = [];
-            for (let i = 0; i < appIds.length; ++i) {
-                openData.push({
-                    appId: appIds[i]
-                });
-            }
-            this._base.showMoreGamesModal({
-                appLaunchOptions: openData
-            });
-        }
-        NavigateToApp(appid, path, extra) {
-            return new Promise((resolve, reject) => {
-                if (!this.isSupportJumpOther) {
-                    reject(false);
-                    console.log("当前平台不支持小游戏跳转", this);
-                }
-                else {
-                    this._base.showMoreGamesModal({
-                        appLaunchOptions: [
-                            {
-                                appId: this.platformData.appId,
-                                query: "foo=bar&baz=qux",
-                                extraData: {}
-                            }
-                        ],
-                        success(res) {
-                            resolve(true);
-                            console.log("跳转小游戏成功", appid);
-                        },
-                        fail(err) {
-                            reject(false);
-                            console.log("跳转小游戏失败", appid);
-                        }
-                    });
-                }
-            });
-        }
-    }
-
-    class PlatformManager {
-        static get instance() {
-            if (this._instance == null) {
-                this._instance = new PlatformManager();
-            }
-            return this._instance;
-        }
-        static get PlatformInstance() {
-            if (!this.instance.m_platformInstance) {
-                console.error(...ConsoleEx.packError('还没有设置过平台实例代理！'));
-            }
-            return this.instance.m_platformInstance;
-        }
-        init() {
-            if (this.m_platformInstance != null) {
-                console.error(...ConsoleEx.packError("已调用过平台创建为", PlatformManagerProxy.GetPlatformStr(this.m_platformInstance.platform), "不能重复创建"));
-                return this.m_platformInstance;
-            }
-            let isQTT = window["qttGame"] != null;
-            let isTT = window["tt"] != null;
-            let result;
-            if (isTT) {
-                result = new TTPlatform();
-                this.m_platformData = new TTData();
-            }
-            else if (Laya.Browser.onMiniGame) {
-                result = new WXPlatform();
-                this.m_platformData = new WXData();
-            }
-            else if (Laya.Browser.onBDMiniGame) {
-                result = new BDPlatform();
-                this.m_platformData = new BDData();
-            }
-            else if (isQTT) {
-                result = new QTTPlatform();
-                this.m_platformData = new QTTData();
-            }
-            else if (Laya.Browser.onQQMiniGame) {
-                result = new QQPlatform();
-                this.m_platformData = new QQData();
-            }
-            else if (Laya.Browser.onQGMiniGame) {
-                result = new OppoPlatform();
-                this.m_platformData = new OPPOData();
-            }
-            else {
-                console.warn(...ConsoleEx.packWarn("未识别平台,默认创建为web"));
-                result = new DefaultPlatform();
-            }
-            this.m_platformInstance = result;
-            PlatformManagerProxy.instance.PlatformInstance = result;
-            window['$Platform'] = this.m_platformInstance;
-            console.log(...ConsoleEx.packPlatform("平台实例创建完成", PlatformManagerProxy.GetPlatformStr(this.m_platformInstance.platform)));
-        }
-        initPlatform() {
-            this.m_platformInstance.Init(this.m_platformData);
-            console.log(...ConsoleEx.packPlatform('平台初始化完成'));
-        }
-    }
-
-    class FGUI_PGameTestPlatform extends fairygui.GComponent {
-        constructor() {
-            super();
-        }
-        static createInstance() {
-            return (fairygui.UIPackage.createObject("GameMain", "PGameTestPlatform"));
-        }
-        onConstruct() {
-            this.m_bg = (this.getChildAt(0));
-            this.m_lookVAd = (this.getChildAt(1));
-            this.m_lookVAdText = (this.getChildAt(2));
-            this.m__lookVAd = (this.getChildAt(3));
-            this.m_share = (this.getChildAt(4));
-            this.m_shareText = (this.getChildAt(5));
-            this.m__share = (this.getChildAt(6));
-            this.m_showToast = (this.getChildAt(7));
-            this.m_showToastText = (this.getChildAt(8));
-            this.m__showToast = (this.getChildAt(9));
-        }
-    }
-    FGUI_PGameTestPlatform.URL = "ui://kk7g5mmmt1pw9y";
-
-    class PGameTestPlatformMediator extends BaseUIMediator {
-        constructor() { super(); }
-        static get instance() {
-            if (!this.m_instance) {
-                this.m_instance = new PGameTestPlatformMediator();
-                this.m_instance._classDefine = FGUI_PGameTestPlatform;
-            }
-            return this.m_instance;
-        }
-        _OnShow() {
-            this.ui.m_bg.onClick(this, this.close);
-            this.ui.m_lookVAd.onClick(this, this.lookVAd);
-            this.ui.m_showToast.onClick(this, this.showToast);
-            this.ui.m_share.onClick(this, this.share);
-        }
-        lookVAd() {
-            console.log('看广告测试');
-            PlatformManager.PlatformInstance.ShowRewardVideoAdAsync().then((ifLook) => {
-                console.log('看广告完成测试', ifLook);
-            });
-        }
-        showToast() {
-            console.log('显示消息测试');
-            PlatformManager.PlatformInstance.ShowToast('显示消息测试');
-        }
-        share() {
-            console.log('分享测试');
-            PlatformManager.PlatformInstance.ShareAppMessage({
-                shareId: undefined,
-                shareImg: undefined,
-                sharePath: undefined,
-                shareTitle: '分享消息',
-            }, Laya.Handler.create(this, () => {
-                console.log('分享成功');
-            }), Laya.Handler.create(this, () => {
-                console.log('分享失败！');
-            }));
-        }
-        close() {
-            UIManagerProxy.instance.setUIState([
-                { typeIndex: EUI.TestPlatform, state: false },
-            ], false);
-        }
-        _OnHide() { }
-    }
-
-    class BaseUIManager {
-        constructor() {
-            this.initUIMediator();
-            this._initUIMediator();
-        }
-        initUIMediator() { }
-        _initUIMediator() {
-            if (!this.m_UIMediator) {
-                console.error(...ConsoleEx.packError('没有注册UI状态列表'));
-            }
-            let _length = 0;
-            for (let _i in this.m_UIMediator) {
-                _length++;
-                if (typeof this.m_UIMediator[_i] == "undefined" || !this.m_UIMediator[_i]) {
-                    console.warn(...ConsoleEx.packWarn('有一个UIMediator不存在', _i));
-                }
-            }
-            if (_length == 0) {
-                console.warn(...ConsoleEx.packWarn('UI状态列表长度为0'));
-            }
-            if (!this.m_UIProxy) {
-                console.warn(...ConsoleEx.packWarn('没有注册UI代理类。'));
-            }
-            this.m_UIProxy.setProxyMediatroList(this.m_UIMediator);
-            let _serialNumber;
-            let _serialNumberLenth;
-            for (let _i in this.m_UIMediator) {
-                this.m_UIMediator[_i].keyId = _i;
-                _serialNumber = [];
-                this.getUIBelongSerialNumber(this.m_UIMediator[_i], _serialNumber);
-                _serialNumberLenth = _serialNumber.length;
-                _serialNumber = ArrayUtils.Unique(_serialNumber);
-                if (_serialNumberLenth != _serialNumber.length) {
-                    console.error(...ConsoleEx.packError('UI调度者', _i, '的附属UI有重复出现！'));
-                }
-            }
-        }
-        getUIBelongSerialNumber(_UIMed, _numbers, _ifR = false) {
-            if (_UIMed.belongDownUIMediator.length > 0) {
-                _UIMed.belongDownUIMediator.forEach((item) => {
-                    this.getUIBelongSerialNumber(item, _numbers, true);
-                });
-            }
-            if (!_ifR) {
-                if (_UIMed.ifBelongUIMediator) {
-                    console.warn(...ConsoleEx.packWarn('注意！有一个附属UI调度者被添加进了UI管理器列表中，它将不会被显示。'));
-                }
-            }
-            else {
-                if (!_UIMed.ifBelongUIMediator) {
-                    console.warn(...ConsoleEx.packWarn('注意！有一个不是附属的UI调度者被添加进了附属列表中'));
-                }
-            }
-            _numbers.push(_UIMed.serialNumber);
-            if (_UIMed.belongUpUIMediator.length > 0) {
-                _UIMed.belongUpUIMediator.forEach((item) => {
-                    this.getUIBelongSerialNumber(item, _numbers, true);
-                });
-            }
-        }
-    }
-
-    class UIManager extends BaseUIManager {
-        constructor() {
-            super();
-        }
-        static get instance() {
-            if (!this.m_instance) {
-                this.m_instance = new UIManager();
-            }
-            return this.m_instance;
-        }
-        initUIMediator() {
-            this.m_UIMediator = {
-                [EUI.GameLoading]: PGameLoadingMediator.instance,
-                [EUI.CustomsLoading]: PGameCustomsLoadingMediator.instance,
-                [EUI.TestMain]: PGameTestMainMediator.instance,
-                [EUI.TestPlatform]: PGameTestPlatformMediator.instance,
-                [EUI.Main]: PGameMainMediator.instance,
-                [EUI.Set]: PGameSetMediator.instance,
-                [EUI.Play]: PGamePlayMediator.instance,
-                [EUI.Start]: PGameStartMediator.instance,
-                [EUI.Pause]: PGamePauseMediator.instance,
-                [EUI.Com]: PGameComMediator.instance,
-                [EUI.End]: PGameEndMediator.instance,
-            };
-            this.m_UIProxy = UIManagerProxy.instance;
-        }
-        init() {
-        }
-        Start() {
-            this.m_UIProxy.Start();
-        }
-    }
-
-    class GlobalStateManager {
-        constructor() {
-            this.m_GameIfInit = false;
-        }
-        static get instance() {
-            if (!this.m_instance) {
-                this.m_instance = new GlobalStateManager();
-            }
-            return this.m_instance;
-        }
-        init() { }
-        get gameIfInit() {
-            return this.m_GameIfInit;
-        }
-        GameInit() {
-            this.m_GameIfInit = false;
-            MesManager.instance.sendEvent(EEventGlobal.GameInit);
-        }
-        GameOnInit() {
-            this.m_GameIfInit = true;
-            MesManager.instance.sendEvent(EEventGlobal.GameOnInit);
-        }
-    }
-
-    class RootShortProxy extends RootDataManger {
-    }
-
-    class GameOnCustomData extends RootGameData {
-        clone() {
-            return JSON.parse(JSON.stringify(this));
-        }
-    }
-
-    class GameShortData extends RootGameData {
-        constructor() {
-            super(...arguments);
-            this.onCustomsData = new GameOnCustomData();
-        }
-    }
-
-    class GameShortDataProxy extends RootShortProxy {
-        constructor() {
-            super();
-        }
-        static get instance() {
-            if (this._instance == null) {
-                this._instance = new GameShortDataProxy();
-            }
-            return this._instance;
-        }
-        InitData() {
-            this._shortData = new GameShortData();
-        }
-        get shortData() {
-            return this._shortData;
-        }
-        static emptyGameOnCustomData() {
-            this._instance._shortData = new GameShortData();
-        }
-    }
-
-    class GameManager {
-        constructor() { }
-        static get instance() {
-            if (!this.m_instance) {
-                this.m_instance = new GameManager();
-            }
-            return this.m_instance;
-        }
-        init() {
-            MesManager.instance.onEvent(EEventScene.GameLevelsBuildBefore, this, this.gameLevelsBuildBefore);
-            MesManager.instance.onEvent(EEventScene.GameLevelsOnBuild, this, this.gameLevelsOnBuild);
-            MesManager.instance.onEvent(EEventScene.GameLevelsDelete, this, this.gameLevelsDelete);
-            MesManager.instance.onEvent(EEventScene.GameStart, this, this.gameStart);
-        }
-        gameLevelsBuildBefore() {
-            GameShortDataProxy.emptyGameOnCustomData();
-        }
-        gameLevelsOnBuild() {
-        }
-        gameLevelsDelete() {
-        }
-        gameStart() {
-        }
-    }
-
-    var TestConst;
-    (function (TestConst) {
-        class config {
-        }
-        TestConst.config = config;
-        TestConst.path = "res/config/TestConst.json";
-    })(TestConst || (TestConst = {}));
-
-    class TestConstProxy extends BaseConstDataProxy {
-        constructor() { super(); }
-        static get instance() {
-            if (this._instance == null) {
-                this._instance = new TestConstProxy();
-            }
-            return this._instance;
-        }
-        get data() {
-            return undefined;
-        }
-        initData() {
-            this.m_data = TestConst.data;
-        }
-        get ifDebug() {
-            if (!MainGameConfig.ifGameTest)
-                return false;
-            return this.m_data.if_debug;
-        }
-        get ifShowOimoMesh() {
-            if (!MainGameConfig.ifGameTest)
-                return false;
-            return this.m_data.if_show_oimo_mesh;
-        }
-        get oimoMeshDiaphaneity() {
-            return this.m_data.oimo_mesh_diaphaneity;
-        }
-    }
-
-    class ResUrl {
-        static music_url(name) {
-            return KeyResManager.instance.getResURL(EKeyResName.music) + name + '.mp3';
-        }
-        static sound_url(name) {
-            return KeyResManager.instance.getResURL(EKeyResName.sound) + name + '.mp3';
-        }
-        static icon_url(name) {
-            return KeyResManager.instance.getResURL(EKeyResName.icon) + name + '.png';
-        }
-        static img_url(name, _suffix = 'png') {
-            return KeyResManager.instance.getResURL(EKeyResName.img) + name + '.' + _suffix;
-        }
-        static skin_url(name, _suffix = 'png') {
-            return KeyResManager.instance.getResURL(EKeyResName.skin) + name + '.' + _suffix;
-        }
-    }
-
-    class AudioUtils {
-        constructor() {
-            this._bgPast = [];
-            this._urlBGM = '';
-            this._urlSOUND = '';
-            this._sounds = [];
-        }
-        static get instance() {
-            if (this._instance == null) {
-                this._instance = new AudioUtils();
-            }
-            return this._instance;
-        }
-        init() { }
-        playBGM(name, loops, complete, startTime) {
-            if (name != null && this._bgPast.slice(-1)[0] != name) {
-                this._bgPast.push(name);
-                this._urlBGM = ResUrl.music_url(name);
-                this._playMusic(loops, complete, startTime);
-                console.log(...ConsoleEx.packLog("播放背景音乐", name));
-            }
-            else {
-                if (this._urlBGM != "") {
-                    this._playMusic(loops, complete, startTime);
-                    console.log(...ConsoleEx.packLog("播放背景音乐", name));
-                }
-                else {
-                }
-            }
-        }
-        shiftBGM(name, loops, complete, startTime) {
-            if (this._bgPast.slice(-1)[0] == name) {
-                this._bgPast.pop();
-                let pastBg = this._bgPast.slice(-1)[0];
-                if (pastBg) {
-                    this._urlBGM = ResUrl.music_url(name);
-                    this._playMusic(loops, complete, startTime);
-                }
-            }
-        }
-        pauseBGM() {
-            Laya.SoundManager.stopMusic();
-            console.log(...ConsoleEx.packLog("停止播放音乐", this._urlBGM));
-        }
-        pauseSound() {
-            Laya.SoundManager.stopAllSound();
-        }
-        playSound(type, loops, complete, soundClass, startTime) {
-            this._urlSOUND = ResUrl.sound_url(type);
-            for (let i = 0; i < this._sounds.length; i++) {
-                if (this._sounds[i]) {
-                    if (this._sounds[i].url.indexOf(this._urlSOUND) >= 0) {
-                        this._sounds[i].stop();
-                        this._sounds.splice(i, 1);
-                        break;
-                    }
-                }
-            }
-            let temp = Laya.SoundManager.playSound(this._urlSOUND, loops, complete, soundClass, startTime);
-            this._sounds.push(temp);
-        }
-        stopSound(type) {
-            this._urlSOUND = ResUrl.sound_url(type);
-            Laya.SoundManager.stopSound(this._urlSOUND);
-        }
-        _playMusic(loops = 0, complete, startTime) {
-            Laya.SoundManager.stopMusic();
-            Laya.SoundManager.playMusic(this._urlBGM, loops, complete, startTime);
-        }
-    }
-
-    class AudioProxy {
-        constructor() {
-            this.m_stop = false;
-            this.m_onLoopSoundList = new Set();
-        }
-        static get instance() {
-            if (!this.m_instance) {
-                this.m_instance = new AudioProxy();
-            }
-            return this.m_instance;
-        }
-        stopBGM() {
-            AudioUtils.instance.pauseBGM();
-        }
-        BGMGoOn() {
-            this.playBGM(this.m_onBGM);
-        }
-        soundSuspend() {
-            this.m_stop = true;
-            for (let _o of this.m_onLoopSoundList) {
-                AudioUtils.instance.stopSound(_o);
-            }
-        }
-        soundGoOn() {
-            this.m_stop = false;
-            for (let _o of this.m_onLoopSoundList) {
-                AudioUtils.instance.playSound(_o, 0);
-            }
-        }
-        playBGM(_name, loops, complete, startTime) {
-            if (!GameDataProxyShell.instance.gameData.ifOpenBgm || this.m_stop)
-                return;
-            AudioUtils.instance.playBGM(_name, loops, complete, startTime);
-            this.m_onBGM = _name;
-        }
-        playSound(_eSoundName, loops, complete, soundClass, startTime) {
-            if (!GameDataProxyShell.instance.gameData.ifOpenSound || this.m_stop)
-                return;
-            if (loops == 0) {
-                this.m_onLoopSoundList.add(_eSoundName);
-            }
-            AudioUtils.instance.playSound(_eSoundName, loops, complete, soundClass, startTime);
-        }
-        stopSound(_eSoundName) {
-            AudioUtils.instance.stopSound(_eSoundName);
-            if (this.m_onLoopSoundList.has(_eSoundName)) {
-                this.m_onLoopSoundList.delete(_eSoundName);
-            }
-        }
-    }
-
-    class AudioManager {
-        constructor() { }
-        static get instance() {
-            if (this._instance == null) {
-                this._instance = new AudioManager();
-            }
-            return this._instance;
-        }
-        init() {
-            MesManager.instance.onEvent(EEventAudio.BGMSuspend, this, this.BGMsuSpend);
-            MesManager.instance.onEvent(EEventAudio.BGMGoOn, this, this.BGMGoOn);
-            MesManager.instance.onEvent(EEventAudio.SoundSuspend, this, this.soundSuspend);
-            MesManager.instance.onEvent(EEventAudio.SoundGoOn, this, this.soundGoOn);
-            MesManager.instance.onEvent(EEventAudio.BGMVolumeChange, this, this.bgmVolumeChange);
-            MesManager.instance.onEvent(EEventAudio.SoundVolumeChange, this, this.soundVolumeChange);
-        }
-        BGMsuSpend() {
-            AudioProxy.instance.stopBGM();
-        }
-        BGMGoOn() {
-            AudioProxy.instance.BGMGoOn();
-        }
-        soundSuspend() {
-            AudioProxy.instance.soundSuspend();
-        }
-        soundGoOn() {
-            AudioProxy.instance.soundGoOn();
-        }
-        bgmVolumeChange(_n = 1) {
-            Laya.SoundManager.setMusicVolume(_n);
-        }
-        soundVolumeChange(_n = 1) {
-            Laya.SoundManager.setSoundVolume(_n);
-        }
-    }
-
-    class Game3D {
-        constructor() { }
-        static get instance() {
-            if (this._instance == null) {
-                this._instance = new Game3D();
-            }
-            return this._instance;
-        }
-        enterGame() {
-            this.initGame();
-            this._startGame();
-            this.startGame();
-        }
-        initGame() {
-            GlobalStateManager.instance.init();
-            MesManager.instance.init();
-            AudioManager.instance.init();
-            GameManager.instance.init();
-            EnvironmentManager.instance.init();
-            UIManager.instance.init();
-            CustomsManager.instance.init();
-        }
-        _startGame() {
-            if (TestConstProxy.instance.ifDebug) {
-                Laya.Stat.show();
-            }
-            else {
-                Laya.Stat.hide();
-            }
-        }
-        startGame() {
-            UIManager.instance.Start();
-            CustomsManager.instance.initLevelBuild();
-        }
-    }
-
-    class ConfigManager {
-        static get needLoadCount() {
-            return this._configList.length;
-        }
-        static AddConfig(configName) {
-            ConfigManager._configList.push(configName);
-        }
-        static AddExtraConfig(_url) {
-            if (_url.length > 0) {
-                ConfigManager._extraConfig.push(..._url);
-                ConfigManager._extraConfig = ArrayUtils.Unique(ConfigManager._extraConfig);
-            }
-        }
-        static StartLoad(onFinished, onProgress = null) {
-            if (ConfigManager._configList.length == 0) {
-                if (onFinished) {
-                    onFinished.run();
-                }
-                return;
-            }
-            let loadUrls = [];
-            for (let configName of ConfigManager._configList) {
-                loadUrls.push(EssentialResUrls.ConfigURL(configName.path.match(/[a-zA-Z0-9.]*$/)[0]));
-            }
-            let _clearURLs = [];
-            loadUrls.forEach((item) => {
-                _clearURLs.push(item);
-            });
-            loadUrls.push(...this._extraConfig);
-            Laya.loader.create(loadUrls, Laya.Handler.create(this, () => {
-                for (let configName of ConfigManager._configList) {
-                    configName.data = Laya.loader.getRes(EssentialResUrls.ConfigURL(configName.path.match(/[a-zA-Z0-9.]*$/)[0]));
-                    configName.dataList = [];
-                    for (let configKey in configName.data) {
-                        let value = configName.data[configKey];
-                        if (value != null) {
-                            configName.dataList.push(value);
-                        }
-                    }
-                    if (configName.dataList.length > 0) {
-                        configName.lastData = configName.dataList[configName.dataList.length - 1];
-                    }
-                }
-                if (onFinished) {
-                    onFinished.run();
-                }
-                _clearURLs.forEach((item) => {
-                    ResLoad.Unload(item);
-                });
-            }), onProgress);
-        }
-    }
-    ConfigManager._configList = [];
-    ConfigManager._extraConfig = [];
-
-    var GameConst;
-    (function (GameConst) {
-        class config {
-        }
-        GameConst.config = config;
-        GameConst.path = "res/config/GameConst.json";
-    })(GameConst || (GameConst = {}));
-
-    class LoadUIPack {
-        constructor(packPath, atliasCount = -1, _extraURL) {
-            this.packPath = packPath;
-            this.atliasCount = atliasCount;
-            this.m_extraURL = _extraURL;
-        }
-        PushUrl(urls) {
-            urls.push({ url: this.packPath + ".bin", type: Laya.Loader.BUFFER });
-            if (this.m_extraURL && this.m_extraURL.length > 0) {
-                urls.push(...this.m_extraURL);
-            }
-            if (this.atliasCount >= 0) {
-                urls.push({ url: this.packPath + "_atlas0.png", type: Laya.Loader.IMAGE });
-                for (let i = 1; i <= this.atliasCount; i++) {
-                    urls.push({ url: this.packPath + "_atlas0_" + i + ".png", type: Laya.Loader.IMAGE });
-                }
-            }
-        }
-        AddPackage() {
-            fgui.UIPackage.addPackage(this.packPath);
-        }
-    }
-
-    class ComData extends RootLocalStorageData {
-    }
-
-    class CommonDataProxy extends RootLocalStorageProxy {
-        constructor() {
-            super();
-        }
-        static get instance() {
-            if (this._instance == null) {
-                this._instance = new CommonDataProxy();
-            }
-            return this._instance;
-        }
-        get _saveName() {
-            return "Common";
-        }
-        getNewData() {
-            return new ComData();
-        }
-    }
-
-    class RootGameLoad {
-        constructor() {
-            this._needLoadOtherUIPack = [];
-            this._loadProgressWeight = {
-                config: 1,
-                gameRes: 5,
-                otherUI: 3,
-            };
-            this._configProgress = 0;
-            this._otherUIProgress = 0;
-            this._resProgress = 0;
-        }
-        get loadProgress() {
-            let totalWeight = 0;
-            for (let i in this._loadProgressWeight) {
-                totalWeight += this._loadProgressWeight[i];
-            }
-            let loadWeight = this._loadProgressWeight.config * this._configProgress
-                + this._loadProgressWeight.gameRes * this._resProgress
-                + this._loadProgressWeight.otherUI * this._otherUIProgress;
-            return (loadWeight / totalWeight) * 100;
-        }
-        Enter(_this, _beforeHandler, _backHandler) {
-            this.m_handlerThis = _this;
-            this.m_beforeHandler = _beforeHandler;
-            this.m_backHandler = _backHandler;
-            this.Init();
-        }
-        _Init() {
-            return;
-        }
-        Init() {
-            let _promise = this._Init();
-            let _f = () => {
-                this.initEmptyScreen();
-            };
-            if (_promise) {
-                _promise.then(() => {
-                    _f();
-                });
-            }
-            else {
-                _f();
-            }
-        }
-        initEmptyScreen() {
-            SceneManager.instance.init();
-            FGuiRootManager.Init();
-            this.OnBindUI();
-            let loadUrl = [];
-            this._initEmptyScreen.PushUrl(loadUrl);
-            if (loadUrl.length == 0) {
-                this.InitUI();
-                return;
-            }
-            Laya.loader.load(loadUrl, Laya.Handler.create(this, this.InitUI));
-        }
-        InitUI() {
-            this._initEmptyScreen.AddPackage();
-            this._OnInitEmptyScreen();
-            let _f = () => {
-                let loadUrl = [];
-                this._initUiPack.PushUrl(loadUrl);
-                if (loadUrl.length == 0) {
-                    this.OnInitUILoaded();
-                    return;
-                }
-                Laya.loader.load(loadUrl, Laya.Handler.create(this, this.OnInitUILoaded));
-            };
-            if (this.m_beforeHandler) {
-                this.m_beforeHandler.call(this.m_handlerThis).then(() => {
-                    _f();
-                });
-            }
-            else {
-                _f();
-            }
-        }
-        OnInitUILoaded() {
-            this._initUiPack.AddPackage();
-            this._OnInitUILoaded();
-            this.onLoading(this.loadProgress);
-            this.OnConfigLoaded();
-        }
-        OnConfigLoaded() {
-            this.OnSetLoadConfig();
-            let _levelSceneURLs = [];
-            for (let _i in ELevelSceneName) {
-                if (!ELevelSceneName[_i]) {
-                    continue;
-                }
-                _levelSceneURLs.push(EssentialResUrls.levelConfigURL(ELevelSceneName[_i]));
-            }
-            ConfigManager.AddExtraConfig(_levelSceneURLs);
-            if (ConfigManager.needLoadCount <= 0) {
-                this._OnConfigProgress(1);
-                this._OnConfigLoaded();
-                return;
-            }
-            ConfigManager.StartLoad(Laya.Handler.create(this, this._OnConfigLoaded), Laya.Handler.create(this, this._OnConfigProgress, null, false));
-        }
-        _OnConfigProgress(value) {
-            this._configProgress = value;
-            this.onLoading(this.loadProgress);
-        }
-        _OnConfigLoaded() {
-            SceneManager.instance.initConfig();
-            let uiLoadData = [];
-            for (let i = 0; i < this._needLoadOtherUIPack.length; ++i) {
-                this._needLoadOtherUIPack[i].PushUrl(uiLoadData);
-            }
-            if (uiLoadData.length == 0) {
-                this._OnOtherUIProgress(1);
-                this._OnOtherUILoaded();
-                return;
-            }
-            Laya.loader.load(uiLoadData, Laya.Handler.create(this, this._OnOtherUILoaded), Laya.Handler.create(this, this._OnOtherUIProgress, null, false));
-        }
-        _OnOtherUIProgress(value) {
-            this._otherUIProgress = value;
-            this.onLoading(this.loadProgress);
-        }
-        _OnOtherUILoaded() {
-            for (let i = 0; i < this._needLoadOtherUIPack.length; ++i) {
-                this._needLoadOtherUIPack[i].AddPackage();
-            }
-            let loadUrls = [];
-            this.OnGameResPrepared(loadUrls);
-            loadUrls.push(...EssentialResUrls.EssentialOtherResUrl());
-            SceneManager.instance.Preload(loadUrls);
-            if (loadUrls.length == 0) {
-                this._OnResProgress(1);
-                this._OnResLoaded();
-                return;
-            }
-            Laya.loader.create(loadUrls, Laya.Handler.create(this, this._OnResLoaded), Laya.Handler.create(this, this._OnResProgress, null, false));
-        }
-        _OnResProgress(value) {
-            this._resProgress = value;
-            this.onLoading(this.loadProgress);
-        }
-        _OnResLoaded() {
-            Global3D.InitAll();
-            this.loginCommonData();
-            this.loginData();
-            if (this.m_backHandler) {
-                this.m_backHandler.call(this.m_handlerThis).then(() => {
-                    this.OnComplete();
-                });
-            }
-            else {
-                this.OnComplete();
-            }
-        }
-        loginCommonData() {
-            CommonDataProxy.instance.InitData();
-        }
-        OnBindUI() { }
-        OnSetLoadConfig() { }
-        OnGameResPrepared(urls) { }
-        _OnInitEmptyScreen() { }
-        _OnInitUILoaded() { }
-        onLoading(_n) { }
-        loginData() { }
-        OnComplete() { }
-    }
-
-    var SkinConfig;
-    (function (SkinConfig) {
-        class config {
-        }
-        SkinConfig.config = config;
-        SkinConfig.path = "res/config/SkinConfig.json";
-    })(SkinConfig || (SkinConfig = {}));
-
-    class FGUI_splash extends fairygui.GComponent {
-        constructor() {
-            super();
-        }
-        static createInstance() {
-            return (fairygui.UIPackage.createObject("InitLoad", "splash"));
-        }
-        onConstruct() {
-            this.m_bg = (this.getChildAt(0));
-            this.m_progress = (this.getChildAt(1));
-            this.m_loading_progress = (this.getChildAt(2));
-            this.m_text_logo = (this.getChildAt(3));
-            this.m_text_progress = (this.getChildAt(4));
-            this.m_text_laya = (this.getChildAt(5));
-            this.m_text_explain = (this.getChildAt(6));
-            this.m_text_v = (this.getChildAt(7));
-            this.m_text_laya_v = (this.getChildAt(8));
-            this.m_text_game_explain = (this.getChildAt(9));
-        }
-    }
-    FGUI_splash.URL = "ui://n3oedpp6nihr0";
-
-    var GameStateConst;
-    (function (GameStateConst) {
-        class config {
-        }
-        GameStateConst.config = config;
-        GameStateConst.path = "res/config/GameStateConst.json";
-    })(GameStateConst || (GameStateConst = {}));
-
-    class GameCommonBinder {
-        static bindAll() {
-        }
-    }
-
-    class GameMainBinder {
-        static bindAll() {
-            fairygui.UIObjectFactory.setPackageItemExtension(FGUI_PGameSet.URL, FGUI_PGameSet);
-            fairygui.UIObjectFactory.setPackageItemExtension(FGUI_PGamePause.URL, FGUI_PGamePause);
-            fairygui.UIObjectFactory.setPackageItemExtension(FGUI_PGameCustomsLoading.URL, FGUI_PGameCustomsLoading);
-            fairygui.UIObjectFactory.setPackageItemExtension(FGUI_PGameLoading.URL, FGUI_PGameLoading);
-            fairygui.UIObjectFactory.setPackageItemExtension(FGUI_PGamePlay.URL, FGUI_PGamePlay);
-            fairygui.UIObjectFactory.setPackageItemExtension(FGUI_PGameStart.URL, FGUI_PGameStart);
-            fairygui.UIObjectFactory.setPackageItemExtension(FGUI_PGameTestUI.URL, FGUI_PGameTestUI);
-            fairygui.UIObjectFactory.setPackageItemExtension(FGUI_PGameEnd.URL, FGUI_PGameEnd);
-            fairygui.UIObjectFactory.setPackageItemExtension(FGUI_PGameTestMain.URL, FGUI_PGameTestMain);
-            fairygui.UIObjectFactory.setPackageItemExtension(FGUI_PGameCom.URL, FGUI_PGameCom);
-            fairygui.UIObjectFactory.setPackageItemExtension(FGUI_PGameMain.URL, FGUI_PGameMain);
-            fairygui.UIObjectFactory.setPackageItemExtension(FGUI_PGameTestPlatform.URL, FGUI_PGameTestPlatform);
-        }
-    }
-
-    class FGUI_EmptyScreen extends fairygui.GComponent {
-        constructor() {
-            super();
-        }
-        static createInstance() {
-            return (fairygui.UIPackage.createObject("InitEmptyScreen", "EmptyScreen"));
-        }
-        onConstruct() {
-            this.m_bg = (this.getChildAt(0));
-        }
-    }
-    FGUI_EmptyScreen.URL = "ui://7ktzib8oq3ng0";
-
-    class InitEmptyScreenBinder {
-        static bindAll() {
-            fairygui.UIObjectFactory.setPackageItemExtension(FGUI_EmptyScreen.URL, FGUI_EmptyScreen);
-        }
-    }
-
-    class InitLoadBinder {
-        static bindAll() {
-            fairygui.UIObjectFactory.setPackageItemExtension(FGUI_splash.URL, FGUI_splash);
-        }
-    }
-
-    var ESounds;
-    (function (ESounds) {
-        ESounds["null"] = "";
-    })(ESounds || (ESounds = {}));
-
-    var CameraConst;
-    (function (CameraConst) {
-        class config {
-        }
-        CameraConst.config = config;
-        CameraConst.path = "res/config/CameraConst.json";
-    })(CameraConst || (CameraConst = {}));
-
-    var LightingConst;
-    (function (LightingConst) {
-        class config {
-        }
-        LightingConst.config = config;
-        LightingConst.path = "res/config/LightingConst.json";
-    })(LightingConst || (LightingConst = {}));
-
-    class GamePropData extends RootLocalStorageData {
-        constructor() {
-            super(...arguments);
-            this.coinCount = 0;
-        }
-    }
-
-    class GamePropDataProxy extends RootLocalStorageProxy {
-        constructor() {
-            super();
-        }
-        static get instance() {
-            if (this._instance == null) {
-                this._instance = new GamePropDataProxy();
-            }
-            return this._instance;
-        }
-        get _saveName() {
-            return "GameProp";
-        }
-        getNewData() {
-            return new GamePropData();
-        }
-    }
-
-    class GameSkinData extends RootLocalStorageData {
-    }
-
-    class GameSkinDataProxy extends RootLocalStorageProxy {
-        constructor() {
-            super();
-        }
-        static get instance() {
-            if (this._instance == null) {
-                this._instance = new GameSkinDataProxy();
-            }
-            return this._instance;
-        }
-        get _saveName() {
-            return "GameSkin";
-        }
-        getNewData() {
-            return new GameSkinData();
-        }
-    }
-
-    class GameSignData extends RootLocalStorageData {
-        constructor() {
-            super(...arguments);
-            this.ifSignIn = false;
-            this.ifOneDay = false;
-        }
-    }
-
-    class GameSignDataProxy extends RootLocalStorageProxy {
-        constructor() {
-            super();
-        }
-        static get instance() {
-            if (this._instance == null) {
-                this._instance = new GameSignDataProxy();
-            }
-            return this._instance;
-        }
-        get _saveName() {
-            return "GameSign";
-        }
-        getNewData() {
-            return new GameSignData();
-        }
-    }
-
-    var LevelPropConfig;
-    (function (LevelPropConfig) {
-        class config {
-        }
-        LevelPropConfig.config = config;
-        LevelPropConfig.path = "res/config/LevelPropConfig.json";
-    })(LevelPropConfig || (LevelPropConfig = {}));
-
-    var OtherConst;
-    (function (OtherConst) {
-        class config {
-        }
-        OtherConst.config = config;
-        OtherConst.path = "res/config/OtherConst.json";
-    })(OtherConst || (OtherConst = {}));
-
-    var EBGMs;
-    (function (EBGMs) {
-        EBGMs["null"] = "";
-    })(EBGMs || (EBGMs = {}));
-
-    class GameNewHandData extends RootLocalStorageData {
-    }
-
-    class GameNewHandDataProxy extends RootLocalStorageProxy {
-        constructor() {
-            super();
-        }
-        static get instance() {
-            if (this._instance == null) {
-                this._instance = new GameNewHandDataProxy();
-            }
-            return this._instance;
-        }
-        get _saveName() {
-            return "GameNewHand";
-        }
-        getNewData() {
-            return new GameNewHandData();
-        }
-    }
-
-    class GameTestData extends RootLocalStorageData {
-        constructor() {
-            super(...arguments);
-            this.testNumber = 0;
-            this.testBoolean = false;
-            this.testArray = [];
-            this.testObject = {
-                a: 0,
-                b: 0,
-                c: 0,
-            };
-        }
-    }
-
-    class GameTestDataProxy extends RootLocalStorageProxy {
-        constructor() {
-            super();
-        }
-        static get instance() {
-            if (this._instance == null) {
-                this._instance = new GameTestDataProxy();
-            }
-            return this._instance;
-        }
-        get _saveName() {
-            return "GameTest";
-        }
-        getNewData() {
-            return new GameTestData();
-        }
-    }
-
-    class GameLoad extends RootGameLoad {
-        _Init() {
-            GlobalStateManager.instance.GameInit();
-            this._initEmptyScreen = new LoadUIPack(EssentialResUrls.FGUIPack('InitEmptyScreen'));
-            this._initUiPack = new LoadUIPack(EssentialResUrls.FGUIPack('InitLoad'), 0);
-            this._needLoadOtherUIPack = [
-                new LoadUIPack(EssentialResUrls.FGUIPack('GameCommon')),
-                new LoadUIPack(EssentialResUrls.FGUIPack('GameMain'), 0),
-            ];
-            return;
-        }
-        _OnInitEmptyScreen() {
-            this._emptyScreenShowUI = FGuiRootManager.AddUI(FGUI_EmptyScreen, new FGuiData(), EUILayer.Main);
-        }
-        _OnInitUILoaded() {
-            this._emptyScreenShowUI.dispose();
-            this._loadShowUI = FGuiRootManager.AddUI(FGUI_splash, new FGuiData(), EUILayer.Loading);
-            this._loadShowUI.sortingOrder = Number.MAX_SAFE_INTEGER;
-            this._loadShowUI.m_text_explain.text = MainConfig.GameWhatTeam;
-            this._loadShowUI.m_text_logo.text = MainConfig.GameName_;
-            this._loadShowUI.m_text_v.text = MainConfig.versions;
-            this._loadShowUI.m_text_game_explain.text = MainConfig.GameExplain;
-            this._loadShowUI.m_text_laya_v.text = Laya.version;
-            this._loadingProgress = this._loadShowUI.m_progress;
-            this._loadingProgressText = this._loadShowUI.m_loading_progress;
-            this._loadingProgress.value = 0;
-        }
-        OnBindUI() {
-            InitEmptyScreenBinder.bindAll();
-            InitLoadBinder.bindAll();
-            GameCommonBinder.bindAll();
-            GameMainBinder.bindAll();
-        }
-        OnSetLoadConfig() {
-            ConfigManager.AddConfig(CameraConst);
-            ConfigManager.AddConfig(EnvironmentConfig);
-            ConfigManager.AddConfig(OtherEnvironmentConfig);
-            ConfigManager.AddConfig(GameConst);
-            ConfigManager.AddConfig(GameStateConst);
-            ConfigManager.AddConfig(LevelConfig);
-            ConfigManager.AddConfig(OtherLevelConfig);
-            ConfigManager.AddConfig(LevelPropConfig);
-            ConfigManager.AddConfig(LightingConst);
-            ConfigManager.AddConfig(OtherConst);
-            ConfigManager.AddConfig(SkinConfig);
-            ConfigManager.AddConfig(TestConst);
-        }
-        loginData() {
-            GameDataProxy.instance.InitData();
-            GameNewHandDataProxy.instance.InitData();
-            GamePropDataProxy.instance.InitData();
-            GameSkinDataProxy.instance.InitData();
-            GameSignDataProxy.instance.InitData();
-            GameShortDataProxy.instance.InitData();
-            GameTestDataProxy.instance.InitData();
-        }
-        OnGameResPrepared(urls) {
-            let _str;
-            for (let _i in EBGMs) {
-                _str = EBGMs[_i];
-                if (_str == '')
-                    continue;
-                urls.push(ResUrl.music_url(_str));
-            }
-            for (let _i in ESounds) {
-                _str = ESounds[_i];
-                if (_str == '')
-                    continue;
-                urls.push(ResUrl.sound_url(_str));
-            }
-        }
-        onLoading(_n) {
-            this._loadingProgress.value = _n;
-            this._loadingProgressText.text = Math.floor(_n).toString() + '%';
-        }
-        OnComplete() {
-            this._loadShowUI.dispose();
-            GlobalStateManager.instance.GameOnInit();
-        }
-    }
-
-    class Game2D {
-        constructor() { }
-        static get instance() {
-            if (this._instance == null) {
-                this._instance = new Game2D();
-            }
-            return this._instance;
-        }
-        enterGame() {
-            this.initGame();
-        }
-        initGame() {
-        }
-    }
-
-    class RootTest {
-        startTest() { }
-    }
-
-    class ConsoleTest extends RootTest {
-        constructor() {
-            super(...arguments);
-            this._consoleExStr = '输出测试';
-        }
-        startTest() {
-            console.log('->开启测试<-');
-            console.log(...ConsoleEx.packLog(this._consoleExStr));
-            console.warn(...ConsoleEx.packWarn(this._consoleExStr));
-            console.error(...ConsoleEx.packError(this._consoleExStr));
-        }
-    }
-
-    class MainTest extends RootTest {
-        startTest() {
-            new ConsoleTest().startTest();
-        }
-    }
-
-    class AsyncTest extends RootTest {
-        startTest() {
-            this.asyncTest();
-        }
-        asyncTest() {
-            return __awaiter(this, void 0, void 0, function* () {
-                console.log('异步开始。');
-                yield this._asyncTest();
-                console.log('异步结束。');
-            });
-        }
-        _asyncTest() {
-            return new Promise((_r) => {
-                Laya.timer.once(1000, this, () => {
-                    _r();
-                });
-            });
-        }
-    }
-
-    class OIMODebug extends RootTest {
-        static get instance() {
-            if (this._instance) {
-                return this._instance;
-            }
-            else {
-                this._instance = new OIMODebug();
-                return this._instance;
-            }
-        }
-        start(_prefabs) {
-            let _spr = [];
-        }
-    }
-
-    class MyMainTest extends RootTest {
-        startTest() {
-            new AsyncTest().startTest();
-            new OIMODebug().startTest();
-        }
-    }
-
-    class MainDebug extends RootDebug {
-        constructor() {
-            super(...arguments);
-            this._name = 'Main';
-        }
-        _startDebug() {
-            console.log('开启主调试');
-            EnvironmentDebug.instance.startDebug();
-            DataDebug.instance.startDebug();
-        }
-    }
-
-    class CustomDebug extends RootDebug {
-        constructor() {
-            super();
-            this._name = 'Custom';
-        }
-        static get instance() {
-            if (!this.m_instance) {
-                this.m_instance = new CustomDebug();
-            }
-            return this.m_instance;
-        }
-    }
-
-    class MyMainDebug extends RootDebug {
-        constructor() {
-            super(...arguments);
-            this._name = 'MyMainDebug';
-        }
-        _startDebug() {
-            CustomDebug.instance.startDebug();
-        }
-    }
-
-    class MainStart {
-        constructor() {
-            this.init().then(() => {
-                this.upGameLoad();
-                this.gameLoad();
-            });
-        }
-        init() {
-            return new Promise((r) => {
-                PlatformManager.instance.init();
-                PlatformManager.instance.initPlatform();
-                this.loadSubpackage().then(() => {
-                    r();
-                });
-            });
-        }
-        loadSubpackage() {
-            return new Promise((r) => {
-                if (FrameSubpackages.subpackages.length > 0) {
-                    let _promiseList = [];
-                    for (let _o of FrameSubpackages.subpackages) {
-                        if (_o.name) {
-                            _promiseList.push(new Promise((r) => {
-                                PlatformManager.PlatformInstance.LoadSubpackage(_o.name, Laya.Handler.create(this, () => {
-                                    r();
-                                }), Laya.Handler.create(this, () => {
-                                    r();
-                                }), undefined);
-                            }));
-                        }
-                    }
-                    Promise.all(_promiseList).then(() => {
-                        r();
-                    });
-                }
-                else {
-                    r();
-                }
-            });
-        }
-        upGameLoad() {
-            if (MainGameConfig.ifTest) {
-                new MainTest().startTest();
-                new MyMainTest().startTest();
-            }
-            if (MainGameConfig.ifDebug) {
-                new MainDebug().startDebug();
-                new MyMainDebug().startDebug();
-                if (MainGameConfig.ifOpenWindowDebug) {
-                    RootDebug.openWindowDebug();
-                }
-            }
-        }
-        gameLoad() {
-            let _gameLoad = new GameLoad();
-            console.log(...ConsoleEx.comLog('开始加载游戏'));
-            _gameLoad.Enter(this, undefined, this.OnGameLoad);
-        }
-        OnGameLoad() {
-            return new Promise((_r) => {
-                _r();
-                console.log(...ConsoleEx.comLog('游戏加载完成'));
-                if (MainGameConfig.support3D) {
-                    Game3D.instance.enterGame();
-                }
-                if (MainGameConfig.support2D) {
-                    Game2D.instance.enterGame();
-                }
-                this.OnGameEnter();
-            });
-        }
-        OnGameEnter() { }
-    }
-
-    class LayaMiniGameConfig {
-        constructor() {
-            this.name = "LayaMiniGame";
-            this.ZHName = "LayaBox小游戏";
-            this.versions = "1.2.6";
-        }
-    }
-
-    class Main {
-        constructor() {
-            if (window["Laya3D"])
-                Laya3D.init(GameConfig.width, GameConfig.height);
-            else
-                Laya.init(GameConfig.width, GameConfig.height, Laya["WebGL"]);
-            Laya["Physics"] && Laya["Physics"].enable();
-            Laya["DebugPanel"] && Laya["DebugPanel"].enable();
-            Laya.stage.scaleMode = GameConfig.scaleMode;
-            Laya.stage.screenMode = GameConfig.screenMode;
-            Laya.stage.alignV = GameConfig.alignV;
-            Laya.stage.alignH = GameConfig.alignH;
-            Laya.URL.exportSceneToJson = GameConfig.exportSceneToJson;
-            if (GameConfig.debug || Laya.Utils.getQueryString("debug") == "true")
-                Laya.enableDebugPanel();
-            if (GameConfig.physicsDebug && Laya["PhysicsDebugDraw"])
-                Laya["PhysicsDebugDraw"].enable();
-            if (GameConfig.stat)
-                Laya.Stat.show();
-            Laya.alertGlobalError(true);
-            Laya.ResourceVersion.enable("version.json", Laya.Handler.create(this, this.onVersionLoaded), Laya.ResourceVersion.FILENAME_VERSION);
-        }
-        onVersionLoaded() {
-            Laya.AtlasInfoManager.enable("fileconfig.json", Laya.Handler.create(this, this.onConfigLoaded));
-        }
-        onConfigLoaded() {
-            new MainStart();
-        }
-    }
-    let _LayaMiniGameConfig = new LayaMiniGameConfig();
-    window['$' + _LayaMiniGameConfig.name] = _LayaMiniGameConfig;
-    new Main();
-
-}());
-//# sourceMappingURL=bundle.js.map
+/*
+ * ATTENTION: The "eval" devtool has been used (maybe by default in mode: "development").
+ * This devtool is not neither made for production nor for readable output files.
+ * It uses "eval()" calls to create a separate source file in the browser devtools.
+ * If you are trying to read the output file, select a different devtool (https://webpack.js.org/configuration/devtool/)
+ * or disable the default devtool with "devtool: false".
+ * If you are looking for production-ready output files, see mode: "production" (https://webpack.js.org/configuration/mode/).
+ */
+/******/ (() => { // webpackBootstrap
+/******/ 	"use strict";
+/******/ 	var __webpack_modules__ = ({
+
+/***/ "./src/FGUI/GameCommon/GameCommonBinder.ts":
+/*!*************************************************!*\
+  !*** ./src/FGUI/GameCommon/GameCommonBinder.ts ***!
+  \*************************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+eval("\n/** This is an automatically generated class by FairyGUI. Please do not modify it. **/\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n})); // 导入文件\n//! 这是由FGUI自动生成的文件，请不要修改 ~~~ **/\n\nclass GameCommonBinder {\n  static bindAll() {}\n\n}\n\nexports.default = GameCommonBinder;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/FGUI/GameCommon/GameCommonBinder.ts?");
+
+/***/ }),
+
+/***/ "./src/FGUI/GameMain/FGUI_PGameCom.ts":
+/*!********************************************!*\
+  !*** ./src/FGUI/GameMain/FGUI_PGameCom.ts ***!
+  \********************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+eval("\n/** This is an automatically generated class by FairyGUI. Please do not modify it. **/\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n})); // 导入文件\n//! 这是由FGUI自动生成的文件，请不要修改 ~~~ **/\n\nclass FGUI_PGameCom extends fairygui.GComponent {\n  constructor() {\n    super();\n  }\n\n  static createInstance() {\n    return fairygui.UIPackage.createObject(\"GameMain\", \"PGameCom\");\n  }\n\n  onConstruct() {\n    this.m_text = this.getChildAt(0);\n  }\n\n}\n\nexports.default = FGUI_PGameCom;\nFGUI_PGameCom.URL = \"ui://kk7g5mmmq3ng9w\";\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/FGUI/GameMain/FGUI_PGameCom.ts?");
+
+/***/ }),
+
+/***/ "./src/FGUI/GameMain/FGUI_PGameCustomsLoading.ts":
+/*!*******************************************************!*\
+  !*** ./src/FGUI/GameMain/FGUI_PGameCustomsLoading.ts ***!
+  \*******************************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+eval("\n/** This is an automatically generated class by FairyGUI. Please do not modify it. **/\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n})); // 导入文件\n//! 这是由FGUI自动生成的文件，请不要修改 ~~~ **/\n\nclass FGUI_PGameCustomsLoading extends fairygui.GComponent {\n  constructor() {\n    super();\n  }\n\n  static createInstance() {\n    return fairygui.UIPackage.createObject(\"GameMain\", \"PGameCustomsLoading\");\n  }\n\n  onConstruct() {\n    this.m_shade = this.getChildAt(0);\n    this.m_text = this.getChildAt(1);\n    this.m_progress = this.getChildAt(2);\n  }\n\n}\n\nexports.default = FGUI_PGameCustomsLoading;\nFGUI_PGameCustomsLoading.URL = \"ui://kk7g5mmmdbmi13\";\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/FGUI/GameMain/FGUI_PGameCustomsLoading.ts?");
+
+/***/ }),
+
+/***/ "./src/FGUI/GameMain/FGUI_PGameEnd.ts":
+/*!********************************************!*\
+  !*** ./src/FGUI/GameMain/FGUI_PGameEnd.ts ***!
+  \********************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+eval("\n/** This is an automatically generated class by FairyGUI. Please do not modify it. **/\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n})); // 导入文件\n//! 这是由FGUI自动生成的文件，请不要修改 ~~~ **/\n\nclass FGUI_PGameEnd extends fairygui.GComponent {\n  constructor() {\n    super();\n  }\n\n  static createInstance() {\n    return fairygui.UIPackage.createObject(\"GameMain\", \"PGameEnd\");\n  }\n\n  onConstruct() {\n    this.m_text = this.getChildAt(0);\n  }\n\n}\n\nexports.default = FGUI_PGameEnd;\nFGUI_PGameEnd.URL = \"ui://kk7g5mmmlaxd19\";\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/FGUI/GameMain/FGUI_PGameEnd.ts?");
+
+/***/ }),
+
+/***/ "./src/FGUI/GameMain/FGUI_PGameLoading.ts":
+/*!************************************************!*\
+  !*** ./src/FGUI/GameMain/FGUI_PGameLoading.ts ***!
+  \************************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+eval("\n/** This is an automatically generated class by FairyGUI. Please do not modify it. **/\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n})); // 导入文件\n//! 这是由FGUI自动生成的文件，请不要修改 ~~~ **/\n\nclass FGUI_PGameLoading extends fairygui.GComponent {\n  constructor() {\n    super();\n  }\n\n  static createInstance() {\n    return fairygui.UIPackage.createObject(\"GameMain\", \"PGameLoading\");\n  }\n\n  onConstruct() {\n    this.m_shade = this.getChildAt(0);\n    this.m_text = this.getChildAt(1);\n    this.m_progress = this.getChildAt(2);\n  }\n\n}\n\nexports.default = FGUI_PGameLoading;\nFGUI_PGameLoading.URL = \"ui://kk7g5mmmg7a1o\";\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/FGUI/GameMain/FGUI_PGameLoading.ts?");
+
+/***/ }),
+
+/***/ "./src/FGUI/GameMain/FGUI_PGameMain.ts":
+/*!*********************************************!*\
+  !*** ./src/FGUI/GameMain/FGUI_PGameMain.ts ***!
+  \*********************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+eval("\n/** This is an automatically generated class by FairyGUI. Please do not modify it. **/\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n})); // 导入文件\n//! 这是由FGUI自动生成的文件，请不要修改 ~~~ **/\n\nclass FGUI_PGameMain extends fairygui.GComponent {\n  constructor() {\n    super();\n  }\n\n  static createInstance() {\n    return fairygui.UIPackage.createObject(\"GameMain\", \"PGameMain\");\n  }\n\n  onConstruct() {\n    this.m_text = this.getChildAt(0);\n  }\n\n}\n\nexports.default = FGUI_PGameMain;\nFGUI_PGameMain.URL = \"ui://kk7g5mmmsyta9f\";\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/FGUI/GameMain/FGUI_PGameMain.ts?");
+
+/***/ }),
+
+/***/ "./src/FGUI/GameMain/FGUI_PGamePause.ts":
+/*!**********************************************!*\
+  !*** ./src/FGUI/GameMain/FGUI_PGamePause.ts ***!
+  \**********************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+eval("\n/** This is an automatically generated class by FairyGUI. Please do not modify it. **/\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n})); // 导入文件\n//! 这是由FGUI自动生成的文件，请不要修改 ~~~ **/\n\nclass FGUI_PGamePause extends fairygui.GComponent {\n  constructor() {\n    super();\n  }\n\n  static createInstance() {\n    return fairygui.UIPackage.createObject(\"GameMain\", \"PGamePause\");\n  }\n\n  onConstruct() {\n    this.m_text = this.getChildAt(0);\n  }\n\n}\n\nexports.default = FGUI_PGamePause;\nFGUI_PGamePause.URL = \"ui://kk7g5mmm6vcq5g\";\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/FGUI/GameMain/FGUI_PGamePause.ts?");
+
+/***/ }),
+
+/***/ "./src/FGUI/GameMain/FGUI_PGamePlay.ts":
+/*!*********************************************!*\
+  !*** ./src/FGUI/GameMain/FGUI_PGamePlay.ts ***!
+  \*********************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+eval("\n/** This is an automatically generated class by FairyGUI. Please do not modify it. **/\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n})); // 导入文件\n//! 这是由FGUI自动生成的文件，请不要修改 ~~~ **/\n\nclass FGUI_PGamePlay extends fairygui.GComponent {\n  constructor() {\n    super();\n  }\n\n  static createInstance() {\n    return fairygui.UIPackage.createObject(\"GameMain\", \"PGamePlay\");\n  }\n\n  onConstruct() {\n    this.m_text = this.getChildAt(0);\n  }\n\n}\n\nexports.default = FGUI_PGamePlay;\nFGUI_PGamePlay.URL = \"ui://kk7g5mmmg7a1r\";\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/FGUI/GameMain/FGUI_PGamePlay.ts?");
+
+/***/ }),
+
+/***/ "./src/FGUI/GameMain/FGUI_PGameSet.ts":
+/*!********************************************!*\
+  !*** ./src/FGUI/GameMain/FGUI_PGameSet.ts ***!
+  \********************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+eval("\n/** This is an automatically generated class by FairyGUI. Please do not modify it. **/\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n})); // 导入文件\n//! 这是由FGUI自动生成的文件，请不要修改 ~~~ **/\n\nclass FGUI_PGameSet extends fairygui.GComponent {\n  constructor() {\n    super();\n  }\n\n  static createInstance() {\n    return fairygui.UIPackage.createObject(\"GameMain\", \"PGameSet\");\n  }\n\n  onConstruct() {\n    this.m_text = this.getChildAt(0);\n  }\n\n}\n\nexports.default = FGUI_PGameSet;\nFGUI_PGameSet.URL = \"ui://kk7g5mmm6vcq4u\";\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/FGUI/GameMain/FGUI_PGameSet.ts?");
+
+/***/ }),
+
+/***/ "./src/FGUI/GameMain/FGUI_PGameStart.ts":
+/*!**********************************************!*\
+  !*** ./src/FGUI/GameMain/FGUI_PGameStart.ts ***!
+  \**********************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+eval("\n/** This is an automatically generated class by FairyGUI. Please do not modify it. **/\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n})); // 导入文件\n//! 这是由FGUI自动生成的文件，请不要修改 ~~~ **/\n\nclass FGUI_PGameStart extends fairygui.GComponent {\n  constructor() {\n    super();\n  }\n\n  static createInstance() {\n    return fairygui.UIPackage.createObject(\"GameMain\", \"PGameStart\");\n  }\n\n  onConstruct() {\n    this.m_text = this.getChildAt(0);\n  }\n\n}\n\nexports.default = FGUI_PGameStart;\nFGUI_PGameStart.URL = \"ui://kk7g5mmmg7a1v\";\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/FGUI/GameMain/FGUI_PGameStart.ts?");
+
+/***/ }),
+
+/***/ "./src/FGUI/GameMain/FGUI_PGameTestMain.ts":
+/*!*************************************************!*\
+  !*** ./src/FGUI/GameMain/FGUI_PGameTestMain.ts ***!
+  \*************************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+eval("\n/** This is an automatically generated class by FairyGUI. Please do not modify it. **/\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n})); // 导入文件\n//! 这是由FGUI自动生成的文件，请不要修改 ~~~ **/\n\nclass FGUI_PGameTestMain extends fairygui.GComponent {\n  constructor() {\n    super();\n  }\n\n  static createInstance() {\n    return fairygui.UIPackage.createObject(\"GameMain\", \"PGameTestMain\");\n  }\n\n  onConstruct() {\n    this.m_UIButton = this.getChildAt(0);\n    this.m_UI = this.getChildAt(1);\n    this.m_test = this.getChildAt(3);\n    this.m_testText = this.getChildAt(4);\n    this.m__test = this.getChildAt(6);\n  }\n\n}\n\nexports.default = FGUI_PGameTestMain;\nFGUI_PGameTestMain.URL = \"ui://kk7g5mmmo9js9x\";\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/FGUI/GameMain/FGUI_PGameTestMain.ts?");
+
+/***/ }),
+
+/***/ "./src/FGUI/GameMain/FGUI_PGameTestPlatform.ts":
+/*!*****************************************************!*\
+  !*** ./src/FGUI/GameMain/FGUI_PGameTestPlatform.ts ***!
+  \*****************************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+eval("\n/** This is an automatically generated class by FairyGUI. Please do not modify it. **/\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n})); // 导入文件\n//! 这是由FGUI自动生成的文件，请不要修改 ~~~ **/\n\nclass FGUI_PGameTestPlatform extends fairygui.GComponent {\n  constructor() {\n    super();\n  }\n\n  static createInstance() {\n    return fairygui.UIPackage.createObject(\"GameMain\", \"PGameTestPlatform\");\n  }\n\n  onConstruct() {\n    this.m_bg = this.getChildAt(0);\n    this.m_lookVAd = this.getChildAt(1);\n    this.m_lookVAdText = this.getChildAt(2);\n    this.m__lookVAd = this.getChildAt(3);\n    this.m_share = this.getChildAt(4);\n    this.m_shareText = this.getChildAt(5);\n    this.m__share = this.getChildAt(6);\n    this.m_showToast = this.getChildAt(7);\n    this.m_showToastText = this.getChildAt(8);\n    this.m__showToast = this.getChildAt(9);\n  }\n\n}\n\nexports.default = FGUI_PGameTestPlatform;\nFGUI_PGameTestPlatform.URL = \"ui://kk7g5mmmt1pw9y\";\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/FGUI/GameMain/FGUI_PGameTestPlatform.ts?");
+
+/***/ }),
+
+/***/ "./src/FGUI/GameMain/FGUI_PGameTestUI.ts":
+/*!***********************************************!*\
+  !*** ./src/FGUI/GameMain/FGUI_PGameTestUI.ts ***!
+  \***********************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+eval("\n/** This is an automatically generated class by FairyGUI. Please do not modify it. **/\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n})); // 导入文件\n//! 这是由FGUI自动生成的文件，请不要修改 ~~~ **/\n\nclass FGUI_PGameTestUI extends fairygui.GComponent {\n  constructor() {\n    super();\n  }\n\n  static createInstance() {\n    return fairygui.UIPackage.createObject(\"GameMain\", \"PGameTestUI\");\n  }\n\n  onConstruct() {\n    this.m_bg = this.getChildAt(0);\n  }\n\n}\n\nexports.default = FGUI_PGameTestUI;\nFGUI_PGameTestUI.URL = \"ui://kk7g5mmmh66e9z\";\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/FGUI/GameMain/FGUI_PGameTestUI.ts?");
+
+/***/ }),
+
+/***/ "./src/FGUI/GameMain/GameMainBinder.ts":
+/*!*********************************************!*\
+  !*** ./src/FGUI/GameMain/GameMainBinder.ts ***!
+  \*********************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n/** This is an automatically generated class by FairyGUI. Please do not modify it. **/\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n})); // 导入文件\n\nconst FGUI_PGameSet_1 = __webpack_require__(/*! ./FGUI_PGameSet */ \"./src/FGUI/GameMain/FGUI_PGameSet.ts\");\n\nconst FGUI_PGamePause_1 = __webpack_require__(/*! ./FGUI_PGamePause */ \"./src/FGUI/GameMain/FGUI_PGamePause.ts\");\n\nconst FGUI_PGameCustomsLoading_1 = __webpack_require__(/*! ./FGUI_PGameCustomsLoading */ \"./src/FGUI/GameMain/FGUI_PGameCustomsLoading.ts\");\n\nconst FGUI_PGameLoading_1 = __webpack_require__(/*! ./FGUI_PGameLoading */ \"./src/FGUI/GameMain/FGUI_PGameLoading.ts\");\n\nconst FGUI_PGamePlay_1 = __webpack_require__(/*! ./FGUI_PGamePlay */ \"./src/FGUI/GameMain/FGUI_PGamePlay.ts\");\n\nconst FGUI_PGameStart_1 = __webpack_require__(/*! ./FGUI_PGameStart */ \"./src/FGUI/GameMain/FGUI_PGameStart.ts\");\n\nconst FGUI_PGameTestUI_1 = __webpack_require__(/*! ./FGUI_PGameTestUI */ \"./src/FGUI/GameMain/FGUI_PGameTestUI.ts\");\n\nconst FGUI_PGameEnd_1 = __webpack_require__(/*! ./FGUI_PGameEnd */ \"./src/FGUI/GameMain/FGUI_PGameEnd.ts\");\n\nconst FGUI_PGameTestMain_1 = __webpack_require__(/*! ./FGUI_PGameTestMain */ \"./src/FGUI/GameMain/FGUI_PGameTestMain.ts\");\n\nconst FGUI_PGameCom_1 = __webpack_require__(/*! ./FGUI_PGameCom */ \"./src/FGUI/GameMain/FGUI_PGameCom.ts\");\n\nconst FGUI_PGameMain_1 = __webpack_require__(/*! ./FGUI_PGameMain */ \"./src/FGUI/GameMain/FGUI_PGameMain.ts\");\n\nconst FGUI_PGameTestPlatform_1 = __webpack_require__(/*! ./FGUI_PGameTestPlatform */ \"./src/FGUI/GameMain/FGUI_PGameTestPlatform.ts\"); //! 这是由FGUI自动生成的文件，请不要修改 ~~~ **/\n\n\nclass GameMainBinder {\n  static bindAll() {\n    fairygui.UIObjectFactory.setPackageItemExtension(FGUI_PGameSet_1.default.URL, FGUI_PGameSet_1.default);\n    fairygui.UIObjectFactory.setPackageItemExtension(FGUI_PGamePause_1.default.URL, FGUI_PGamePause_1.default);\n    fairygui.UIObjectFactory.setPackageItemExtension(FGUI_PGameCustomsLoading_1.default.URL, FGUI_PGameCustomsLoading_1.default);\n    fairygui.UIObjectFactory.setPackageItemExtension(FGUI_PGameLoading_1.default.URL, FGUI_PGameLoading_1.default);\n    fairygui.UIObjectFactory.setPackageItemExtension(FGUI_PGamePlay_1.default.URL, FGUI_PGamePlay_1.default);\n    fairygui.UIObjectFactory.setPackageItemExtension(FGUI_PGameStart_1.default.URL, FGUI_PGameStart_1.default);\n    fairygui.UIObjectFactory.setPackageItemExtension(FGUI_PGameTestUI_1.default.URL, FGUI_PGameTestUI_1.default);\n    fairygui.UIObjectFactory.setPackageItemExtension(FGUI_PGameEnd_1.default.URL, FGUI_PGameEnd_1.default);\n    fairygui.UIObjectFactory.setPackageItemExtension(FGUI_PGameTestMain_1.default.URL, FGUI_PGameTestMain_1.default);\n    fairygui.UIObjectFactory.setPackageItemExtension(FGUI_PGameCom_1.default.URL, FGUI_PGameCom_1.default);\n    fairygui.UIObjectFactory.setPackageItemExtension(FGUI_PGameMain_1.default.URL, FGUI_PGameMain_1.default);\n    fairygui.UIObjectFactory.setPackageItemExtension(FGUI_PGameTestPlatform_1.default.URL, FGUI_PGameTestPlatform_1.default);\n  }\n\n}\n\nexports.default = GameMainBinder;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/FGUI/GameMain/GameMainBinder.ts?");
+
+/***/ }),
+
+/***/ "./src/FGUI/InitEmptyScreen/FGUI_EmptyScreen.ts":
+/*!******************************************************!*\
+  !*** ./src/FGUI/InitEmptyScreen/FGUI_EmptyScreen.ts ***!
+  \******************************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+eval("\n/** This is an automatically generated class by FairyGUI. Please do not modify it. **/\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n})); // 导入文件\n//! 这是由FGUI自动生成的文件，请不要修改 ~~~ **/\n\nclass FGUI_EmptyScreen extends fairygui.GComponent {\n  constructor() {\n    super();\n  }\n\n  static createInstance() {\n    return fairygui.UIPackage.createObject(\"InitEmptyScreen\", \"EmptyScreen\");\n  }\n\n  onConstruct() {\n    this.m_bg = this.getChildAt(0);\n  }\n\n}\n\nexports.default = FGUI_EmptyScreen;\nFGUI_EmptyScreen.URL = \"ui://7ktzib8oq3ng0\";\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/FGUI/InitEmptyScreen/FGUI_EmptyScreen.ts?");
+
+/***/ }),
+
+/***/ "./src/FGUI/InitEmptyScreen/InitEmptyScreenBinder.ts":
+/*!***********************************************************!*\
+  !*** ./src/FGUI/InitEmptyScreen/InitEmptyScreenBinder.ts ***!
+  \***********************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n/** This is an automatically generated class by FairyGUI. Please do not modify it. **/\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n})); // 导入文件\n\nconst FGUI_EmptyScreen_1 = __webpack_require__(/*! ./FGUI_EmptyScreen */ \"./src/FGUI/InitEmptyScreen/FGUI_EmptyScreen.ts\"); //! 这是由FGUI自动生成的文件，请不要修改 ~~~ **/\n\n\nclass InitEmptyScreenBinder {\n  static bindAll() {\n    fairygui.UIObjectFactory.setPackageItemExtension(FGUI_EmptyScreen_1.default.URL, FGUI_EmptyScreen_1.default);\n  }\n\n}\n\nexports.default = InitEmptyScreenBinder;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/FGUI/InitEmptyScreen/InitEmptyScreenBinder.ts?");
+
+/***/ }),
+
+/***/ "./src/FGUI/InitLoad/FGUI_splash.ts":
+/*!******************************************!*\
+  !*** ./src/FGUI/InitLoad/FGUI_splash.ts ***!
+  \******************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+eval("\n/** This is an automatically generated class by FairyGUI. Please do not modify it. **/\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n})); // 导入文件\n//! 这是由FGUI自动生成的文件，请不要修改 ~~~ **/\n\nclass FGUI_splash extends fairygui.GComponent {\n  constructor() {\n    super();\n  }\n\n  static createInstance() {\n    return fairygui.UIPackage.createObject(\"InitLoad\", \"splash\");\n  }\n\n  onConstruct() {\n    this.m_bg = this.getChildAt(0);\n    this.m_progress = this.getChildAt(1);\n    this.m_loading_progress = this.getChildAt(2);\n    this.m_text_logo = this.getChildAt(3);\n    this.m_text_progress = this.getChildAt(4);\n    this.m_text_laya = this.getChildAt(5);\n    this.m_text_explain = this.getChildAt(6);\n    this.m_text_v = this.getChildAt(7);\n    this.m_text_laya_v = this.getChildAt(8);\n    this.m_text_game_explain = this.getChildAt(9);\n  }\n\n}\n\nexports.default = FGUI_splash;\nFGUI_splash.URL = \"ui://n3oedpp6nihr0\";\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/FGUI/InitLoad/FGUI_splash.ts?");
+
+/***/ }),
+
+/***/ "./src/FGUI/InitLoad/InitLoadBinder.ts":
+/*!*********************************************!*\
+  !*** ./src/FGUI/InitLoad/InitLoadBinder.ts ***!
+  \*********************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n/** This is an automatically generated class by FairyGUI. Please do not modify it. **/\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n})); // 导入文件\n\nconst FGUI_splash_1 = __webpack_require__(/*! ./FGUI_splash */ \"./src/FGUI/InitLoad/FGUI_splash.ts\"); //! 这是由FGUI自动生成的文件，请不要修改 ~~~ **/\n\n\nclass InitLoadBinder {\n  static bindAll() {\n    fairygui.UIObjectFactory.setPackageItemExtension(FGUI_splash_1.default.URL, FGUI_splash_1.default);\n  }\n\n}\n\nexports.default = InitLoadBinder;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/FGUI/InitLoad/InitLoadBinder.ts?");
+
+/***/ }),
+
+/***/ "./src/GameConfig.ts":
+/*!***************************!*\
+  !*** ./src/GameConfig.ts ***!
+  \***************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+eval("\n/**This class is automatically generated by LayaAirIDE, please do not make any modifications. */\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n/*\r\n* 游戏初始化配置;\r\n*/\n\nclass GameConfig {\n  constructor() {}\n\n  static init() {\n    var reg = Laya.ClassUtils.regClass;\n  }\n\n}\n\nexports.default = GameConfig;\nGameConfig.width = 750;\nGameConfig.height = 1334;\nGameConfig.scaleMode = \"fixedwidth\";\nGameConfig.screenMode = \"none\";\nGameConfig.alignV = \"top\";\nGameConfig.alignH = \"left\";\nGameConfig.startScene = \"\";\nGameConfig.sceneRoot = \"\";\nGameConfig.debug = false;\nGameConfig.stat = false;\nGameConfig.physicsDebug = false;\nGameConfig.exportSceneToJson = true;\nGameConfig.init();\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/GameConfig.ts?");
+
+/***/ }),
+
+/***/ "./src/LayaMiniGameConfig.ts":
+/*!***********************************!*\
+  !*** ./src/LayaMiniGameConfig.ts ***!
+  \***********************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n/**\r\n * 框架配置文件\r\n */\n\nclass LayaMiniGameConfig {\n  constructor() {\n    /** 名字 */\n    this.name = \"LayaMiniGame\";\n    /** 中文名字 */\n\n    this.ZHName = \"LayaBox小游戏\";\n    /** 版本 */\n\n    this.versions = \"1.2.6\";\n  }\n\n}\n\nexports.default = LayaMiniGameConfig;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/LayaMiniGameConfig.ts?");
+
+/***/ }),
+
+/***/ "./src/_a/_b/_c/_d/test.ts":
+/*!*********************************!*\
+  !*** ./src/_a/_b/_c/_d/test.ts ***!
+  \*********************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst RootDebug_1 = __webpack_require__(Object(function webpackMissingModule() { var e = new Error(\"Cannot find module 'src/aTGame/Debug/RootDebug'\"); e.code = 'MODULE_NOT_FOUND'; throw e; }()));\n/**\r\n * 自定义调试\r\n */\n\n\nclass newTest extends RootDebug_1.default {\n  constructor() {\n    super(...arguments); //\n\n    this._name = 'Custom';\n  }\n  /** 单例 */\n\n\n  static get instance() {\n    if (!this.m_instance) {\n      this.m_instance = new newTest();\n    } //\n\n\n    return this.m_instance;\n  }\n\n}\n\nexports.default = newTest;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/_a/_b/_c/_d/test.ts?");
+
+/***/ }),
+
+/***/ "./src/aTGame/3D/Global3D.ts":
+/*!***********************************!*\
+  !*** ./src/aTGame/3D/Global3D.ts ***!
+  \***********************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst OimoSystem_1 = __webpack_require__(/*! ../Physics/oimo/OimoSystem */ \"./src/aTGame/Physics/oimo/OimoSystem.ts\");\n\nconst GlobalUnitClassProxy_1 = __webpack_require__(/*! ./GlobalUnitClassProxy */ \"./src/aTGame/3D/GlobalUnitClassProxy.ts\");\n\nconst SceneManagerProxy_1 = __webpack_require__(/*! ./SceneManagerProxy */ \"./src/aTGame/3D/SceneManagerProxy.ts\");\n\nconst MainGameConfig_1 = __webpack_require__(/*! ../../bTGameConfig/MainGameConfig */ \"./src/bTGameConfig/MainGameConfig.ts\");\n\nconst ConsoleEx_1 = __webpack_require__(/*! ../Console/ConsoleEx */ \"./src/aTGame/Console/ConsoleEx.ts\");\n\nconst EnvironmentDebug_1 = __webpack_require__(/*! ../Debug/EnvironmentDebug */ \"./src/aTGame/Debug/EnvironmentDebug.ts\");\n/**\r\n * 全局3D类\r\n */\n\n\nclass Global3D {\n  /**\r\n   * 场景初始化\r\n   */\n  static InitAll() {\n    //判断是否支持3D\n    if (MainGameConfig_1.default.support3D) {\n      this.s3d = Laya.stage.addChildAt(new Laya.Scene3D(), 0);\n      this.camera = new Laya.Camera();\n      this.s3d.addChild(this.camera);\n      SceneManagerProxy_1.default.initCamera(this.camera);\n      this.light = new Laya.DirectionLight();\n      this.s3d.addChild(this.light);\n      SceneManagerProxy_1.default.initLight(this.light); //\n      //查看是否添加oimo物理\n\n      if (MainGameConfig_1.default.ifAddOimoSystem) {\n        this.addOimoSystem();\n      } //设置代理类代理数据\n\n\n      GlobalUnitClassProxy_1.default.s3d = this.s3d;\n      GlobalUnitClassProxy_1.default.camera = this.camera;\n      GlobalUnitClassProxy_1.default.light = this.light; //添加环境调试\n\n      EnvironmentDebug_1.default.instance.s3d = this.s3d;\n      EnvironmentDebug_1.default.instance.camera = this.camera;\n      EnvironmentDebug_1.default.instance.light = this.light;\n    } else {\n      //\n      console.log(...ConsoleEx_1.default.packLog('请设置支持3D!'));\n    }\n  } //添加oimo物理\n\n\n  static addOimoSystem() {\n    //使用新物理系统\n    let oimoNode = new Laya.Sprite3D();\n    this.s3d.addChild(oimoNode);\n    oimoNode.addComponent(OimoSystem_1.OimoSystem);\n  }\n\n}\n\nexports.default = Global3D;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/aTGame/3D/Global3D.ts?");
+
+/***/ }),
+
+/***/ "./src/aTGame/3D/GlobalUnitClassProxy.ts":
+/*!***********************************************!*\
+  !*** ./src/aTGame/3D/GlobalUnitClassProxy.ts ***!
+  \***********************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst RootClassProxy_1 = __webpack_require__(/*! ../Root/RootClassProxy */ \"./src/aTGame/Root/RootClassProxy.ts\");\n/**\r\n * 全局内容类代理\r\n */\n\n\nclass GlobalUnitClassProxy extends RootClassProxy_1.default {}\n\nexports.default = GlobalUnitClassProxy;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/aTGame/3D/GlobalUnitClassProxy.ts?");
+
+/***/ }),
+
+/***/ "./src/aTGame/3D/Scene.ts":
+/*!********************************!*\
+  !*** ./src/aTGame/3D/Scene.ts ***!
+  \********************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst ResLoad_1 = __webpack_require__(/*! ../Res/ResLoad */ \"./src/aTGame/Res/ResLoad.ts\");\n\nconst SceneUtils_1 = __webpack_require__(/*! ./SceneUtils */ \"./src/aTGame/3D/SceneUtils.ts\");\n\nconst GlobalUnitClassProxy_1 = __webpack_require__(/*! ./GlobalUnitClassProxy */ \"./src/aTGame/3D/GlobalUnitClassProxy.ts\");\n\nconst EssentialResUrls_1 = __webpack_require__(/*! ../Res/EssentialResUrls */ \"./src/aTGame/Res/EssentialResUrls.ts\");\n\nconst ConsoleEx_1 = __webpack_require__(/*! ../Console/ConsoleEx */ \"./src/aTGame/Console/ConsoleEx.ts\");\n\nconst ArrayUtils_1 = __webpack_require__(/*! ../Utils/ArrayUtils */ \"./src/aTGame/Utils/ArrayUtils.ts\");\n/**\r\n * 场景类\r\n */\n\n\nclass Scene {\n  /**\r\n   * 初始化\r\n   * @param sceneNode 关卡构建节点\r\n   * @param sceneNode_ 关卡其他资源加载节点\r\n   */\n  constructor(sceneNode, sceneNode_, _lvConfig) {\n    //预制体资源列表\n    this._prefabRes = []; //附属资源列表\n\n    this.m_affiliateResURLs = [];\n    /** 根据预制体分类的物品列表 */\n\n    this.prefabs = {};\n    /** 所有的物品 */\n\n    this.sprite3Ds = [];\n    this.sceneNode = sceneNode;\n    this.sceneNode_ = sceneNode_;\n    this._lvConfig = _lvConfig;\n  }\n  /** 获取是否清除 */\n\n\n  get ifDestroy() {\n    return !Boolean(this._scene);\n  }\n  /** 获取场景 */\n\n\n  get scene() {\n    return this._scene;\n  }\n  /** 设置附属资源列表 */\n\n\n  set affiliateResURLs(_URLs) {\n    this.m_affiliateResURLs = _URLs;\n  }\n  /** 获取附属资源列表 */\n\n\n  get affiliateResURLs() {\n    return this.m_affiliateResURLs;\n  }\n  /** 获取所有的资源路径列表 */\n\n\n  get allResURLs() {\n    let _URLs = this.scenePrefabUrl();\n\n    _URLs.push(...this.m_affiliateResURLs);\n\n    return _URLs;\n  }\n  /**\r\n   * 添加附属资源\r\n   * @param _URLs 资源列表\r\n   */\n\n\n  addAffiliateResURLs(_URLs) {\n    if (_URLs.length <= 0) {\n      return;\n    }\n\n    this.m_affiliateResURLs.push(..._URLs); //去重\n\n    this.m_affiliateResURLs = ArrayUtils_1.default.Unique(this.m_affiliateResURLs);\n  }\n  /**\r\n   * 异步加载资源\r\n   * @param onProgress 加载进度回调\r\n   */\n\n\n  loadRes(onProgress = null) {\n    return ResLoad_1.default.LoadAsync(this.allResURLs, onProgress);\n  }\n  /**\r\n   * 异步构建场景\r\n   * @param onProgress 构建进度\r\n   */\n\n\n  buildScene(onProgress = null) {\n    return new Promise(r => {\n      if (this._scene) {\n        console.warn(...ConsoleEx_1.default.packWarn('重复构建关卡，请注意'));\n        r(this._scene);\n        return;\n      }\n\n      console.log(...ConsoleEx_1.default.packLog('开始构建关卡->' + this._lvConfig.key)); //同步加载资源\n\n      this.loadRes(onProgress).then(() => {\n        //\n        this._scene = new Laya.Sprite3D();\n        GlobalUnitClassProxy_1.default.s3d.addChild(this._scene); //构建场景\n\n        for (let _i in this.sceneNode) {\n          let _spr = new Laya.Sprite3D();\n\n          _spr.name = _i;\n\n          this._scene.addChild(_spr);\n\n          this._buildScene(this.sceneNode[_i], _spr);\n        } //\n\n\n        console.log(...ConsoleEx_1.default.packLog('关卡->' + this._lvConfig.key + '构建完成'));\n        console.log('关卡->' + this._lvConfig.key, '\\n场景->', this._scene, '\\n预制体->', this.prefabs, '\\n物体->', this.sprite3Ds); //返回场景\n\n        r(this._scene);\n      });\n    });\n  }\n  /**\r\n   * 清除场景\r\n   */\n\n\n  clearScene() {\n    //判断是否有场景\n    if (this._scene) {\n      console.log(...ConsoleEx_1.default.packLog('清除关卡->' + this._lvConfig.key)); //\n\n      this._scene.destroy(); //\n\n\n      this._prefabRes = [];\n      this.prefabs = {};\n      this._scene = null;\n      this.sprite3Ds = [];\n    }\n  } //* ---------- *//\n\n  /**\r\n   * 场景所有预制体资源地址列表\r\n   */\n\n\n  scenePrefabUrl() {\n    let resUrl = [];\n    let resName = this.scenePrefabResName();\n    resName && resName.forEach(name => {\n      resUrl.push(EssentialResUrls_1.default.prefab_url(name));\n    });\n    return resUrl;\n  }\n  /**\r\n   * 获取场景中所有直接加载预制体名字\r\n   */\n\n\n  sceneDirectPrefabUrl() {\n    let resUrl = [];\n    let resName = this.sceneDirectPrefabResName();\n    resName && resName.forEach(name => {\n      resUrl.push(EssentialResUrls_1.default.prefab_url(name));\n    });\n    return resUrl;\n  }\n  /**\r\n   * 获取场景中所有预加载预制体名字\r\n   */\n\n\n  scenePreloadPrefabUrl() {\n    let resUrl = [];\n    let resName = this.scenePreloadPrefabResName();\n    resName && resName.forEach(name => {\n      resUrl.push(EssentialResUrls_1.default.prefab_url(name));\n    });\n    return resUrl;\n  }\n  /**\r\n   * 关卡预制体资源名字列表\r\n   */\n\n\n  scenePrefabResName() {\n    //判断长度\n    let _length = 0;\n\n    for (let _i in this.sceneNode) {\n      _length++;\n    }\n\n    if (_length == 0) {\n      console.error(...ConsoleEx_1.default.packError('关卡->' + this._lvConfig.key + '<-不存在,或者是没有内容'));\n      return;\n    }\n\n    if (!this._prefabRes || this._prefabRes.length <= 0) {\n      //判断需要构建的节点\n      for (let _i in this.sceneNode) {\n        this._getPrefabName(this._prefabRes, this.sceneNode[_i]);\n      } //判断是否有其它资源需要加载\n\n\n      if (this.sceneNode_ && this.sceneNode_.length > 0) {\n        //\n        this.sceneNode_.forEach(item => {\n          this._getPrefabName(this._prefabRes, item);\n        });\n      }\n    }\n\n    return this._prefabRes;\n  }\n  /**\r\n   * 获取场景中所有直接加载的预制体名字列表\r\n   */\n\n\n  sceneDirectPrefabResName() {\n    let _prefabNames = []; //\n\n    for (let _i in this.sceneNode) {\n      this._getPrefabName(_prefabNames, this.sceneNode[_i]);\n    } //\n\n\n    return _prefabNames;\n  }\n  /**\r\n   * 获取场景中所有预加载预制体名字列表\r\n   */\n\n\n  scenePreloadPrefabResName() {\n    let _prefabNames = []; //\n\n    this.sceneNode_.forEach(item => {\n      this._getPrefabName(_prefabNames, item);\n    }); //\n\n    return _prefabNames;\n  } //* ------------------------------------------------------ *//\n  // 获取预制体名字\n\n\n  _getPrefabName(spArr, node) {\n    if (node) {\n      let prefabName = node['prefabName'];\n\n      if (prefabName) {\n        node = node;\n\n        if (spArr.indexOf(prefabName) < 0) {\n          spArr.push(prefabName);\n        }\n      } else {\n        node = node;\n\n        if (node.child) {\n          node.child.forEach(nodeChild => {\n            this._getPrefabName(spArr, nodeChild);\n          });\n        }\n      }\n    }\n  } // 构建场景\n\n\n  _buildScene(node, parent) {\n    //获取预制体名字\n    let prefabName = node[\"prefabName\"];\n\n    if (prefabName) {\n      node = node;\n      let sprite = ResLoad_1.default.Get(EssentialResUrls_1.default.prefab_url(prefabName));\n\n      if (sprite) {\n        SceneUtils_1.default.initNode(sprite, node);\n        parent.addChild(sprite);\n        this.prefabs[prefabName] = this.prefabs[prefabName] || [];\n        this.prefabs[prefabName].push(sprite);\n        this.sprite3Ds.push(sprite);\n      }\n    } else {\n      node = node;\n\n      if (node.child) {\n        let nodeSp = new Laya.Sprite3D();\n        SceneUtils_1.default.initNode(nodeSp, node);\n        parent.addChild(nodeSp);\n        node.child.forEach(nodeChild => {\n          this._buildScene(nodeChild, nodeSp);\n        });\n      }\n    }\n  }\n\n}\n\nexports.default = Scene;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/aTGame/3D/Scene.ts?");
+
+/***/ }),
+
+/***/ "./src/aTGame/3D/SceneManager.ts":
+/*!***************************************!*\
+  !*** ./src/aTGame/3D/SceneManager.ts ***!
+  \***************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst ResLoad_1 = __webpack_require__(/*! ../Res/ResLoad */ \"./src/aTGame/Res/ResLoad.ts\");\n\nconst Scene_1 = __webpack_require__(/*! ./Scene */ \"./src/aTGame/3D/Scene.ts\");\n\nconst SceneManagerProxy_1 = __webpack_require__(/*! ./SceneManagerProxy */ \"./src/aTGame/3D/SceneManagerProxy.ts\");\n\nconst FrameLevelConfig_1 = __webpack_require__(/*! ../../cFrameBridge/Config/FrameLevelConfig */ \"./src/cFrameBridge/Config/FrameLevelConfig.ts\");\n\nconst ConsoleEx_1 = __webpack_require__(/*! ../Console/ConsoleEx */ \"./src/aTGame/Console/ConsoleEx.ts\");\n\nconst ELevelSceneName_1 = __webpack_require__(/*! ../../cFrameBridge/Config/ELevelSceneName */ \"./src/cFrameBridge/Config/ELevelSceneName.ts\");\n\nconst EssentialResUrls_1 = __webpack_require__(/*! ../Res/EssentialResUrls */ \"./src/aTGame/Res/EssentialResUrls.ts\");\n\nconst FrameLevelConst_1 = __webpack_require__(/*! ../../cFrameBridge/Config/FrameLevelConst */ \"./src/cFrameBridge/Config/FrameLevelConst.ts\");\n/**\r\n * 场景3d可取出关卡中的所有东西\r\n */\n\n\nclass SceneManager {\n  //初始化\n  constructor() {\n    // 关卡配置数据\n    this._levelConfig = {}; // 场景实例缓存\n\n    this._scenes = {}; //设置代理类代理数据\n\n    SceneManagerProxy_1.default.sevelConfig = this._levelConfig;\n  }\n  /** 单例 */\n\n\n  static get instance() {\n    if (this._instance == null) {\n      this._instance = new SceneManager();\n    }\n\n    return this._instance;\n  } //\n\n\n  init() {}\n  /**\r\n   * 初始化配置\r\n   */\n\n\n  initConfig() {\n    let url;\n    let config;\n\n    for (let _i in ELevelSceneName_1.ELevelSceneName) {\n      url = ELevelSceneName_1.ELevelSceneName[_i];\n\n      if (!url) {\n        continue;\n      }\n\n      url = EssentialResUrls_1.default.levelConfigURL(url); //这里必须不使用克隆资源\n\n      config = ResLoad_1.default.Get(url, true); //\n\n      if (config.root) {\n        this._levelConfig[ELevelSceneName_1.ELevelSceneName[_i]] = {}; //获取根节点下的节点\n\n        for (let i = 0; i < config.root.length; i++) {\n          let data = config.root[i];\n          this._levelConfig[ELevelSceneName_1.ELevelSceneName[_i]][data.name] = data;\n        }\n      } //清理资源缓存只使用一次\n\n\n      ResLoad_1.default.Unload(url);\n    }\n  }\n  /**\r\n   * 获取所有预加载资源路径列表,在游戏开始前加载\r\n   * @param urls 资源集\r\n   */\n\n\n  Preload(urls) {\n    let _preloadUrls = []; // 当前 关卡 初始化\n\n    FrameLevelConst_1.default.PrestrainLeveId.forEach(item => {\n      _preloadUrls.push(...this.getOtherSceneByName(item).scenePrefabUrl());\n    }); //添加进数组\n\n    urls.push(..._preloadUrls);\n  }\n  /**\r\n   * 根据场景id预加载关卡资源\r\n   * @param id 关卡id\r\n   */\n\n\n  preloadSceneRes(id) {\n    console.log(...ConsoleEx_1.default.packLog('预加载关卡->', id)); //\n\n    this.getSceneByLv(id).loadRes();\n  }\n  /**\r\n   * 根据场景名字预加载其它关卡资源\r\n   * @param name 关卡名字\r\n   */\n\n\n  preloadOtherSceneRes(name) {\n    console.log(...ConsoleEx_1.default.packLog('预加载其它关卡->', name)); //\n\n    this.getOtherSceneByName(name).loadRes();\n  }\n  /**\r\n   * 通过id获取关卡\r\n   * @param id 关卡id\r\n   */\n\n\n  getSceneByLv(id) {\n    let lvConfig = FrameLevelConfig_1.default.byLevelIdGetLevelData(id);\n\n    if (!lvConfig) {\n      console.error(...ConsoleEx_1.default.packError(\"不存在此关卡->\", id));\n    } //查看缓存\n\n\n    if (!this._scenes[lvConfig.key]) {\n      //创建场景实例\n      this._scenes[lvConfig.key] = this.getSceneByData(lvConfig);\n    }\n\n    return this._scenes[lvConfig.key];\n  }\n  /**\r\n   * 通过关卡名字获取其他关卡\r\n   * @param _name 关卡名字\r\n   */\n\n\n  getOtherSceneByName(_name) {\n    let lvConfig = FrameLevelConfig_1.default.byLevelNameGetOtherLevelData(_name);\n\n    if (!lvConfig) {\n      console.error(...ConsoleEx_1.default.packError(\"不存在此关卡->\", _name));\n    } //查看缓存\n\n\n    if (!this._scenes[lvConfig.key]) {\n      //创建场景实例\n      this._scenes[lvConfig.key] = this.getSceneByData(lvConfig);\n    }\n\n    return this._scenes[lvConfig.key];\n  } //通过关卡数据构建关卡\n\n\n  getSceneByData(_lvConfig) {\n    let _data = this.getSceneConfig(_lvConfig);\n\n    return new Scene_1.default(_data.sceneNodes, _data.sceneNodes_, _lvConfig);\n  } // 获取场景配置数据\n\n\n  getSceneConfig(_lvConfig) {\n    //获取该关卡名字\n    let sceneName = _lvConfig.sceneName; //获取该关卡其他资源加载名字\n\n    let _sceneName_ = _lvConfig.sceneOtherRes; //\n\n    let sceneNodes = {};\n    let sceneNodes_ = []; //获取需要加载和预加载的节点\n\n    if (!this._levelConfig[_lvConfig.rootScene]) {\n      console.error(...ConsoleEx_1.default.packError('没有找到场景-', _lvConfig.rootScene, ' 请先注册。'));\n    }\n\n    for (let _i in this._levelConfig[_lvConfig.rootScene]) {\n      if (sceneName.findIndex(item => {\n        return item == _i;\n      }) != -1) {\n        sceneNodes[_i] = this._levelConfig[_lvConfig.rootScene][_i];\n      }\n\n      if (_sceneName_.findIndex(item => {\n        return item == _i;\n      }) != -1) {\n        sceneNodes_.push(this._levelConfig[_lvConfig.rootScene][_i]);\n      }\n    } //\n\n\n    return {\n      sceneNodes: sceneNodes,\n      sceneNodes_: sceneNodes_\n    };\n  }\n  /**\r\n   * 通过关卡id获取该关卡所有预制体资源名字\r\n   * @param id 关卡id\r\n   */\n\n\n  getLvResName(id) {\n    return this.getSceneByLv(id).scenePrefabResName();\n  }\n  /**\r\n   * 通过关卡id获取该关卡所有预制体资源路径列表\r\n   * @param id 关卡id\r\n   */\n\n\n  getLvResUrl(id) {\n    return this.getSceneByLv(id).scenePrefabUrl();\n  }\n\n}\n\nexports.default = SceneManager;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/aTGame/3D/SceneManager.ts?");
+
+/***/ }),
+
+/***/ "./src/aTGame/3D/SceneManagerProxy.ts":
+/*!********************************************!*\
+  !*** ./src/aTGame/3D/SceneManagerProxy.ts ***!
+  \********************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst ELevelSceneName_1 = __webpack_require__(/*! ../../cFrameBridge/Config/ELevelSceneName */ \"./src/cFrameBridge/Config/ELevelSceneName.ts\");\n\nconst SceneUtils_1 = __webpack_require__(/*! ./SceneUtils */ \"./src/aTGame/3D/SceneUtils.ts\");\n/**\r\n * SceneManager类代理类\r\n */\n\n\nclass SceneManagerProxy {\n  /** 设置关卡配置信息 */\n  static set sevelConfig(_data) {\n    this.m_sevelConfig = _data;\n  }\n  /**\r\n   * 根据场景配置数据初始化相机参数\r\n   * @param camera 相机\r\n   * @param _sceneName 场景名\r\n   */\n\n\n  static initCamera(camera, _sceneName = ELevelSceneName_1.default.defaultLevelSceneName) {\n    let cameraData = this.m_sevelConfig[_sceneName][\"camera\"];\n\n    if (cameraData) {\n      SceneUtils_1.default.initNode(camera, cameraData);\n    }\n  }\n  /**\r\n   * 根据场景配置数据初始化灯光参数\r\n   * @param light 灯光\r\n   * @param _sceneName 场景名\r\n   */\n\n\n  static initLight(light, _sceneName = ELevelSceneName_1.default.defaultLevelSceneName) {\n    let lightData = this.m_sevelConfig[_sceneName][\"light\"];\n\n    if (lightData) {\n      SceneUtils_1.default.initNode(light, lightData);\n    }\n  }\n\n}\n\nexports.default = SceneManagerProxy; //关卡配置信息\n\nSceneManagerProxy.m_sevelConfig = {};\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/aTGame/3D/SceneManagerProxy.ts?");
+
+/***/ }),
+
+/***/ "./src/aTGame/3D/SceneUtils.ts":
+/*!*************************************!*\
+  !*** ./src/aTGame/3D/SceneUtils.ts ***!
+  \*************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst V3Utils_1 = __webpack_require__(/*! ../Utils/V3Utils */ \"./src/aTGame/Utils/V3Utils.ts\");\n/**\r\n * 场景实用工具类\r\n */\n\n\nclass SceneUtils {\n  /**\r\n   * 根据spr精灵初始化节点\r\n   * @param _spr 精灵\r\n   * @param _target 目标节点\r\n   */\n  static initNode(_spr, _target) {\n    _spr.name = _target.name; //设置位置\n\n    if (!_target.position) {\n      //默认位置\n      _spr.transform.localPosition = new Laya.Vector3(0, 0, 0);\n    } else {\n      _spr.transform.localPosition = V3Utils_1.default.parseVector3(_target.position);\n    } //设置旋转\n\n\n    if (!_target.euler) {\n      //默认旋转\n      _spr.transform.localRotationEuler = new Laya.Vector3(0, 0, 0);\n    } else {\n      _spr.transform.localRotationEuler = V3Utils_1.default.parseVector3(_target.euler);\n    } //设置缩放\n\n\n    if (!_target.scale) {\n      //默认缩放\n      _spr.transform.localScale = new Laya.Vector3(1, 1, 1);\n    } else {\n      _spr.transform.localScale = V3Utils_1.default.parseVector3(_target.scale);\n    }\n  }\n\n}\n\nexports.default = SceneUtils;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/aTGame/3D/SceneUtils.ts?");
+
+/***/ }),
+
+/***/ "./src/aTGame/Async/Awaiters.ts":
+/*!**************************************!*\
+  !*** ./src/aTGame/Async/Awaiters.ts ***!
+  \**************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n/**\r\n * 异步等待类\r\n */\n\nclass Awaiters {\n  /**\r\n   * 等待2帧\r\n   */\n  static NextFrame() {\n    // 一帧有可能刚好当帧执行,这里跳两帧\n    return this.Frames(2);\n  }\n  /**\r\n   * 等待一定帧数\r\n   * @param num 帧数\r\n   */\n\n\n  static Frames(num) {\n    return new Promise(function (resolve) {\n      Laya.timer.frameOnce(num, null, () => {\n        resolve();\n      });\n    });\n  }\n  /**\r\n   * 等待多少秒\r\n   * @param num 多少秒\r\n   */\n\n\n  static Seconds(num) {\n    return new Promise(function (resolve) {\n      Laya.timer.once(num * 1000, null, () => {\n        resolve();\n      });\n    });\n  }\n\n}\n\nexports.default = Awaiters;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/aTGame/Async/Awaiters.ts?");
+
+/***/ }),
+
+/***/ "./src/aTGame/Audio/AudioUtils.ts":
+/*!****************************************!*\
+  !*** ./src/aTGame/Audio/AudioUtils.ts ***!
+  \****************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst ResUrl_1 = __webpack_require__(/*! ../../aTGame/Res/ResUrl */ \"./src/aTGame/Res/ResUrl.ts\");\n\nconst ConsoleEx_1 = __webpack_require__(/*! ../Console/ConsoleEx */ \"./src/aTGame/Console/ConsoleEx.ts\");\n/**\r\n * 音效工具类\r\n * 必须要先预加载音效，不然播放会有延迟\r\n */\n\n\nclass AudioUtils {\n  //\n  constructor() {\n    //\n    this._bgPast = [];\n    this._urlBGM = '';\n    this._urlSOUND = '';\n    this._sounds = [];\n  }\n  /** 单例 */\n\n\n  static get instance() {\n    if (this._instance == null) {\n      this._instance = new AudioUtils();\n    }\n\n    return this._instance;\n  } //初始化\n\n\n  init() {}\n  /**\r\n   * 播放背景音乐\r\n   * @param name 背景音乐名字\r\n   */\n\n\n  playBGM(name, loops, complete, startTime) {\n    if (name != null && this._bgPast.slice(-1)[0] != name) {\n      this._bgPast.push(name);\n\n      this._urlBGM = ResUrl_1.default.music_url(name);\n\n      this._playMusic(loops, complete, startTime);\n\n      console.log(...ConsoleEx_1.default.packLog(\"播放背景音乐\", name));\n    } else {\n      if (this._urlBGM != \"\") {\n        this._playMusic(loops, complete, startTime);\n\n        console.log(...ConsoleEx_1.default.packLog(\"播放背景音乐\", name));\n      } else {}\n    }\n  }\n  /**\r\n   * 转移背景音乐\r\n   * @param name\r\n   */\n\n\n  shiftBGM(name, loops, complete, startTime) {\n    if (this._bgPast.slice(-1)[0] == name) {\n      this._bgPast.pop();\n\n      let pastBg = this._bgPast.slice(-1)[0];\n\n      if (pastBg) {\n        this._urlBGM = ResUrl_1.default.music_url(name);\n\n        this._playMusic(loops, complete, startTime);\n      }\n    }\n  }\n  /**\r\n   * 暂停背景音乐\r\n   */\n\n\n  pauseBGM() {\n    Laya.SoundManager.stopMusic();\n    console.log(...ConsoleEx_1.default.packLog(\"停止播放音乐\", this._urlBGM));\n  }\n  /**\r\n   * 暂停特效音乐\r\n   */\n\n\n  pauseSound() {\n    Laya.SoundManager.stopAllSound();\n  }\n  /**\r\n   * 播放特效音乐\r\n   * @param type 名字\r\n   * @param loops 是否循环\r\n   * @param complete 完成回调\r\n   * @param soundClass 使用哪个声音类进行播放，null表示自动选择。\r\n   * @param startTime 开始时间\r\n   */\n\n\n  playSound(type, loops, complete, soundClass, startTime) {\n    this._urlSOUND = ResUrl_1.default.sound_url(type);\n\n    for (let i = 0; i < this._sounds.length; i++) {\n      if (this._sounds[i]) {\n        if (this._sounds[i].url.indexOf(this._urlSOUND) >= 0) {\n          this._sounds[i].stop();\n\n          this._sounds.splice(i, 1);\n\n          break;\n        }\n      }\n    }\n\n    let temp = Laya.SoundManager.playSound(this._urlSOUND, loops, complete, soundClass, startTime);\n\n    this._sounds.push(temp);\n  }\n  /**\r\n   * 停止播放某个特效音乐\r\n   * @param type\r\n   */\n\n\n  stopSound(type) {\n    this._urlSOUND = ResUrl_1.default.sound_url(type);\n    Laya.SoundManager.stopSound(this._urlSOUND);\n  } // 播放音乐后的回调\n\n\n  _playMusic(loops = 0, complete, startTime) {\n    Laya.SoundManager.stopMusic();\n    Laya.SoundManager.playMusic(this._urlBGM, loops, complete, startTime);\n  }\n\n}\n\nexports.default = AudioUtils;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/aTGame/Audio/AudioUtils.ts?");
+
+/***/ }),
+
+/***/ "./src/aTGame/Commom/ComData.ts":
+/*!**************************************!*\
+  !*** ./src/aTGame/Commom/ComData.ts ***!
+  \**************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst RootLocalStorageData_1 = __webpack_require__(/*! ../Data/RootLocalStorageData */ \"./src/aTGame/Data/RootLocalStorageData.ts\");\n/**\r\n * 公共需要保存的数据\r\n */\n\n\nclass ComData extends RootLocalStorageData_1.default {}\n\nexports.default = ComData;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/aTGame/Commom/ComData.ts?");
+
+/***/ }),
+
+/***/ "./src/aTGame/Commom/CommonDataProxy.ts":
+/*!**********************************************!*\
+  !*** ./src/aTGame/Commom/CommonDataProxy.ts ***!
+  \**********************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst RootLocalStorageProxy_1 = __webpack_require__(/*! ../Data/RootLocalStorageProxy */ \"./src/aTGame/Data/RootLocalStorageProxy.ts\");\n\nconst ComData_1 = __webpack_require__(/*! ./ComData */ \"./src/aTGame/Commom/ComData.ts\");\n/**\r\n * 公共数据保存类\r\n */\n\n\nclass CommonDataProxy extends RootLocalStorageProxy_1.default {\n  /** 不允许外界实例化 */\n  constructor() {\n    super();\n  }\n  /** 单例 */\n\n\n  static get instance() {\n    if (this._instance == null) {\n      this._instance = new CommonDataProxy();\n    }\n\n    return this._instance;\n  }\n  /** 获取保存名称 */\n\n\n  get _saveName() {\n    return \"Common\";\n  } //获取一个新的数据\n\n\n  getNewData() {\n    return new ComData_1.default();\n  }\n\n}\n\nexports.default = CommonDataProxy;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/aTGame/Commom/CommonDataProxy.ts?");
+
+/***/ }),
+
+/***/ "./src/aTGame/Commom/CommonLeveEnum.ts":
+/*!*********************************************!*\
+  !*** ./src/aTGame/Commom/CommonLeveEnum.ts ***!
+  \*********************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\nexports.ECommonLeve = void 0;\n/**\r\n * 关卡公共枚举\r\n */\n\nvar ECommonLeve;\n\n(function (ECommonLeve) {\n  /** 最小关卡数量 */\n  ECommonLeve[ECommonLeve[\"MinLeveNumber\"] = 3] = \"MinLeveNumber\";\n  /** 默认关卡 */\n\n  ECommonLeve[ECommonLeve[\"DefaultLeveId\"] = 1] = \"DefaultLeveId\";\n  /** 测试关卡id */\n\n  ECommonLeve[ECommonLeve[\"DebugLeveId\"] = 0] = \"DebugLeveId\";\n  /** 新手关卡 */\n\n  ECommonLeve[ECommonLeve[\"NewHandLeveId\"] = 1] = \"NewHandLeveId\";\n})(ECommonLeve = exports.ECommonLeve || (exports.ECommonLeve = {}));\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/aTGame/Commom/CommonLeveEnum.ts?");
+
+/***/ }),
+
+/***/ "./src/aTGame/Config/ConfigManager.ts":
+/*!********************************************!*\
+  !*** ./src/aTGame/Config/ConfigManager.ts ***!
+  \********************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\nexports.ConfigManager = void 0;\n\nconst EssentialResUrls_1 = __webpack_require__(/*! ../Res/EssentialResUrls */ \"./src/aTGame/Res/EssentialResUrls.ts\");\n\nconst ResLoad_1 = __webpack_require__(/*! ../Res/ResLoad */ \"./src/aTGame/Res/ResLoad.ts\");\n\nconst ArrayUtils_1 = __webpack_require__(/*! ../Utils/ArrayUtils */ \"./src/aTGame/Utils/ArrayUtils.ts\");\n/**\r\n * 配置管理器\r\n * 所有配置文件加载完处理后就销毁,只有额外的配置文件列表中的配置文件不会被销毁\r\n */\n\n\nclass ConfigManager {\n  /** 加载配置文件数量 */\n  static get needLoadCount() {\n    return this._configList.length;\n  }\n  /**\r\n   * 添加配置文件\r\n   * @param configName 配置文件\r\n   */\n\n\n  static AddConfig(configName) {\n    ConfigManager._configList.push(configName);\n  }\n  /**\r\n   * 添加额外的配置文件列表\r\n   * @param _url\r\n   */\n\n\n  static AddExtraConfig(_url) {\n    //\n    if (_url.length > 0) {\n      //添加\n      ConfigManager._extraConfig.push(..._url); //去重\n\n\n      ConfigManager._extraConfig = ArrayUtils_1.default.Unique(ConfigManager._extraConfig);\n    }\n  }\n  /**\r\n   * 开始加载配置\r\n   * @param onFinished 加载完成回调\r\n   * @param onProgress 加载进度回调\r\n   */\n\n\n  static StartLoad(onFinished, onProgress = null) {\n    //判断是否有配置\n    if (ConfigManager._configList.length == 0) {\n      if (onFinished) {\n        onFinished.run();\n      }\n\n      return;\n    } //获取配置路径列表\n\n\n    let loadUrls = [];\n\n    for (let configName of ConfigManager._configList) {\n      loadUrls.push(EssentialResUrls_1.default.ConfigURL(configName.path.match(/[a-zA-Z0-9.]*$/)[0]));\n    } //获取需要清理掉的配置文件路径\n\n\n    let _clearURLs = [];\n    loadUrls.forEach(item => {\n      _clearURLs.push(item);\n    }); //添加额外的配置文件\n\n    loadUrls.push(...this._extraConfig); //加载文件\n\n    Laya.loader.create(loadUrls, Laya.Handler.create(this, () => {\n      //获取文件并初始化数据\n      for (let configName of ConfigManager._configList) {\n        configName.data = Laya.loader.getRes(EssentialResUrls_1.default.ConfigURL(configName.path.match(/[a-zA-Z0-9.]*$/)[0]));\n        configName.dataList = [];\n\n        for (let configKey in configName.data) {\n          let value = configName.data[configKey];\n\n          if (value != null) {\n            configName.dataList.push(value);\n          }\n        }\n\n        if (configName.dataList.length > 0) {\n          configName.lastData = configName.dataList[configName.dataList.length - 1];\n        }\n      }\n\n      if (onFinished) {\n        onFinished.run();\n      } //清理资源\n\n\n      _clearURLs.forEach(item => {\n        ResLoad_1.default.Unload(item);\n      });\n    }), onProgress);\n  }\n\n}\n\nexports.ConfigManager = ConfigManager; //\n\nConfigManager._configList = []; //\n\nConfigManager._extraConfig = [];\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/aTGame/Config/ConfigManager.ts?");
+
+/***/ }),
+
+/***/ "./src/aTGame/Config/RootDataProxy.ts":
+/*!********************************************!*\
+  !*** ./src/aTGame/Config/RootDataProxy.ts ***!
+  \********************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\nexports.BaseConstDataProxy = void 0;\n/**\r\n * 数据代理基类\r\n */\n\nclass BaseDataProxy {\n  //初始化\n  constructor() {\n    this.initData();\n  }\n  /**\r\n   * 初始化 使用时覆盖\r\n   */\n\n\n  initData() {//\n  }\n\n}\n/**\r\n * Config数据代理基类\r\n */\n\n\nclass BaseConfigDataProxy extends BaseDataProxy {\n  /** 配置数据列表 */\n  get dataList() {\n    return this.m_dataList;\n  }\n\n}\n\nexports.default = BaseConfigDataProxy;\n/**\r\n * Const数据代理基类\r\n */\n\nclass BaseConstDataProxy extends BaseDataProxy {\n  /** 配置数据 */\n  get data() {\n    return this.m_data;\n  }\n\n}\n\nexports.BaseConstDataProxy = BaseConstDataProxy;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/aTGame/Config/RootDataProxy.ts?");
+
+/***/ }),
+
+/***/ "./src/aTGame/Console/ConsoleConst.ts":
+/*!********************************************!*\
+  !*** ./src/aTGame/Console/ConsoleConst.ts ***!
+  \********************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n/**\r\n * 打印台常用配置\r\n */\n\nclass ConsoleConst {}\n\nexports.default = ConsoleConst;\n/** 打印台Log样式 */\n\nConsoleConst.logStyle = `\n        color: #fff;\n        background-color: #8d93ab;\n        border-radius: 3px;\n        line-height: 15px;\n        `;\n/** 打印台Log样式 */\n\nConsoleConst.logLightStyle = `\n        color: #52575d;\n        background-color: #EBEBEB;\n        border-radius: 3px;\n        line-height: 15px;\n        `;\n/** 打印台Log样式 */\n\nConsoleConst.comStyle = `\n        color: #fff;\n        background-color: #ade498;\n        border-radius: 3px;\n        line-height: 15px;\n        `;\n/** 打印台Log样式 */\n\nConsoleConst.warnStyle = `\n        color: #5c6e06;\n        background-color: #ffa931;\n        border-radius: 3px;\n        line-height: 15px;\n        `;\n/** 打印台Log样式 */\n\nConsoleConst.errorStyle = `\n        color: #fff;\n        background-color: #ec0101;\n        border-radius: 3px;\n        line-height: 15px;\n        `; // * ---------- *//\n\n/** 打印台Log样式 */\n\nConsoleConst.platformStyle = `\n        color: #52575d;\n        background-color: #e3fdfd;\n        border-radius: 3px;\n        line-height: 15px;\n        `;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/aTGame/Console/ConsoleConst.ts?");
+
+/***/ }),
+
+/***/ "./src/aTGame/Console/ConsoleEx.ts":
+/*!*****************************************!*\
+  !*** ./src/aTGame/Console/ConsoleEx.ts ***!
+  \*****************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst ConsoleConst_1 = __webpack_require__(/*! ./ConsoleConst */ \"./src/aTGame/Console/ConsoleConst.ts\");\n/**\r\n * 打印台扩展\r\n */\n\n\nclass ConsoleEx {\n  /**\r\n   * 打印普通消息\r\n   * @param any 内容\r\n   */\n  static log(...any) {\n    console.log(`%c ${any}`, ConsoleConst_1.default.logStyle);\n  }\n  /**\r\n   * 打印警告消息\r\n   * @param any 内容\r\n   */\n\n\n  static warn(...any) {\n    console.log(`%c ${any}`, ConsoleConst_1.default.warnStyle);\n  }\n  /**\r\n   * 打印错误消息\r\n   * @param any 内容\r\n   */\n\n\n  static error(...any) {\n    console.log(`%c ${any}`, ConsoleConst_1.default.errorStyle);\n  } //* ---------- *//\n\n  /**\r\n   * 包装普通消息\r\n   * @param any 内容\r\n   */\n\n\n  static packLog(...any) {\n    return [`%c ${any} `, ConsoleConst_1.default.logStyle];\n  }\n  /**\r\n   * 包装普通轻消息\r\n   * @param any 内容\r\n   */\n\n\n  static packLogLight(...any) {\n    return [`%c ${any} `, ConsoleConst_1.default.logLightStyle];\n  }\n  /**\r\n   * 包装成功消息\r\n   * @param any 内容\r\n   */\n\n\n  static comLog(...any) {\n    return [`%c ${any} `, ConsoleConst_1.default.comStyle];\n  }\n  /**\r\n   * 包装警告消息\r\n   * @param any 内容\r\n   */\n\n\n  static packWarn(...any) {\n    return [`%c 警告: ${any} `, ConsoleConst_1.default.warnStyle];\n  }\n  /**\r\n   * 包装错误消息\r\n   * @param any 内容\r\n   */\n\n\n  static packError(...any) {\n    return [`%c 错误: ${any} `, ConsoleConst_1.default.errorStyle];\n  } // * ---------- * //\n\n  /**\r\n   * 包装平台消息\r\n   * @param any 内容\r\n   */\n\n\n  static packPlatform(...any) {\n    return [`%c 平台: ${any} `, ConsoleConst_1.default.platformStyle];\n  }\n\n}\n\nexports.default = ConsoleEx;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/aTGame/Console/ConsoleEx.ts?");
+
+/***/ }),
+
+/***/ "./src/aTGame/Data/Base64.ts":
+/*!***********************************!*\
+  !*** ./src/aTGame/Data/Base64.ts ***!
+  \***********************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n/**\r\n * 使用base64编码字符串\r\n */\n\nclass Base64 {\n  /**\r\n   * 编码\r\n   * @param input 输入\r\n   */\n  static encode(input) {\n    let output = '';\n    let chr1, chr2, chr3, enc1, enc2, enc3, enc4;\n    let i = 0;\n    input = this._utf8_encode(input);\n\n    while (i < input.length) {\n      chr1 = input.charCodeAt(i++);\n      chr2 = input.charCodeAt(i++);\n      chr3 = input.charCodeAt(i++);\n      enc1 = chr1 >> 2;\n      enc2 = (chr1 & 3) << 4 | chr2 >> 4;\n      enc3 = (chr2 & 15) << 2 | chr3 >> 6;\n      enc4 = chr3 & 63;\n\n      if (isNaN(chr2)) {\n        enc3 = enc4 = 64;\n      } else if (isNaN(chr3)) {\n        enc4 = 64;\n      }\n\n      output = output + this._keyStr.charAt(enc1) + this._keyStr.charAt(enc2) + this._keyStr.charAt(enc3) + this._keyStr.charAt(enc4);\n    }\n\n    return output;\n  }\n  /**\r\n   * 译码\r\n   * @param input 输入\r\n   */\n\n\n  static decode(input) {\n    let output = '';\n    let chr1, chr2, chr3;\n    let enc1, enc2, enc3, enc4;\n    let i = 0;\n    input = input.replace(/[^A-Za-z0-9\\+\\/\\=]/g, '');\n\n    while (i < input.length) {\n      enc1 = this._keyStr.indexOf(input.charAt(i++));\n      enc2 = this._keyStr.indexOf(input.charAt(i++));\n      enc3 = this._keyStr.indexOf(input.charAt(i++));\n      enc4 = this._keyStr.indexOf(input.charAt(i++));\n      chr1 = enc1 << 2 | enc2 >> 4;\n      chr2 = (enc2 & 15) << 4 | enc3 >> 2;\n      chr3 = (enc3 & 3) << 6 | enc4;\n      output = output + String.fromCharCode(chr1);\n\n      if (enc3 !== 64) {\n        output = output + String.fromCharCode(chr2);\n      }\n\n      if (enc4 !== 64) {\n        output = output + String.fromCharCode(chr3);\n      }\n    }\n\n    output = this._utf8_decode(output);\n    return output;\n  } // \n\n\n  static _utf8_encode(string) {\n    string = string.replace(/\\r\\n/g, '\\n');\n    let utftext = '';\n\n    for (let n = 0; n < string.length; n++) {\n      const c = string.charCodeAt(n);\n\n      if (c < 128) {\n        utftext += String.fromCharCode(c);\n      } else if (c > 127 && c < 2048) {\n        utftext += String.fromCharCode(c >> 6 | 192);\n        utftext += String.fromCharCode(c & 63 | 128);\n      } else {\n        utftext += String.fromCharCode(c >> 12 | 224);\n        utftext += String.fromCharCode(c >> 6 & 63 | 128);\n        utftext += String.fromCharCode(c & 63 | 128);\n      }\n    }\n\n    return utftext;\n  } // \n\n\n  static _utf8_decode(utftext) {\n    let string = '';\n    let i = 0;\n    let c = 0,\n        c2 = 0,\n        c3 = 0;\n\n    while (i < utftext.length) {\n      c = utftext.charCodeAt(i);\n\n      if (c < 128) {\n        string += String.fromCharCode(c);\n        i++;\n      } else if (c > 191 && c < 224) {\n        c2 = utftext.charCodeAt(i + 1);\n        string += String.fromCharCode((c & 31) << 6 | c2 & 63);\n        i += 2;\n      } else {\n        c2 = utftext.charCodeAt(i + 1);\n        c3 = utftext.charCodeAt(i + 2);\n        string += String.fromCharCode((c & 15) << 12 | (c2 & 63) << 6 | c3 & 63);\n        i += 3;\n      }\n    }\n\n    return string;\n  }\n\n}\n\nexports.default = Base64; //\n\nBase64._keyStr = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/aTGame/Data/Base64.ts?");
+
+/***/ }),
+
+/***/ "./src/aTGame/Data/Md5.ts":
+/*!********************************!*\
+  !*** ./src/aTGame/Data/Md5.ts ***!
+  \********************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n/**\r\n * TypeScript Md5加密\r\n */\n\nclass Md5 {\n  constructor() {\n    this._state = new Int32Array(4);\n    this._buffer = new ArrayBuffer(68);\n    this._buffer8 = new Uint8Array(this._buffer, 0, 68);\n    this._buffer32 = new Uint32Array(this._buffer, 0, 17);\n    this.start();\n  } // One time hashing functions\n\n\n  static hashStr(str, raw = false) {\n    return this.onePassHasher.start().appendStr(str).end(raw);\n  }\n\n  static hashAsciiStr(str, raw = false) {\n    return this.onePassHasher.start().appendAsciiStr(str).end(raw);\n  }\n\n  static _hex(x) {\n    const hc = Md5.hexChars;\n    const ho = Md5.hexOut;\n    let n;\n    let offset;\n    let j;\n    let i;\n\n    for (i = 0; i < 4; i += 1) {\n      offset = i * 8;\n      n = x[i];\n\n      for (j = 0; j < 8; j += 2) {\n        ho[offset + 1 + j] = hc.charAt(n & 0x0F);\n        n >>>= 4;\n        ho[offset + 0 + j] = hc.charAt(n & 0x0F);\n        n >>>= 4;\n      }\n    }\n\n    return ho.join('');\n  }\n\n  static _md5cycle(x, k) {\n    let a = x[0];\n    let b = x[1];\n    let c = x[2];\n    let d = x[3]; // ff()\n\n    a += (b & c | ~b & d) + k[0] - 680876936 | 0;\n    a = (a << 7 | a >>> 25) + b | 0;\n    d += (a & b | ~a & c) + k[1] - 389564586 | 0;\n    d = (d << 12 | d >>> 20) + a | 0;\n    c += (d & a | ~d & b) + k[2] + 606105819 | 0;\n    c = (c << 17 | c >>> 15) + d | 0;\n    b += (c & d | ~c & a) + k[3] - 1044525330 | 0;\n    b = (b << 22 | b >>> 10) + c | 0;\n    a += (b & c | ~b & d) + k[4] - 176418897 | 0;\n    a = (a << 7 | a >>> 25) + b | 0;\n    d += (a & b | ~a & c) + k[5] + 1200080426 | 0;\n    d = (d << 12 | d >>> 20) + a | 0;\n    c += (d & a | ~d & b) + k[6] - 1473231341 | 0;\n    c = (c << 17 | c >>> 15) + d | 0;\n    b += (c & d | ~c & a) + k[7] - 45705983 | 0;\n    b = (b << 22 | b >>> 10) + c | 0;\n    a += (b & c | ~b & d) + k[8] + 1770035416 | 0;\n    a = (a << 7 | a >>> 25) + b | 0;\n    d += (a & b | ~a & c) + k[9] - 1958414417 | 0;\n    d = (d << 12 | d >>> 20) + a | 0;\n    c += (d & a | ~d & b) + k[10] - 42063 | 0;\n    c = (c << 17 | c >>> 15) + d | 0;\n    b += (c & d | ~c & a) + k[11] - 1990404162 | 0;\n    b = (b << 22 | b >>> 10) + c | 0;\n    a += (b & c | ~b & d) + k[12] + 1804603682 | 0;\n    a = (a << 7 | a >>> 25) + b | 0;\n    d += (a & b | ~a & c) + k[13] - 40341101 | 0;\n    d = (d << 12 | d >>> 20) + a | 0;\n    c += (d & a | ~d & b) + k[14] - 1502002290 | 0;\n    c = (c << 17 | c >>> 15) + d | 0;\n    b += (c & d | ~c & a) + k[15] + 1236535329 | 0;\n    b = (b << 22 | b >>> 10) + c | 0; // gg()\n\n    a += (b & d | c & ~d) + k[1] - 165796510 | 0;\n    a = (a << 5 | a >>> 27) + b | 0;\n    d += (a & c | b & ~c) + k[6] - 1069501632 | 0;\n    d = (d << 9 | d >>> 23) + a | 0;\n    c += (d & b | a & ~b) + k[11] + 643717713 | 0;\n    c = (c << 14 | c >>> 18) + d | 0;\n    b += (c & a | d & ~a) + k[0] - 373897302 | 0;\n    b = (b << 20 | b >>> 12) + c | 0;\n    a += (b & d | c & ~d) + k[5] - 701558691 | 0;\n    a = (a << 5 | a >>> 27) + b | 0;\n    d += (a & c | b & ~c) + k[10] + 38016083 | 0;\n    d = (d << 9 | d >>> 23) + a | 0;\n    c += (d & b | a & ~b) + k[15] - 660478335 | 0;\n    c = (c << 14 | c >>> 18) + d | 0;\n    b += (c & a | d & ~a) + k[4] - 405537848 | 0;\n    b = (b << 20 | b >>> 12) + c | 0;\n    a += (b & d | c & ~d) + k[9] + 568446438 | 0;\n    a = (a << 5 | a >>> 27) + b | 0;\n    d += (a & c | b & ~c) + k[14] - 1019803690 | 0;\n    d = (d << 9 | d >>> 23) + a | 0;\n    c += (d & b | a & ~b) + k[3] - 187363961 | 0;\n    c = (c << 14 | c >>> 18) + d | 0;\n    b += (c & a | d & ~a) + k[8] + 1163531501 | 0;\n    b = (b << 20 | b >>> 12) + c | 0;\n    a += (b & d | c & ~d) + k[13] - 1444681467 | 0;\n    a = (a << 5 | a >>> 27) + b | 0;\n    d += (a & c | b & ~c) + k[2] - 51403784 | 0;\n    d = (d << 9 | d >>> 23) + a | 0;\n    c += (d & b | a & ~b) + k[7] + 1735328473 | 0;\n    c = (c << 14 | c >>> 18) + d | 0;\n    b += (c & a | d & ~a) + k[12] - 1926607734 | 0;\n    b = (b << 20 | b >>> 12) + c | 0; // hh()\n\n    a += (b ^ c ^ d) + k[5] - 378558 | 0;\n    a = (a << 4 | a >>> 28) + b | 0;\n    d += (a ^ b ^ c) + k[8] - 2022574463 | 0;\n    d = (d << 11 | d >>> 21) + a | 0;\n    c += (d ^ a ^ b) + k[11] + 1839030562 | 0;\n    c = (c << 16 | c >>> 16) + d | 0;\n    b += (c ^ d ^ a) + k[14] - 35309556 | 0;\n    b = (b << 23 | b >>> 9) + c | 0;\n    a += (b ^ c ^ d) + k[1] - 1530992060 | 0;\n    a = (a << 4 | a >>> 28) + b | 0;\n    d += (a ^ b ^ c) + k[4] + 1272893353 | 0;\n    d = (d << 11 | d >>> 21) + a | 0;\n    c += (d ^ a ^ b) + k[7] - 155497632 | 0;\n    c = (c << 16 | c >>> 16) + d | 0;\n    b += (c ^ d ^ a) + k[10] - 1094730640 | 0;\n    b = (b << 23 | b >>> 9) + c | 0;\n    a += (b ^ c ^ d) + k[13] + 681279174 | 0;\n    a = (a << 4 | a >>> 28) + b | 0;\n    d += (a ^ b ^ c) + k[0] - 358537222 | 0;\n    d = (d << 11 | d >>> 21) + a | 0;\n    c += (d ^ a ^ b) + k[3] - 722521979 | 0;\n    c = (c << 16 | c >>> 16) + d | 0;\n    b += (c ^ d ^ a) + k[6] + 76029189 | 0;\n    b = (b << 23 | b >>> 9) + c | 0;\n    a += (b ^ c ^ d) + k[9] - 640364487 | 0;\n    a = (a << 4 | a >>> 28) + b | 0;\n    d += (a ^ b ^ c) + k[12] - 421815835 | 0;\n    d = (d << 11 | d >>> 21) + a | 0;\n    c += (d ^ a ^ b) + k[15] + 530742520 | 0;\n    c = (c << 16 | c >>> 16) + d | 0;\n    b += (c ^ d ^ a) + k[2] - 995338651 | 0;\n    b = (b << 23 | b >>> 9) + c | 0; // ii()\n\n    a += (c ^ (b | ~d)) + k[0] - 198630844 | 0;\n    a = (a << 6 | a >>> 26) + b | 0;\n    d += (b ^ (a | ~c)) + k[7] + 1126891415 | 0;\n    d = (d << 10 | d >>> 22) + a | 0;\n    c += (a ^ (d | ~b)) + k[14] - 1416354905 | 0;\n    c = (c << 15 | c >>> 17) + d | 0;\n    b += (d ^ (c | ~a)) + k[5] - 57434055 | 0;\n    b = (b << 21 | b >>> 11) + c | 0;\n    a += (c ^ (b | ~d)) + k[12] + 1700485571 | 0;\n    a = (a << 6 | a >>> 26) + b | 0;\n    d += (b ^ (a | ~c)) + k[3] - 1894986606 | 0;\n    d = (d << 10 | d >>> 22) + a | 0;\n    c += (a ^ (d | ~b)) + k[10] - 1051523 | 0;\n    c = (c << 15 | c >>> 17) + d | 0;\n    b += (d ^ (c | ~a)) + k[1] - 2054922799 | 0;\n    b = (b << 21 | b >>> 11) + c | 0;\n    a += (c ^ (b | ~d)) + k[8] + 1873313359 | 0;\n    a = (a << 6 | a >>> 26) + b | 0;\n    d += (b ^ (a | ~c)) + k[15] - 30611744 | 0;\n    d = (d << 10 | d >>> 22) + a | 0;\n    c += (a ^ (d | ~b)) + k[6] - 1560198380 | 0;\n    c = (c << 15 | c >>> 17) + d | 0;\n    b += (d ^ (c | ~a)) + k[13] + 1309151649 | 0;\n    b = (b << 21 | b >>> 11) + c | 0;\n    a += (c ^ (b | ~d)) + k[4] - 145523070 | 0;\n    a = (a << 6 | a >>> 26) + b | 0;\n    d += (b ^ (a | ~c)) + k[11] - 1120210379 | 0;\n    d = (d << 10 | d >>> 22) + a | 0;\n    c += (a ^ (d | ~b)) + k[2] + 718787259 | 0;\n    c = (c << 15 | c >>> 17) + d | 0;\n    b += (d ^ (c | ~a)) + k[9] - 343485551 | 0;\n    b = (b << 21 | b >>> 11) + c | 0;\n    x[0] = a + x[0] | 0;\n    x[1] = b + x[1] | 0;\n    x[2] = c + x[2] | 0;\n    x[3] = d + x[3] | 0;\n  }\n\n  start() {\n    this._dataLength = 0;\n    this._bufferLength = 0;\n\n    this._state.set(Md5.stateIdentity);\n\n    return this;\n  } // Char to code point to to array conversion:\n  // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/charCodeAt\n  // #Example.3A_Fixing_charCodeAt_to_handle_non-Basic-Multilingual-Plane_characters_if_their_presence_earlier_in_the_string_is_unknown\n\n\n  appendStr(str) {\n    const buf8 = this._buffer8;\n    const buf32 = this._buffer32;\n    let bufLen = this._bufferLength;\n    let code;\n    let i;\n\n    for (i = 0; i < str.length; i += 1) {\n      code = str.charCodeAt(i);\n\n      if (code < 128) {\n        buf8[bufLen++] = code;\n      } else if (code < 0x800) {\n        buf8[bufLen++] = (code >>> 6) + 0xC0;\n        buf8[bufLen++] = code & 0x3F | 0x80;\n      } else if (code < 0xD800 || code > 0xDBFF) {\n        buf8[bufLen++] = (code >>> 12) + 0xE0;\n        buf8[bufLen++] = code >>> 6 & 0x3F | 0x80;\n        buf8[bufLen++] = code & 0x3F | 0x80;\n      } else {\n        code = (code - 0xD800) * 0x400 + (str.charCodeAt(++i) - 0xDC00) + 0x10000;\n\n        if (code > 0x10FFFF) {\n          throw new Error('Unicode standard supports code points up to U+10FFFF');\n        }\n\n        buf8[bufLen++] = (code >>> 18) + 0xF0;\n        buf8[bufLen++] = code >>> 12 & 0x3F | 0x80;\n        buf8[bufLen++] = code >>> 6 & 0x3F | 0x80;\n        buf8[bufLen++] = code & 0x3F | 0x80;\n      }\n\n      if (bufLen >= 64) {\n        this._dataLength += 64;\n\n        Md5._md5cycle(this._state, buf32);\n\n        bufLen -= 64;\n        buf32[0] = buf32[16];\n      }\n    }\n\n    this._bufferLength = bufLen;\n    return this;\n  }\n\n  appendAsciiStr(str) {\n    const buf8 = this._buffer8;\n    const buf32 = this._buffer32;\n    let bufLen = this._bufferLength;\n    let i;\n    let j = 0;\n\n    for (;;) {\n      i = Math.min(str.length - j, 64 - bufLen);\n\n      while (i--) {\n        buf8[bufLen++] = str.charCodeAt(j++);\n      }\n\n      if (bufLen < 64) {\n        break;\n      }\n\n      this._dataLength += 64;\n\n      Md5._md5cycle(this._state, buf32);\n\n      bufLen = 0;\n    }\n\n    this._bufferLength = bufLen;\n    return this;\n  }\n\n  appendByteArray(input) {\n    const buf8 = this._buffer8;\n    const buf32 = this._buffer32;\n    let bufLen = this._bufferLength;\n    let i;\n    let j = 0;\n\n    for (;;) {\n      i = Math.min(input.length - j, 64 - bufLen);\n\n      while (i--) {\n        buf8[bufLen++] = input[j++];\n      }\n\n      if (bufLen < 64) {\n        break;\n      }\n\n      this._dataLength += 64;\n\n      Md5._md5cycle(this._state, buf32);\n\n      bufLen = 0;\n    }\n\n    this._bufferLength = bufLen;\n    return this;\n  }\n\n  getState() {\n    const self = this;\n    const s = self._state;\n    return {\n      buffer: String.fromCharCode.apply(null, self._buffer8),\n      buflen: self._bufferLength,\n      length: self._dataLength,\n      state: [s[0], s[1], s[2], s[3]]\n    };\n  }\n\n  setState(state) {\n    const buf = state.buffer;\n    const x = state.state;\n    const s = this._state;\n    let i;\n    this._dataLength = state.length;\n    this._bufferLength = state.buflen;\n    s[0] = x[0];\n    s[1] = x[1];\n    s[2] = x[2];\n    s[3] = x[3];\n\n    for (i = 0; i < buf.length; i += 1) {\n      this._buffer8[i] = buf.charCodeAt(i);\n    }\n  }\n\n  end(raw = false) {\n    const bufLen = this._bufferLength;\n    const buf8 = this._buffer8;\n    const buf32 = this._buffer32;\n    const i = (bufLen >> 2) + 1;\n    let dataBitsLen;\n    this._dataLength += bufLen;\n    buf8[bufLen] = 0x80;\n    buf8[bufLen + 1] = buf8[bufLen + 2] = buf8[bufLen + 3] = 0;\n    buf32.set(Md5.buffer32Identity.subarray(i), i);\n\n    if (bufLen > 55) {\n      Md5._md5cycle(this._state, buf32);\n\n      buf32.set(Md5.buffer32Identity);\n    } // Do the final computation based on the tail and length\n    // Beware that the final length may not fit in 32 bits so we take care of that\n\n\n    dataBitsLen = this._dataLength * 8;\n\n    if (dataBitsLen <= 0xFFFFFFFF) {\n      buf32[14] = dataBitsLen;\n    } else {\n      const matches = dataBitsLen.toString(16).match(/(.*?)(.{0,8})$/);\n\n      if (matches === null) {\n        return;\n      }\n\n      const lo = parseInt(matches[2], 16);\n      const hi = parseInt(matches[1], 16) || 0;\n      buf32[14] = lo;\n      buf32[15] = hi;\n    }\n\n    Md5._md5cycle(this._state, buf32);\n\n    return raw ? this._state : Md5._hex(this._state);\n  }\n\n}\n\nexports.default = Md5;\n/** 能否使用 */\n\nMd5.ifUse = true; // Private Static Variables\n\nMd5.stateIdentity = new Int32Array([1732584193, -271733879, -1732584194, 271733878]);\nMd5.buffer32Identity = new Int32Array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);\nMd5.hexChars = '0123456789abcdef';\nMd5.hexOut = []; // Permanent instance is to use for one-call hashing\n\nMd5.onePassHasher = new Md5(); //检查Md5是否可用\n\nif (Md5.hashStr('hello') !== '5d41402abc4b2a76b9719d911017c592') {\n  //设置不能使用\n  Md5.ifUse = false;\n  console.warn('Md5 self test failed.');\n}\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/aTGame/Data/Md5.ts?");
+
+/***/ }),
+
+/***/ "./src/aTGame/Data/RootDataManger.ts":
+/*!*******************************************!*\
+  !*** ./src/aTGame/Data/RootDataManger.ts ***!
+  \*******************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n/**\r\n * 游戏数据管理器基类\r\n */\n\nclass RootDataManger {}\n\nexports.default = RootDataManger;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/aTGame/Data/RootDataManger.ts?");
+
+/***/ }),
+
+/***/ "./src/aTGame/Data/RootDataProxyShell.ts":
+/*!***********************************************!*\
+  !*** ./src/aTGame/Data/RootDataProxyShell.ts ***!
+  \***********************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n/**\r\n * 基类数据代理外壳\r\n * 在数据代理的外面一层，对进出数据进行包装并监听\r\n * ! 设置了代理外壳就尽量用这个访问数据，否则可能会有意想不到的bug\r\n */\n\nclass RootDataProxyShell {\n  //\n  constructor() {\n    this.initData();\n  }\n  /**\r\n   * 初始化数据，并注册代理外壳\r\n   */\n\n\n  initData() {}\n\n}\n\nexports.default = RootDataProxyShell;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/aTGame/Data/RootDataProxyShell.ts?");
+
+/***/ }),
+
+/***/ "./src/aTGame/Data/RootGameData.ts":
+/*!*****************************************!*\
+  !*** ./src/aTGame/Data/RootGameData.ts ***!
+  \*****************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n/**\r\n * 游戏数据基类\r\n * 会有一个返回副本的方法，防止被修改\r\n */\n\nclass RootGameData {}\n\nexports.default = RootGameData;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/aTGame/Data/RootGameData.ts?");
+
+/***/ }),
+
+/***/ "./src/aTGame/Data/RootLocalStorageData.ts":
+/*!*************************************************!*\
+  !*** ./src/aTGame/Data/RootLocalStorageData.ts ***!
+  \*************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst RootGameData_1 = __webpack_require__(/*! ./RootGameData */ \"./src/aTGame/Data/RootGameData.ts\");\n/**\r\n * 本地保存数据基类\r\n * 会同步项目的版本\r\n */\n\n\nclass RootLocalStorageData extends RootGameData_1.default {\n  /**\r\n   * 返回一个副本\r\n   * @param _data 源数据\r\n   */\n  static clone(_data) {\n    return JSON.parse(JSON.stringify(_data));\n  }\n\n}\n\nexports.default = RootLocalStorageData;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/aTGame/Data/RootLocalStorageData.ts?");
+
+/***/ }),
+
+/***/ "./src/aTGame/Data/RootLocalStorageProxy.ts":
+/*!**************************************************!*\
+  !*** ./src/aTGame/Data/RootLocalStorageProxy.ts ***!
+  \**************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst MainConfig_1 = __webpack_require__(/*! ../../bTGameConfig/MainConfig */ \"./src/bTGameConfig/MainConfig.ts\");\n\nconst StringUtils_1 = __webpack_require__(/*! ../Utils/StringUtils */ \"./src/aTGame/Utils/StringUtils.ts\");\n\nconst Md5_1 = __webpack_require__(/*! ./Md5 */ \"./src/aTGame/Data/Md5.ts\");\n\nconst RootDataManger_1 = __webpack_require__(/*! ./RootDataManger */ \"./src/aTGame/Data/RootDataManger.ts\");\n\nconst Base64_1 = __webpack_require__(/*! ./Base64 */ \"./src/aTGame/Data/Base64.ts\");\n\nconst ConsoleEx_1 = __webpack_require__(/*! ../Console/ConsoleEx */ \"./src/aTGame/Console/ConsoleEx.ts\");\n\nconst DataDebug_1 = __webpack_require__(/*! ../Debug/DataDebug */ \"./src/aTGame/Debug/DataDebug.ts\");\n/**\r\n * 本地数据代理基类，用以使用和保存数据\r\n * 泛型为数据类型\r\n */\n\n\nclass RootLocalStorageProxy extends RootDataManger_1.default {\n  constructor() {\n    super(...arguments);\n    /**\r\n     * 是否设置数据代理,默认为true\r\n     * 监听数据变化并且自动保存\r\n     * 最低监听数组变化，当数组内容是对象时不会监听该对象。\r\n     */\n\n    this._ifSetDataProxy = true;\n    /** 数据设置监听，当数据设置时会执行的监听 */\n\n    this._dataSetMonitor = [];\n    /**\r\n     * 是否对比数据\r\n     * 默认为true，如果为真当为线上模式时会生成一个加密的对比数据，防止用户改动本地数据\r\n     */\n\n    this._ifDifferData = true;\n    /** 保存执行队列 */\n\n    this.m_saveToDiskQueue = 0;\n  } //获取保存数据的名字\n\n\n  get saveName() {\n    return MainConfig_1.default.GameName + '->' + this._saveName + '->' + MainConfig_1.default.versions;\n  } // 获取对比数据的保存名字\n\n\n  get differName() {\n    //\n    return this.encrypt(this.saveName + '__verify');\n  }\n  /** 获取保存数据 */\n\n\n  get saveData() {\n    return this._saveData;\n  }\n  /**\r\n   * 获取原始数据，不能更改\r\n   * 使用这个数据来设置监听数据的层级和位置\r\n   */\n\n\n  get rootData() {\n    return this._rootData;\n  }\n  /**\r\n   * 添加数据设置监听\r\n   * @param _this 执行域\r\n   * @param _dataSetMonitor 执行方法\r\n   * @param _rootData 受监听的原始对象，不设置则监听全部内容，只能在this.rootData找属性进行监听\r\n   * @param _key 受监听的对象的属性，可以直接是个字符串\r\n   */\n\n\n  addDataSetMonitor(_this, _dataSetMonitor, _rootData, _key) {\n    //判断是否设置了数据代理\n    if (!this._ifSetDataProxy) {\n      console.warn(...ConsoleEx_1.default.packWarn('没有设置数据代理，数据被设置时不会被监听！'));\n    } else {\n      //判断是否是对象属性\n      if (_key && typeof _key == 'object') {\n        //判断对象和键值是否匹配\n        if (_key[RootLocalStorageProxy.$RootParentDataKey] != _rootData) {\n          console.error(...ConsoleEx_1.default.packError('监听的对象属性不存在该对象属性列表中！'));\n        }\n\n        _key = _key[RootLocalStorageProxy.$RootDataCruxKey];\n      } //添加到监听列表\n\n\n      this._dataSetMonitor.push({\n        _this: _this,\n        _f: _dataSetMonitor,\n        _rootData: _rootData,\n        _key: _key\n      });\n    }\n  }\n  /**\r\n   * 删除设置数据监听\r\n   */\n\n\n  offDataSetMonitor(_this, _dataSetMonitor) {\n    this._dataSetMonitor = this._dataSetMonitor.filter(item => {\n      return item._this !== _this && item._f !== _dataSetMonitor;\n    });\n  }\n  /**\r\n   * 删除全部设置数据监听\r\n   */\n\n\n  offAllDataSetMonitor(_this) {\n    this._dataSetMonitor = this._dataSetMonitor.filter(item => {\n      return item._this !== _this;\n    });\n  }\n  /**\r\n   * 初始化数据\r\n   */\n\n\n  InitData() {\n    this._saveData = this._ReadFromFile(); //保存原始数据\n\n    this._rootData = this._saveData; //判断是否设置数据代理\n\n    if (this._ifSetDataProxy) {\n      this._saveData = this.getProxyData(this._saveData);\n    } //添加到调试当中\n\n\n    DataDebug_1.default.instance.addItem(this._saveName, this); //\n\n    this._initData();\n  }\n  /**\r\n   * 获取一个代理对象\r\n   * @param _obj 需要代理的对象\r\n   */\n\n\n  getProxyData(_obj) {\n    //防止原始对象被污染\n    let _rootObj = {}; //\n\n    if (typeof _obj == 'object' && _obj) {\n      //不监听数组中的对象\n      if (!Array.prototype.isPrototypeOf(_obj)) {\n        //遍历对象属性\n        for (let _i in _obj) {\n          //注意 null 也为object\n          if (typeof _obj[_i] == 'object' && _obj[_i]) {\n            _rootObj[_i] = this.getProxyData(_obj[_i]);\n          } else {\n            //\n            _rootObj[_i] = _obj[_i]; //包装原始对象值类型\n\n            _obj[_i] = {\n              //关键键值\n              [RootLocalStorageProxy.$RootDataCruxKey]: Symbol('$key'),\n              //父对象\n              [RootLocalStorageProxy.$RootParentDataKey]: _obj,\n              //本身值\n              value: _obj[_i]\n            };\n          }\n        }\n      } else {\n        _rootObj = _obj;\n      }\n    } else {\n      return _obj;\n    } //设置原始对象\n\n\n    _rootObj[RootLocalStorageProxy.$RootObjectKey] = _obj; // console.log('设置原始对象', _rootObj);\n    //返回代理对象\n\n    return new Proxy(_rootObj, {\n      set: (target, key, value) => {\n        this.proxyDataSet(target, key, value);\n        return true;\n      }\n    });\n  }\n  /** 代理数据被设置时调用 */\n\n\n  proxyDataSet(target, key, value) {\n    //判断是不是原始数据节点\n    if (key == RootLocalStorageProxy.$RootObjectKey) {\n      console.warn('试图更改数据的原始对象，被阻止', target, key, value);\n      return;\n    } //原来的值\n\n\n    let _rotValue = target[key]; //如果赋的值是一个对象则继续监听\n\n    if (typeof value == 'object' && value && !Array.prototype.isPrototypeOf(target)) {\n      target[key] = this.getProxyData(value);\n    } else {\n      target[key] = value; //判断是不是数组长度改变，这个不用被监听\n\n      if (Array.prototype.isPrototypeOf(target) && key == 'length') {\n        return;\n      }\n    } //执行数据监听\n\n\n    for (let item of this._dataSetMonitor) {\n      if (item._rootData && item._rootData != target[RootLocalStorageProxy.$RootObjectKey]) {\n        continue;\n      }\n\n      if (typeof item._key != 'undefined') {\n        if (typeof item._key == 'symbol') {\n          if (item._key != target[RootLocalStorageProxy.$RootObjectKey][key][RootLocalStorageProxy.$RootDataCruxKey]) {\n            continue;\n          }\n        } else if (item._key != key) {\n          continue;\n        }\n      } //\n\n\n      item._f.call(item._this, target, key, value, _rotValue, target[RootLocalStorageProxy.$RootObjectKey]);\n    } //保存数据\n\n\n    this.SaveToDisk(this._saveData);\n  }\n  /** 初始化完成，继承使用 */\n\n\n  _initData() {}\n  /**\r\n   * 保存数据到本地\r\n   * @param _saveData 数据\r\n   * @param _ifCl 是否限流\r\n   */\n\n\n  SaveToDisk(_saveData, _ifCl = true) {\n    //判断是否限流\n    if (!_ifCl) {\n      this._SaveToDisk(_saveData);\n    } else {\n      this.m_saveToDiskQueue++; //当前帧末尾执行\n\n      setTimeout(() => {\n        this.m_saveToDiskQueue--;\n\n        if (this.m_saveToDiskQueue == 0) {\n          //限流，每一帧只保存一次数据\n          this._SaveToDisk(_saveData);\n        }\n      }, 0);\n    }\n  } //保存数据到本地\n\n\n  _SaveToDisk(_saveData) {\n    // console.log('保存数据');\n    //序列化\n    let json = JSON.stringify(_saveData);\n    Laya.LocalStorage.setJSON(this.saveName, json); //判断是否是线上环境\n\n    if (MainConfig_1.default.OnLine && this._ifDifferData) {\n      //获取对比数据\n      let _differJson = this.getDifferData(json); //保存对比数据\n\n\n      Laya.LocalStorage.setJSON(this.differName, _differJson);\n    }\n  } //从本地获取数据\n\n\n  _ReadFromFile() {\n    let readStr = Laya.LocalStorage.getJSON(this.saveName); //判断是否是线上环境\n\n    if (MainConfig_1.default.OnLine && this._ifDifferData) {\n      //对比数据\n      let _differ = Laya.LocalStorage.getJSON(this.differName);\n\n      if (this.getDifferData(readStr) != _differ) {\n        return this._saveNewData();\n      }\n    }\n\n    let _saveData = this.getNewData(); //判断数据是否被篡改\n\n\n    try {\n      if (!StringUtils_1.default.IsNullOrEmpty(readStr)) {\n        let jsonData = JSON.parse(readStr);\n\n        for (let key in _saveData) {\n          _saveData[key] = jsonData[key];\n        }\n      } else {\n        return this._saveNewData();\n      }\n    } catch (_a) {\n      return this._saveNewData();\n    } //\n\n\n    return _saveData;\n  } //获取并保存一个新数据\n\n\n  _saveNewData() {\n    let _saveData = this.getNewData(); //保存数据，马上保存，不然后续这个数据会被修改\n\n\n    this.SaveToDisk(_saveData, false); //\n\n    return _saveData;\n  } //处理对比数据\n\n\n  getDifferData(_string) {\n    //判断是否为空\n    if (StringUtils_1.default.IsNullOrEmpty(_string)) return ''; //加密\n\n    return this.encrypt(_string);\n  } //加密\n\n\n  encrypt(_string) {\n    let _encryptStr = 'LayaMiniGame-(-' + _string + '-)-ModifiedWithout-' + this.saveName; //判断能否使用md5\n\n\n    if (Md5_1.default.ifUse) {\n      return Md5_1.default.hashStr(_encryptStr).toString();\n    } else {\n      //使用base64\n      return Base64_1.default.encode(_encryptStr);\n    }\n  }\n\n}\n\nexports.default = RootLocalStorageProxy;\n/**\r\n * 全局唯一属性，代理数据根数据\r\n * 根据这个可以找到代理数据的原始数据然后和原始数据对比就能判断数据代理层级\r\n */\n\nRootLocalStorageProxy.$RootObjectKey = Symbol('$RootObjectKey');\n/** 根数据关键键值 */\n\nRootLocalStorageProxy.$RootDataCruxKey = Symbol('$RootDataCruxKey');\n/** 根数据父节点 */\n\nRootLocalStorageProxy.$RootParentDataKey = Symbol('$RootParentDataKey');\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/aTGame/Data/RootLocalStorageProxy.ts?");
+
+/***/ }),
+
+/***/ "./src/aTGame/Data/RootShortProxy.ts":
+/*!*******************************************!*\
+  !*** ./src/aTGame/Data/RootShortProxy.ts ***!
+  \*******************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst RootDataManger_1 = __webpack_require__(/*! ./RootDataManger */ \"./src/aTGame/Data/RootDataManger.ts\");\n/**\r\n * 临时数据代理基类\r\n * 泛型为数据类型\r\n */\n\n\nclass RootShortProxy extends RootDataManger_1.default {}\n\nexports.default = RootShortProxy;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/aTGame/Data/RootShortProxy.ts?");
+
+/***/ }),
+
+/***/ "./src/aTGame/Debug/DataDebug.ts":
+/*!***************************************!*\
+  !*** ./src/aTGame/Debug/DataDebug.ts ***!
+  \***************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst RootDebug_1 = __webpack_require__(/*! ./RootDebug */ \"./src/aTGame/Debug/RootDebug.ts\");\n/**\r\n * 数据调试类\r\n */\n\n\nclass DataDebug extends RootDebug_1.default {\n  //\n  constructor() {\n    super();\n    this._name = 'Data';\n  }\n  /** 单例对象 */\n\n\n  static get instance() {\n    if (this._instance) {\n      return this._instance;\n    } else {\n      this._instance = new DataDebug();\n      return this._instance;\n    }\n  } //开启调试\n\n\n  _startDebug() {\n    console.log('开启数据调试');\n  }\n\n}\n\nexports.default = DataDebug;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/aTGame/Debug/DataDebug.ts?");
+
+/***/ }),
+
+/***/ "./src/aTGame/Debug/DebugWindowCommunication.ts":
+/*!******************************************************!*\
+  !*** ./src/aTGame/Debug/DebugWindowCommunication.ts ***!
+  \******************************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n/**\r\n * 窗口通信\r\n */\n\nclass DebugWindowCommunication {\n  constructor() {\n    /** 消息列表 */\n    this.m_mesList = [];\n  }\n  /**\r\n   * 添加一个消息\r\n   * @param _this 执行域\r\n   * @param _key 关键字\r\n   * @param _f 回调方法\r\n   */\n\n\n  onMes(_this, _key, _f) {\n    this.m_mesList.push({\n      this: _this,\n      key: _key,\n      f: _f\n    });\n  }\n  /**\r\n   * 发送一个消息\r\n   */\n\n\n  eventMes(_key, ..._data) {\n    //遍历整个消息列表\n    this.m_mesList.forEach(item => {\n      if (item.key == _key) {\n        item.f.call(item.this, ..._data);\n      }\n    });\n  }\n  /**\r\n   * 删除消息\r\n   * @param _key 键值\r\n   */\n\n\n  removeMes(_this, _key) {\n    this.m_mesList = this.m_mesList.filter(item => {\n      if (typeof _key != \"undefined\") {\n        return item.this != _this && item.key != _key;\n      } else {\n        return item.this != _this;\n      }\n    });\n  }\n\n}\n\nexports.default = DebugWindowCommunication;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/aTGame/Debug/DebugWindowCommunication.ts?");
+
+/***/ }),
+
+/***/ "./src/aTGame/Debug/EnvironmentDebug.ts":
+/*!**********************************************!*\
+  !*** ./src/aTGame/Debug/EnvironmentDebug.ts ***!
+  \**********************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst RootDebug_1 = __webpack_require__(/*! ./RootDebug */ \"./src/aTGame/Debug/RootDebug.ts\");\n/**\r\n * 环境调试对象\r\n */\n\n\nclass EnvironmentDebug extends RootDebug_1.default {\n  //\n  constructor() {\n    super();\n    this._name = 'Environment';\n  }\n  /** 单例对象 */\n\n\n  static get instance() {\n    if (this._instance) {\n      return this._instance;\n    } else {\n      this._instance = new EnvironmentDebug();\n      return this._instance;\n    }\n  } //开启调试\n\n\n  _startDebug() {\n    console.log('开启环境调试');\n  }\n\n}\n\nexports.default = EnvironmentDebug;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/aTGame/Debug/EnvironmentDebug.ts?");
+
+/***/ }),
+
+/***/ "./src/aTGame/Debug/MainDebug.ts":
+/*!***************************************!*\
+  !*** ./src/aTGame/Debug/MainDebug.ts ***!
+  \***************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst DataDebug_1 = __webpack_require__(/*! ./DataDebug */ \"./src/aTGame/Debug/DataDebug.ts\");\n\nconst EnvironmentDebug_1 = __webpack_require__(/*! ./EnvironmentDebug */ \"./src/aTGame/Debug/EnvironmentDebug.ts\");\n\nconst RootDebug_1 = __webpack_require__(/*! ./RootDebug */ \"./src/aTGame/Debug/RootDebug.ts\");\n/**\r\n * 调试类入口\r\n */\n\n\nclass MainDebug extends RootDebug_1.default {\n  constructor() {\n    super(...arguments);\n    this._name = 'Main';\n  }\n  /** 开启调试 */\n\n\n  _startDebug() {\n    console.log('开启主调试'); //环境调试类\n\n    EnvironmentDebug_1.default.instance.startDebug(); //数据调试\n\n    DataDebug_1.default.instance.startDebug();\n  }\n\n}\n\nexports.default = MainDebug;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/aTGame/Debug/MainDebug.ts?");
+
+/***/ }),
+
+/***/ "./src/aTGame/Debug/RootDebug.ts":
+/*!***************************************!*\
+  !*** ./src/aTGame/Debug/RootDebug.ts ***!
+  \***************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst MainConfig_1 = __webpack_require__(/*! ../../bTGameConfig/MainConfig */ \"./src/bTGameConfig/MainConfig.ts\");\n\nconst MainGameConfig_1 = __webpack_require__(/*! ../../bTGameConfig/MainGameConfig */ \"./src/bTGameConfig/MainGameConfig.ts\");\n\nconst ConsoleEx_1 = __webpack_require__(/*! ../Console/ConsoleEx */ \"./src/aTGame/Console/ConsoleEx.ts\");\n\nconst DebugWindowCommunication_1 = __webpack_require__(/*! ./DebugWindowCommunication */ \"./src/aTGame/Debug/DebugWindowCommunication.ts\");\n\nconst debugHTML_1 = __webpack_require__(/*! ./html/debugHTML */ \"./src/aTGame/Debug/html/debugHTML.ts\");\n\nconst EDebugWindow_1 = __webpack_require__(/*! ./mes/EDebugWindow */ \"./src/aTGame/Debug/mes/EDebugWindow.ts\");\n/**\r\n * 根调试类，所有调试类必须由此继承\r\n */\n\n\nclass RootDebug {\n  constructor() {\n    /** 是否开始调试 */\n    this._ifStart = false;\n  }\n  /**\r\n   * 添加一个调试对象\r\n   * @param _key key\r\n   * @param _item 该对象\r\n   */\n\n\n  static addItem(_key, _item) {\n    let _rootKey = this.prefix + ':' + _key;\n\n    if (this[_rootKey]) {\n      console.warn(...ConsoleEx_1.default.packWarn('该调试对象已经存在了，将会被第二个覆盖', _rootKey));\n    }\n\n    this[_rootKey] = _item;\n  }\n  /** 开启调试 */\n\n\n  startDebug() {\n    this._ifStart = true; //注入到全局中\n\n    if (window[RootDebug.prefix][this._name]) {\n      console.warn(...ConsoleEx_1.default.packWarn('有一个调试对象名字重名了，将会被第二个覆盖', this._name));\n    }\n\n    window[RootDebug.prefix][this._name] = this; //\n\n    this._startDebug();\n  }\n  /**\r\n   * 添加一个调试对象\r\n   * @param _key key\r\n   * @param _item 该对象\r\n   */\n\n\n  addItem(_key, _item) {\n    //判断是否开启了调试\n    if (!this._ifStart) {\n      return;\n    } //\n\n\n    if (this[_key]) {\n      console.warn(...ConsoleEx_1.default.packWarn('该调试对象已经存在了，将会被第二个覆盖', this._name, '-', _key));\n    }\n\n    this[_key] = _item;\n  }\n  /** 开启调试回调 */\n\n\n  _startDebug() {}\n  /**\r\n   * 打开一个新窗口调试\r\n   */\n\n\n  static openWindowDebug() {\n    let _win = window.open('', MainConfig_1.default.GameName); //把新窗口注入到当前win\n\n\n    window[EDebugWindow_1.EDebugWindow.DebugWindow] = _win; //写入首页\n\n    let _url = window.location.href.replace('bin/index.html', 'DebugWindow/dist/');\n\n    _win.document.getElementsByTagName('html')[0].innerHTML = debugHTML_1.default.replace(/\"\\//g, '\"' + _url); //\n\n    console.warn(...ConsoleEx_1.default.packWarn('打开调式窗口。')); //提取JavaScript标签并且重新添加\n\n    let _HTMLCollection = _win.document.getElementsByTagName('body')[0].getElementsByTagName('script'); //注入消息沟通对象\n\n\n    _win[EDebugWindow_1.EDebugWindow.Mes] = new DebugWindowCommunication_1.default(); //\n\n    let _scriptSrc = [];\n\n    for (let item of _HTMLCollection) {\n      _scriptSrc.push(item.src);\n    }\n\n    ;\n\n    _scriptSrc.forEach(item => {\n      let script = _win.document.createElement(\"script\");\n\n      script.async = false;\n      script.src = item;\n\n      _win.document.body.appendChild(script);\n    });\n  }\n  /**\r\n   * 向调试页面发送一个消息\r\n   */\n\n\n  static fendDebugWindow(_mes, ..._data) {\n    window[EDebugWindow_1.EDebugWindow.DebugWindow][EDebugWindow_1.EDebugWindow.Mes].eventMes(_mes, ..._data);\n  }\n\n}\n\nexports.default = RootDebug;\n/** 前缀 */\n\nRootDebug.prefix = '$Debug'; //注册全局调试对象\n\nwindow[RootDebug.prefix] = {}; //判断是否开启了调试模式\n\nif (MainGameConfig_1.default.ifDebug) {\n  console.warn(...ConsoleEx_1.default.packWarn('开启调试模式，通过', RootDebug.prefix, '访问'));\n}\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/aTGame/Debug/RootDebug.ts?");
+
+/***/ }),
+
+/***/ "./src/aTGame/Debug/html/debugHTML.ts":
+/*!********************************************!*\
+  !*** ./src/aTGame/Debug/html/debugHTML.ts ***!
+  \********************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n/**\r\n * ! 自动生成，请不要修改\r\n */\n\nconst html = `<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"utf-8\"><meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><link rel=\"icon\" href=\"/favicon.ico\"><title>DebugWindow</title><link href=\"/css/app.d6b301ef.css\" rel=\"preload\" as=\"style\"><link href=\"/css/chunk-vendors.84bb20f7.css\" rel=\"preload\" as=\"style\"><link href=\"/js/app.2e279fb7.js\" rel=\"preload\" as=\"script\"><link href=\"/js/chunk-vendors.ee9c6a8c.js\" rel=\"preload\" as=\"script\"><link href=\"/css/chunk-vendors.84bb20f7.css\" rel=\"stylesheet\"><link href=\"/css/app.d6b301ef.css\" rel=\"stylesheet\"></head><body><noscript><strong>We're sorry but DebugWindow doesn't work properly without JavaScript enabled. Please enable it to continue.</strong></noscript><div id=\"app\"></div><script src=\"/js/chunk-vendors.ee9c6a8c.js\"></script><script src=\"/js/app.2e279fb7.js\"></script></body></html>`; //\n\nexports.default = html;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/aTGame/Debug/html/debugHTML.ts?");
+
+/***/ }),
+
+/***/ "./src/aTGame/Debug/mes/EDebugWindow.ts":
+/*!**********************************************!*\
+  !*** ./src/aTGame/Debug/mes/EDebugWindow.ts ***!
+  \**********************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\nexports.EDebugWindow = void 0;\n/**\r\n * 调试窗口键值枚举类\r\n */\n\nvar EDebugWindow;\n\n(function (EDebugWindow) {\n  /** 窗口实例键值 */\n  EDebugWindow[\"DebugWindow\"] = \"$DebugWindow\";\n  /** 消息实例键值 */\n\n  EDebugWindow[\"Mes\"] = \"$Mes\";\n})(EDebugWindow = exports.EDebugWindow || (exports.EDebugWindow = {}));\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/aTGame/Debug/mes/EDebugWindow.ts?");
+
+/***/ }),
+
+/***/ "./src/aTGame/Debug/mes/EDebugWindowEvent.ts":
+/*!***************************************************!*\
+  !*** ./src/aTGame/Debug/mes/EDebugWindowEvent.ts ***!
+  \***************************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\nexports.EDebugWindowEvent = void 0;\n/**\r\n * 调试窗口事件类\r\n */\n\nvar EDebugWindowEvent;\n\n(function (EDebugWindowEvent) {\n  /** 环境设置改变事件 */\n  EDebugWindowEvent[\"SetEnvironment\"] = \"setEnvironment\";\n})(EDebugWindowEvent = exports.EDebugWindowEvent || (exports.EDebugWindowEvent = {}));\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/aTGame/Debug/mes/EDebugWindowEvent.ts?");
+
+/***/ }),
+
+/***/ "./src/aTGame/Main/RootGameLoad.ts":
+/*!*****************************************!*\
+  !*** ./src/aTGame/Main/RootGameLoad.ts ***!
+  \*****************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst ConfigManager_1 = __webpack_require__(/*! ../Config/ConfigManager */ \"./src/aTGame/Config/ConfigManager.ts\");\n\nconst SceneManager_1 = __webpack_require__(/*! ../3D/SceneManager */ \"./src/aTGame/3D/SceneManager.ts\");\n\nconst FGuiRootManager_1 = __webpack_require__(/*! ../UI/FGUI/FGuiRootManager */ \"./src/aTGame/UI/FGUI/FGuiRootManager.ts\");\n\nconst Global3D_1 = __webpack_require__(/*! ../3D/Global3D */ \"./src/aTGame/3D/Global3D.ts\");\n\nconst EssentialResUrls_1 = __webpack_require__(/*! ../Res/EssentialResUrls */ \"./src/aTGame/Res/EssentialResUrls.ts\");\n\nconst CommonDataProxy_1 = __webpack_require__(/*! ../Commom/CommonDataProxy */ \"./src/aTGame/Commom/CommonDataProxy.ts\");\n\nconst ELevelSceneName_1 = __webpack_require__(/*! ../../cFrameBridge/Config/ELevelSceneName */ \"./src/cFrameBridge/Config/ELevelSceneName.ts\");\n/**\r\n * 游戏进入之前的加载操作基类\r\n * 加载分包\r\n * 加载顺序\r\n * 白屏显示UI包\r\n * 游戏初始化加载资源UI包\r\n * 配置文件\r\n * 其他UI包\r\n * 其他游戏资源\r\n */\n\n\nclass RootGameLoad {\n  constructor() {\n    /** 需要加载的其他UI包 */\n    this._needLoadOtherUIPack = [];\n    /**\r\n     * 资源加载权重\r\n     */\n\n    this._loadProgressWeight = {\n      config: 1,\n      gameRes: 5,\n      otherUI: 3\n    }; //配置文件加载进度\n\n    this._configProgress = 0; //其他UI加载进度\n\n    this._otherUIProgress = 0; //其他游戏资源加载进度\n\n    this._resProgress = 0;\n  } //总加载进度\n\n\n  get loadProgress() {\n    //总配比\n    let totalWeight = 0;\n\n    for (let i in this._loadProgressWeight) {\n      totalWeight += this._loadProgressWeight[i];\n    } //加载配比\n\n\n    let loadWeight = this._loadProgressWeight.config * this._configProgress //配置文件\n    + this._loadProgressWeight.gameRes * this._resProgress //游戏资源\n    + this._loadProgressWeight.otherUI * this._otherUIProgress; //其他UI\n    //返回总进度\n\n    return loadWeight / totalWeight * 100;\n  }\n  /**\r\n   * 开始\r\n   */\n\n\n  Enter(_this, _beforeHandler, _backHandler) {\n    //保存回调\n    this.m_handlerThis = _this;\n    this.m_beforeHandler = _beforeHandler;\n    this.m_backHandler = _backHandler; //\n\n    this.Init();\n  } //初始化之前，可以返回一个promise(使用时重写)\n\n\n  _Init() {\n    return;\n  } // 初始化\n\n\n  Init() {\n    //判断初始化函数有没有promise返回值\n    let _promise = this._Init();\n\n    let _f = () => {\n      //开始初始化白屏页面\n      this.initEmptyScreen();\n    };\n\n    if (_promise) {\n      //初始化之前\n      _promise.then(() => {\n        _f();\n      });\n    } else {\n      _f();\n    }\n  } //初始化空白页面\n\n\n  initEmptyScreen() {\n    //初始化场景管理器\n    SceneManager_1.default.instance.init(); //初始化FGUI\n\n    FGuiRootManager_1.default.Init(); //捆绑所有UI\n\n    this.OnBindUI(); //获取空白页面资源地址列表\n\n    let loadUrl = [];\n\n    this._initEmptyScreen.PushUrl(loadUrl); //判断是否有资源\n\n\n    if (loadUrl.length == 0) {\n      this.InitUI();\n      return;\n    } //加载初始化UI包\n\n\n    Laya.loader.load(loadUrl, Laya.Handler.create(this, this.InitUI));\n  } //初始化UI\n\n\n  InitUI() {\n    //\n    this._initEmptyScreen.AddPackage(); //回调，打开空白页面\n\n\n    this._OnInitEmptyScreen(); //获取需要加载的初始化UI路径列表\n\n\n    let _f = () => {\n      let loadUrl = [];\n\n      this._initUiPack.PushUrl(loadUrl); //判断是否有资源\n\n\n      if (loadUrl.length == 0) {\n        this.OnInitUILoaded();\n        return;\n      } //加载初始化UI包\n\n\n      Laya.loader.load(loadUrl, Laya.Handler.create(this, this.OnInitUILoaded));\n    }; //判断是否有加载之前处理函数\n\n\n    if (this.m_beforeHandler) {\n      this.m_beforeHandler.call(this.m_handlerThis).then(() => {\n        _f();\n      });\n    } else {\n      _f();\n    }\n  } //初始化UI包加载完成\n\n\n  OnInitUILoaded() {\n    //\n    this._initUiPack.AddPackage(); // 回调 (打开初始UI设置进度条)\n\n\n    this._OnInitUILoaded(); //\n\n\n    this.onLoading(this.loadProgress); // 加载配置文件\n\n    this.OnConfigLoaded();\n  } //加载配置文件\n\n\n  OnConfigLoaded() {\n    //设置要添加的配置文件\n    this.OnSetLoadConfig(); //添加其他必要配置文件路径列表\n\n    let _levelSceneURLs = [];\n\n    for (let _i in ELevelSceneName_1.ELevelSceneName) {\n      if (!ELevelSceneName_1.ELevelSceneName[_i]) {\n        continue;\n      }\n\n      _levelSceneURLs.push(EssentialResUrls_1.default.levelConfigURL(ELevelSceneName_1.ELevelSceneName[_i]));\n    }\n\n    ConfigManager_1.ConfigManager.AddExtraConfig(_levelSceneURLs); //\n\n    if (ConfigManager_1.ConfigManager.needLoadCount <= 0) {\n      this._OnConfigProgress(1);\n\n      this._OnConfigLoaded();\n\n      return;\n    } //使用的是Laya.loader.create方法加载\n\n\n    ConfigManager_1.ConfigManager.StartLoad(Laya.Handler.create(this, this._OnConfigLoaded), Laya.Handler.create(this, this._OnConfigProgress, null, false));\n  } //配置文件加载进度\n\n\n  _OnConfigProgress(value) {\n    this._configProgress = value; //\n\n    this.onLoading(this.loadProgress);\n  } //加载配置文件完成\n\n\n  _OnConfigLoaded() {\n    //设置配置文件\n    SceneManager_1.default.instance.initConfig(); //获取其他需要加载的UI文件路径列表\n\n    let uiLoadData = [];\n\n    for (let i = 0; i < this._needLoadOtherUIPack.length; ++i) {\n      this._needLoadOtherUIPack[i].PushUrl(uiLoadData);\n    } //判断是否有资源\n\n\n    if (uiLoadData.length == 0) {\n      this._OnOtherUIProgress(1);\n\n      this._OnOtherUILoaded();\n\n      return;\n    } //加载\n\n\n    Laya.loader.load(uiLoadData, Laya.Handler.create(this, this._OnOtherUILoaded), Laya.Handler.create(this, this._OnOtherUIProgress, null, false));\n  } //其他UI加载进度\n\n\n  _OnOtherUIProgress(value) {\n    this._otherUIProgress = value; //\n\n    this.onLoading(this.loadProgress);\n  } //其他UI加载完成\n\n\n  _OnOtherUILoaded() {\n    for (let i = 0; i < this._needLoadOtherUIPack.length; ++i) {\n      this._needLoadOtherUIPack[i].AddPackage();\n    } // 获取需要加载的游戏资源路径列表\n\n\n    let loadUrls = [];\n    this.OnGameResPrepared(loadUrls); //添加必要的资源\n\n    loadUrls.push(...EssentialResUrls_1.default.EssentialOtherResUrl()); //获取需要预加载的场景资源\n\n    SceneManager_1.default.instance.Preload(loadUrls); //判断是否有资源\n\n    if (loadUrls.length == 0) {\n      this._OnResProgress(1);\n\n      this._OnResLoaded();\n\n      return;\n    } //加载\n\n\n    Laya.loader.create(loadUrls, Laya.Handler.create(this, this._OnResLoaded), Laya.Handler.create(this, this._OnResProgress, null, false));\n  } //游戏其他资源加载进度\n\n\n  _OnResProgress(value) {\n    this._resProgress = value; //\n\n    this.onLoading(this.loadProgress);\n  } //游戏其他资源加载完成\n  //# 所有内容加载完成\n\n\n  _OnResLoaded() {\n    //初始化游戏场景\n    Global3D_1.default.InitAll(); //注册数据\n\n    this.loginCommonData();\n    this.loginData(); //处理回调\n\n    if (this.m_backHandler) {\n      this.m_backHandler.call(this.m_handlerThis).then(() => {\n        //游戏加载完毕\n        this.OnComplete();\n      });\n    } else {\n      //游戏加载完毕\n      this.OnComplete();\n    }\n  } //注册公共数据\n\n\n  loginCommonData() {\n    CommonDataProxy_1.default.instance.InitData();\n  } //! //\n  // * -----------------------------生命周期函数---------------------------- * //\n  //! //\n\n  /**\r\n   * 注册UI\r\n   */\n\n\n  OnBindUI() {}\n  /**\r\n   * 注册表格\r\n   */\n\n\n  OnSetLoadConfig() {}\n  /**\r\n   * 加载游戏资源\r\n   * @param urls 注入的目标列表\r\n   */\n\n\n  OnGameResPrepared(urls) {}\n  /**\r\n   * 空白页面UI初始化完成 (在这里设置空白页面)\r\n   */\n\n\n  _OnInitEmptyScreen() {}\n  /**\r\n   * 初始化UI加载完成 (在这里设置进度条)\r\n   */\n\n\n  _OnInitUILoaded() {}\n  /**\r\n   * 加载进度\r\n   * @param _n 0-100\r\n   */\n\n\n  onLoading(_n) {}\n  /**\r\n   * 注册数据\r\n   */\n\n\n  loginData() {}\n  /**\r\n   * 全部加载完成\r\n   */\n\n\n  OnComplete() {}\n\n}\n\nexports.default = RootGameLoad;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/aTGame/Main/RootGameLoad.ts?");
+
+/***/ }),
+
+/***/ "./src/aTGame/Physics/oimo/OimoManager.ts":
+/*!************************************************!*\
+  !*** ./src/aTGame/Physics/oimo/OimoManager.ts ***!
+  \************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\nexports.OimoManager = void 0;\n\nconst Dictionary_1 = __webpack_require__(/*! ../../Utils/Dictionary */ \"./src/aTGame/Utils/Dictionary.ts\");\n\nconst OimoConst_1 = __webpack_require__(/*! ../../../cFrameBridge/Physics/OimoConst */ \"./src/cFrameBridge/Physics/OimoConst.ts\");\n/**\r\n * OIMO物理管理器\r\n */\n\n\nclass OimoManager {\n  //\n  constructor() {\n    this._oimoRigDic = new Dictionary_1.default();\n    this._transformDic = new Dictionary_1.default();\n    this._oimoOffset = new Dictionary_1.default();\n    this._oimoRigDicR = new Dictionary_1.default();\n    this._transformDicR = new Dictionary_1.default();\n    this._oimoOffsetR = new Dictionary_1.default();\n    this._tempOimoV3 = new OIMO.Vec3();\n    this._tempOimoQuat = new OIMO.Quat();\n    this._tempQuaternion = new Laya.Quaternion();\n\n    this._init();\n  }\n\n  get oimoWorld() {\n    return this._oimoWorld;\n  }\n\n  static get instance() {\n    if (!OimoManager._instance) {\n      OimoManager._instance = new OimoManager();\n    }\n\n    return OimoManager._instance;\n  }\n\n  _init() {\n    this._oimoWorld = this.CreateWolrd();\n    window['oimoWorld'] = this._oimoWorld;\n  } // 建造场景\n\n\n  CreateWolrd() {\n    let wolrd = new OIMO.World({\n      timestep: OimoConst_1.default.timestep,\n      iterations: OimoConst_1.default.iterations,\n      broadphase: OimoConst_1.default.broadphase,\n      worldscale: OimoConst_1.default.worldscale,\n      random: OimoConst_1.default.random,\n      info: OimoConst_1.default.info,\n      gravity: OimoConst_1.default.gravity\n    });\n    return wolrd;\n  }\n\n  _createRigBox(world, pos, eulerRot, size, isMove, type = 'box') {\n    let addRig = world.add({\n      type: type,\n      size: [size.x, size.y, size.z],\n      pos: [pos.x, pos.y, pos.z],\n      rot: [eulerRot.x, eulerRot.y, eulerRot.z],\n      move: isMove,\n      density: 10,\n      // friction: 0.89,\n      // restitution: 0.01,\n      belongsTo: 1,\n      collidesWith: 0xffffffff // The bits of the collision groups with which the shape collides.\n\n    });\n    return addRig;\n  }\n  /**\r\n   * 创建一个物理刚体\r\n   * @param ts\r\n   * @param shapes\r\n   * @param isMove\r\n   * @param update\r\n   * @param reverseUpdate\r\n   * @param isKinematic\r\n   * @param density\r\n   * @param belongsTo\r\n   * @param collidesWith\r\n   */\n\n\n  CreateCompoundRig(ts, shapes, isMove = true, update = true, reverseUpdate = false, isKinematic = false, density = 10, belongsTo = 1, collidesWith = 0xffffffff) {\n    var type = [];\n    var posShape = [];\n    var rotShape = [];\n    var size = [];\n\n    for (var i = 0; i < shapes.length; i++) {\n      let shape = shapes[i];\n      type.push(shape.type);\n      posShape.push(shape.pos.x, shape.pos.y, shape.pos.z);\n      rotShape.push(shape.eular.x, shape.eular.y, shape.eular.z);\n      size.push(shape.size.x, shape.size.y, shape.size.z);\n    }\n\n    let rig = this.oimoWorld.add({\n      type: type,\n      pos: [ts.position.x, ts.position.y, ts.position.z],\n      rot: [ts.rotationEuler.x, ts.rotationEuler.y, ts.rotationEuler.z],\n      posShape: posShape,\n      rotShape: rotShape,\n      size: size,\n      move: isMove,\n      density: density,\n      friction: 0.999,\n      restitution: 0.1,\n      isKinematic: isKinematic,\n      belongsTo: belongsTo,\n      collidesWith: collidesWith\n    }); //加一个不变的id\n\n    rig.id = OimoManager.m_rigId;\n    OimoManager.m_rigId++; //\n\n    if (update) {\n      this._oimoRigDic.set(rig.id, rig);\n\n      this._transformDic.set(rig.id, ts);\n\n      this._oimoOffset.set(rig.id, new Laya.Vector3());\n    }\n\n    if (reverseUpdate) {\n      this._oimoRigDicR.set(rig.id, rig);\n\n      this._transformDicR.set(rig.id, ts);\n\n      this._oimoOffsetR.set(rig.id, new Laya.Vector3());\n    }\n\n    return rig;\n  }\n  /**\r\n   * 设置一个刚体的各个参数\r\n   * @param rig\r\n   * @param belongsTo\r\n   * @param collidesWith\r\n   * @param restitution\r\n   * @param friction\r\n   */\n\n\n  static SetCollideData(rig, belongsTo, collidesWith, restitution, friction) {\n    for (var shape = rig.shapes; shape !== null; shape = shape.next) {\n      if (belongsTo != null) shape.belongsTo = belongsTo;\n      if (collidesWith != null) shape.collidesWith = collidesWith;\n      if (restitution != null) shape.restitution = restitution;\n      if (friction != null) shape.friction = friction;\n    }\n  }\n  /**\r\n   * 设置是否是  静止物体\r\n   * @param rig\r\n   * @param can\r\n   */\n\n\n  setCanMove(rig, can) {\n    if (can) {\n      rig.setupMass(OIMO.BODY_DYNAMIC, false);\n    } else {\n      rig.setupMass(OIMO.BODY_STATIC, false);\n    }\n  }\n\n  clearRig() {\n    this._oimoWorld.clear();\n\n    this._oimoRigDic.clear();\n\n    this._transformDic.clear();\n\n    this._oimoOffset.clear();\n\n    this._oimoRigDicR.clear();\n\n    this._transformDicR.clear();\n\n    this._oimoOffsetR.clear();\n  }\n  /**\r\n   * 添加刚体\r\n   * @param rig\r\n   * @param world\r\n   * @param stopUpdate 是否停止更新\r\n   */\n\n\n  addRig(rig, world = this._oimoWorld) {\n    if (rig) {\n      world.addRigidBody(rig);\n    }\n  }\n  /**\r\n   * 删除刚体\r\n   * @param rig\r\n   * @param world\r\n   * @param offList # 如果为true的话就是彻底删除，再添加也没有用了\r\n   */\n\n\n  RemoveRig(rig, world = this._oimoWorld, offList = false) {\n    if (rig) {\n      if (offList) {\n        this._oimoRigDic.remove(rig.id);\n\n        this._transformDic.remove(rig.id);\n\n        this._oimoOffset.remove(rig.id);\n\n        this._oimoRigDicR.remove(rig.id);\n\n        this._transformDicR.remove(rig.id);\n\n        this._oimoOffsetR.remove(rig.id);\n      }\n\n      world.removeRigidBody(rig);\n    }\n  }\n  /**\r\n   * 添加关节\r\n   * @param type\r\n   * @param rig1\r\n   * @param rig2\r\n   * @param pos1\r\n   * @param pos2\r\n   * @param spring\r\n   */\n\n\n  AddJoint(type, rig1, rig2, pos1, pos2, spring) {\n    return this.oimoWorld.add({\n      type: type,\n      body1: rig1,\n      body2: rig2,\n      pos1: pos1 != null ? [pos1.x, pos1.y, pos1.z] : pos1,\n      pos2: pos2 != null ? [pos2.x, pos2.y, pos2.z] : pos2,\n      spring: spring\n    });\n  }\n  /**\r\n   * 删除一个关节\r\n   * @param joint\r\n   */\n\n\n  RemoveJoint(joint) {\n    this.oimoWorld.removeJoint(joint);\n  }\n\n  updateAllTrans() {\n    let keys = this._oimoRigDic.keys();\n\n    keys.forEach(key => {\n      this.UpdateTrans(this._transformDic.get(key), this._oimoRigDic.get(key), this._oimoOffset.get(key));\n    });\n  }\n  /**\r\n   * 运动物体的  反向赋值\r\n   */\n\n\n  updateAllTransReverse() {\n    let keys = this._oimoRigDicR.keys();\n\n    keys.forEach(key => {\n      this.UpdateTransReverse(this._transformDicR.get(key), this._oimoRigDicR.get(key));\n    });\n  }\n\n  UpdateTransReverse(transform, rig) {\n    if (!transform || !rig || !rig.parent) return;\n    let pos = transform.position;\n\n    this._tempOimoV3.set(pos.x, pos.y, pos.z);\n\n    rig.awake();\n    rig.setPosition(this._tempOimoV3);\n    let rotate = transform.rotation;\n\n    this._tempOimoQuat.set(rotate.x, rotate.y, rotate.z, rotate.w);\n\n    rig.setQuaternion(this._tempOimoQuat);\n  }\n\n  UpdateTrans(transform, rig, posOffset) {\n    if (!transform || !rig || !rig.parent) return;\n    let getPos = rig.getPosition();\n    transform.position.x = getPos.x;\n    transform.position.y = getPos.y;\n    transform.position.z = getPos.z;\n\n    if (posOffset && !this.isZero(posOffset)) {\n      // LIUTODO  可以规避的计算\n      let offset = posOffset.clone();\n      Laya.Quaternion.createFromYawPitchRoll(this.deg2rad(transform.rotationEuler.y), this.deg2rad(transform.rotationEuler.x), this.deg2rad(transform.rotationEuler.z), this._tempQuaternion);\n      Laya.Vector3.transformQuat(offset, this._tempQuaternion, offset);\n      Laya.Vector3.subtract(transform.position, offset, transform.position);\n    }\n\n    transform.position = transform.position;\n    let getRot = rig.getQuaternion();\n    transform.rotation.x = getRot.x;\n    transform.rotation.y = getRot.y;\n    transform.rotation.z = getRot.z;\n    transform.rotation.w = getRot.w;\n    transform.rotation = transform.rotation;\n  }\n\n  isZero(pos) {\n    return Laya.MathUtils3D.isZero(pos.x) && Laya.MathUtils3D.isZero(pos.y) && Laya.MathUtils3D.isZero(pos.z);\n  }\n\n  deg2rad(p_y) {\n    return p_y * Math.PI / 180.0;\n  }\n\n  GetRig(name) {\n    return this._oimoRigDic.get(name);\n  }\n\n}\n\nexports.OimoManager = OimoManager; //刚体递增id\n\nOimoManager.m_rigId = 0;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/aTGame/Physics/oimo/OimoManager.ts?");
+
+/***/ }),
+
+/***/ "./src/aTGame/Physics/oimo/OimoSystem.ts":
+/*!***********************************************!*\
+  !*** ./src/aTGame/Physics/oimo/OimoSystem.ts ***!
+  \***********************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\nexports.OimoSystem = void 0;\n\nconst OimoManager_1 = __webpack_require__(/*! ./OimoManager */ \"./src/aTGame/Physics/oimo/OimoManager.ts\");\n/**\r\n * OIMO物理系统\r\n */\n\n\nclass OimoSystem extends Laya.Script3D {\n  onUpdate() {\n    OimoManager_1.OimoManager.instance.oimoWorld.timeStep = Laya.timer.delta / 1000;\n    OimoManager_1.OimoManager.instance.oimoWorld.step();\n    OimoManager_1.OimoManager.instance.updateAllTrans();\n    OimoManager_1.OimoManager.instance.updateAllTransReverse();\n  }\n\n}\n\nexports.OimoSystem = OimoSystem;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/aTGame/Physics/oimo/OimoSystem.ts?");
+
+/***/ }),
+
+/***/ "./src/aTGame/Platform/Common/PlatformCommonEventId.ts":
+/*!*************************************************************!*\
+  !*** ./src/aTGame/Platform/Common/PlatformCommonEventId.ts ***!
+  \*************************************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\nexports.PlatformCommonEvent = void 0;\n/**\r\n * 平台公共事件\r\n */\n\nvar PlatformCommonEvent;\n\n(function (PlatformCommonEvent) {\n  PlatformCommonEvent[\"PAUSE_AUDIO\"] = \"PAUSE_AUDIO\";\n  PlatformCommonEvent[\"RESUM_AUDIO\"] = \"RESUM_AUDIO\";\n  PlatformCommonEvent[\"AD_CONFIG_GETTED\"] = \"AD_CONFIG_GETTED\";\n  PlatformCommonEvent[\"SELF_AD_INITED\"] = \"SELF_AD_INITED\";\n})(PlatformCommonEvent = exports.PlatformCommonEvent || (exports.PlatformCommonEvent = {}));\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/aTGame/Platform/Common/PlatformCommonEventId.ts?");
+
+/***/ }),
+
+/***/ "./src/aTGame/Platform/Data/PlatformData.ts":
+/*!**************************************************!*\
+  !*** ./src/aTGame/Platform/Data/PlatformData.ts ***!
+  \**************************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n/**\r\n * 平台数据类\r\n */\n\nclass PlatformData {\n  constructor() {\n    /** 应用ID */\n    this.appId = '';\n    this.appKey = '';\n    /** 广告id */\n\n    this.bannerId = '';\n    this.rewardVideoId = '';\n    this.interstitialId = '';\n    this.nativeId = ''; //\n\n    this.nativeBannerIds = [];\n    this.nativeIconIds = [];\n    this.nativeinterstitialIds = [];\n    this.nativeinpageIds = []; //分享id\n\n    this.shareId = '';\n  }\n\n}\n\nexports.default = PlatformData;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/aTGame/Platform/Data/PlatformData.ts?");
+
+/***/ }),
+
+/***/ "./src/aTGame/Platform/Device/DefaultDevice.ts":
+/*!*****************************************************!*\
+  !*** ./src/aTGame/Platform/Device/DefaultDevice.ts ***!
+  \*****************************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n/**\r\n * 默认设备\r\n */\n\nclass DefaultDevice {\n  Vibrate(isLong) {\n    console.log(\"调用震动\", isLong); //判断平台是否支持\n\n    if (!navigator.vibrate) {\n      // 不支持\n      console.log(\"不支持设备震动！\");\n      return;\n    } //\n\n\n    if (isLong) {\n      navigator.vibrate(400);\n    } else {\n      navigator.vibrate(15);\n    }\n  }\n\n}\n\nexports.default = DefaultDevice;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/aTGame/Platform/Device/DefaultDevice.ts?");
+
+/***/ }),
+
+/***/ "./src/aTGame/Platform/Device/TTDevice.ts":
+/*!************************************************!*\
+  !*** ./src/aTGame/Platform/Device/TTDevice.ts ***!
+  \************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst DefaultDevice_1 = __webpack_require__(/*! ./DefaultDevice */ \"./src/aTGame/Platform/Device/DefaultDevice.ts\");\n/**\r\n * 头条设备\r\n */\n\n\nclass TTDevice extends DefaultDevice_1.default {\n  constructor(base) {\n    super();\n    this._base = base;\n  }\n\n  Vibrate(isLong) {\n    console.log(\"调用震动\", isLong);\n\n    if (isLong) {\n      this._base.vibrateLong({\n        success(res) {},\n\n        fail(res) {\n          console.error(\"调用震动失败\", res);\n        },\n\n        complete(res) {}\n\n      });\n    } else {\n      this._base.vibrateShort({\n        success(res) {},\n\n        fail(res) {\n          console.error(\"调用震动失败\", res);\n        },\n\n        complete(res) {}\n\n      });\n    }\n  }\n\n}\n\nexports.default = TTDevice;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/aTGame/Platform/Device/TTDevice.ts?");
+
+/***/ }),
+
+/***/ "./src/aTGame/Platform/Device/WXDevice.ts":
+/*!************************************************!*\
+  !*** ./src/aTGame/Platform/Device/WXDevice.ts ***!
+  \************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst DefaultDevice_1 = __webpack_require__(/*! ./DefaultDevice */ \"./src/aTGame/Platform/Device/DefaultDevice.ts\");\n/**\r\n * 微信设备\r\n */\n\n\nclass WXDevice extends DefaultDevice_1.default {\n  Vibrate(isLong) {\n    console.log(\"调用震动\", isLong); //判断是否在小游戏平台\n\n    if (window['wx']) {\n      if (isLong) {\n        Laya.timer.callLater(wx, wx.vibrateLong, [null]);\n      } else {\n        Laya.timer.callLater(wx, wx.vibrateShort, [null]);\n      }\n    }\n  }\n\n}\n\nexports.default = WXDevice;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/aTGame/Platform/Device/WXDevice.ts?");
+
+/***/ }),
+
+/***/ "./src/aTGame/Platform/PlatformClass/BDPlatform.ts":
+/*!*********************************************************!*\
+  !*** ./src/aTGame/Platform/PlatformClass/BDPlatform.ts ***!
+  \*********************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst ConsoleEx_1 = __webpack_require__(/*! ../../Console/ConsoleEx */ \"./src/aTGame/Console/ConsoleEx.ts\");\n\nconst StringUtils_1 = __webpack_require__(/*! ../../Utils/StringUtils */ \"./src/aTGame/Utils/StringUtils.ts\");\n\nconst PlatformCommonEventId_1 = __webpack_require__(/*! ../Common/PlatformCommonEventId */ \"./src/aTGame/Platform/Common/PlatformCommonEventId.ts\");\n\nconst EPlatformType_1 = __webpack_require__(/*! ../T/EPlatformType */ \"./src/aTGame/Platform/T/EPlatformType.ts\");\n\nconst WXPlatform_1 = __webpack_require__(/*! ./WXPlatform */ \"./src/aTGame/Platform/PlatformClass/WXPlatform.ts\");\n/**\r\n * 百度平台实例\r\n */\n\n\nclass BDPlatform extends WXPlatform_1.default {\n  constructor() {\n    super(...arguments);\n    this.platform = EPlatformType_1.EPlatformType.BD;\n    this._showVideoLoad = false;\n  }\n\n  Init(platformData) {\n    this._base = window[\"swan\"];\n\n    if (this._base == null) {\n      console.error(...ConsoleEx_1.default.packError(\"平台初始化错误\"));\n      return;\n    }\n\n    this.platformData = platformData;\n    this.recordManager.Platform = this;\n\n    this._InitLauchOption(); // this._Login();\n\n\n    this._InitShareInfo();\n\n    this._InitSystemInfo();\n\n    this._isBannerLoaded = false;\n    this._isBannerShowed = false; // this._CreateBannerAd();\n\n    this._CreateVideoAd();\n\n    this._CreateInterstitalAd();\n\n    window[\"iplatform\"] = this;\n  }\n\n  _CreateBannerAd() {\n    if (StringUtils_1.default.IsNullOrEmpty(this.platformData.bannerId)) {\n      console.log(\"无有效的banner广告ID,取消加载\");\n      return;\n    }\n\n    let windowWidth = this._base.getSystemInfoSync().windowWidth;\n\n    let windowHeight = this._base.getSystemInfoSync().windowHeight;\n\n    let bannerObj = {};\n    bannerObj[\"adUnitId\"] = this.platformData.bannerId; // \"adunit-b48894d44d318e5a\";\n\n    bannerObj[\"appSid\"] = this.platformData.sid;\n    let styleObj = {};\n    styleObj[\"left\"] = 0;\n    styleObj[\"top\"] = 0;\n    styleObj[\"width\"] = windowWidth;\n    bannerObj[\"style\"] = styleObj;\n    this._bannerAd = this._base.createBannerAd(bannerObj);\n\n    this._bannerAd.onLoad(() => {\n      console.log(\"banner加载成功\");\n      this._isBannerLoaded = true;\n      this._bannerAd.style.top = windowHeight - this._bannerAd.style.height; // 创建完直接显示广告\n\n      this._bannerAd.show();\n    });\n\n    this._bannerAd.onError(res => {\n      console.error(\"banner广告加载失败\", res);\n    });\n  }\n\n  _CreateVideoAd() {\n    if (StringUtils_1.default.IsNullOrEmpty(this.platformData.rewardVideoId)) {\n      console.log(\"无有效的视频广告ID,取消加载\");\n      return;\n    }\n\n    this._videoFailedCount = 0;\n    let videoObj = {};\n    videoObj[\"adUnitId\"] = this.platformData.rewardVideoId; // \"adunit-5631637236cf16b6\";\n\n    videoObj[\"appSid\"] = this.platformData.sid;\n    this._rewardVideo = this._base.createRewardedVideoAd(videoObj);\n\n    this._rewardVideo.onLoad(() => {\n      console.log(\"视频广告加载成功\");\n      this._isVideoLoaded = true;\n    });\n\n    this._rewardVideo.onError(res => {\n      this._videoFailedCount++;\n      console.error(\"视频广告加载失败\", res);\n\n      if (this._videoFailedCount > 10) {\n        console.log(\"第\", this._videoFailedCount, \"次重新加载视频广告\"); // 失败自动加载广告\n\n        this._rewardVideo.load();\n      }\n    });\n\n    this._rewardVideo.onClose(res => {\n      this._base.hideLoading();\n\n      Laya.stage.event(PlatformCommonEventId_1.PlatformCommonEvent.RESUM_AUDIO);\n      console.log(\"视频回调\", res);\n      let isEnd = res[\"isEnded\"];\n\n      if (isEnd) {\n        if (this._rewardSuccessed) this._rewardSuccessed.run();\n      } else {\n        if (this._rewardSkipped) this._rewardSkipped.run();\n      } // bd需要自动加载广告\n\n\n      this._rewardVideo.load();\n    });\n  }\n\n  _CreateInterstitalAd() {}\n\n  LoadSubpackage(name, onSuccess, onFailed, onProgress) {\n    let loadObj = {};\n    loadObj[\"name\"] = name;\n\n    loadObj[\"success\"] = () => {\n      console.log(\"分包加载成功\", name);\n\n      if (onSuccess) {\n        onSuccess.run();\n      }\n    };\n\n    loadObj[\"fail\"] = () => {\n      console.error(\"分包加载失败\", name);\n\n      if (onFailed) {\n        onFailed.run();\n      }\n    };\n\n    let loadTask = this._base.loadSubpackage(loadObj);\n\n    loadTask.onProgressUpdate(res => {\n      if (onProgress) {\n        let value = res.progress / 100;\n\n        if (isNaN(value)) {\n          value = res.loaded / res.total;\n        }\n\n        onProgress.runWith(value);\n      }\n    });\n  }\n\n  RecordEvent(eventId, param) {\n    this._base.reportAnalytics(eventId, param);\n  }\n\n  ShowBannerAd() {\n    if (this._isBannerLoaded) {\n      return;\n    }\n\n    this._CreateBannerAd();\n  }\n\n  HideBannerAd() {\n    if (!this._isBannerLoaded) return;\n    this._isBannerLoaded = false;\n\n    if (this._bannerAd) {\n      this._bannerAd.destroy();\n    }\n  }\n\n}\n\nexports.default = BDPlatform;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/aTGame/Platform/PlatformClass/BDPlatform.ts?");
+
+/***/ }),
+
+/***/ "./src/aTGame/Platform/PlatformClass/DefaultPlatform.ts":
+/*!**************************************************************!*\
+  !*** ./src/aTGame/Platform/PlatformClass/DefaultPlatform.ts ***!
+  \**************************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst EPlatformType_1 = __webpack_require__(/*! ../T/EPlatformType */ \"./src/aTGame/Platform/T/EPlatformType.ts\");\n\nconst DefaultDevice_1 = __webpack_require__(/*! ../Device/DefaultDevice */ \"./src/aTGame/Platform/Device/DefaultDevice.ts\");\n\nconst WebRecordManager_1 = __webpack_require__(/*! ../Record/WebRecordManager */ \"./src/aTGame/Platform/Record/WebRecordManager.ts\");\n\nconst PlatformManagerProxy_1 = __webpack_require__(/*! ../PlatformManagerProxy */ \"./src/aTGame/Platform/PlatformManagerProxy.ts\");\n/**\r\n * 默认平台\r\n */\n\n\nclass DefaultPlatform {\n  constructor() {\n    this.platform = EPlatformType_1.EPlatformType.Web;\n    this.safeArea = null;\n    this.recordManager = new WebRecordManager_1.WebRecordManager();\n    this.device = new DefaultDevice_1.default();\n    this.systemInfo = null;\n    /**\r\n     * 是否支持直接跳转到其他小程序\r\n     * 默认平台进行强制fake true,方便进行调试\r\n     */\n\n    this.isSupportJumpOther = true;\n  }\n\n  Init(platformData) {\n    this.loginState = {\n      isLogin: false,\n      code: null\n    };\n    this.recordManager.Platform = this;\n    Laya.timer.once(500, this, this._FakeLoginEnd);\n  }\n\n  _FakeLoginEnd() {\n    if (this.onLoginEnd) this.onLoginEnd.run();\n  }\n\n  IsBannerAvaliable() {\n    return false;\n  }\n\n  IsVideoAvaliable() {\n    return true;\n  }\n\n  IsInterstitalAvaliable() {\n    return false;\n  }\n  /**\r\n   * 显示banner\r\n   */\n\n\n  ShowBannerAd() {\n    console.log(\"调用ShowBannerAd\");\n  }\n\n  HideBannerAd() {\n    console.log(\"调用HideBannerAd\");\n  }\n  /**\r\n   * 显示激励视频\r\n   */\n\n\n  ShowRewardVideoAd(onSuccess, onSkipped) {\n    console.log(\"调用ShowRewardVideoAd\"); //默认看完广告\n\n    onSuccess.run();\n  }\n\n  ShowRewardVideoAdAsync() {\n    return new Promise(function (resolve) {\n      PlatformManagerProxy_1.default.instance.PlatformInstance.ShowRewardVideoAd(Laya.Handler.create(this, () => {\n        resolve(true);\n      }), Laya.Handler.create(this, () => {\n        resolve(false);\n      }));\n    });\n  }\n  /**\r\n   * 显示插屏广告\r\n   */\n\n\n  ShowInterstitalAd() {\n    console.log(\"调用ShowInterstitalAd\");\n  }\n\n  GetFromAppId() {\n    return null;\n  }\n\n  ShareAppMessage(obj, onSuccess = null, onFailed = null) {\n    console.log(\"分享消息\", obj);\n\n    if (onSuccess) {\n      onSuccess.run();\n    }\n  }\n\n  LoadSubpackage(name, onSuccess, onFailed) {\n    if (onSuccess) {\n      onSuccess.run();\n    }\n  }\n\n  RecordEvent(eventId, param) {\n    console.log(\"记录事件\", eventId, param);\n  }\n\n  ShareVideoInfo() {\n    console.log(PlatformManagerProxy_1.default.platformStr, \"暂未实现录屏功能\");\n  }\n\n  _CheckUpdate() {}\n\n  ShowToast(str) {\n    //\n    console.log('显示消息：', str);\n  }\n\n  OpenGameBox() {\n    console.error(\"当前平台\", PlatformManagerProxy_1.default.platformStr, \"暂不支持互推游戏盒子\");\n  }\n\n  NavigateToApp(appid, path, extra) {\n    return new Promise((resolve, reject) => {\n      console.error(\"当前平台\", PlatformManagerProxy_1.default.platformStr, `暂不支持小程序跳转appid:${appid}`); // 这里使用resolve\n\n      resolve(false);\n    });\n  }\n\n  createShortcut() {\n    console.log('创建桌面图标');\n  }\n\n  GetStorage(key) {\n    console.log('读本地存储');\n    return Laya.LocalStorage.getItem(key);\n  }\n\n  SetStorage(key, data) {\n    console.log('写本地存储');\n    Laya.LocalStorage.setItem(key, data);\n  }\n\n}\n\nexports.default = DefaultPlatform;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/aTGame/Platform/PlatformClass/DefaultPlatform.ts?");
+
+/***/ }),
+
+/***/ "./src/aTGame/Platform/PlatformClass/OppoPlatform.ts":
+/*!***********************************************************!*\
+  !*** ./src/aTGame/Platform/PlatformClass/OppoPlatform.ts ***!
+  \***********************************************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+eval("\n\nvar __awaiter = this && this.__awaiter || function (thisArg, _arguments, P, generator) {\n  function adopt(value) {\n    return value instanceof P ? value : new P(function (resolve) {\n      resolve(value);\n    });\n  }\n\n  return new (P || (P = Promise))(function (resolve, reject) {\n    function fulfilled(value) {\n      try {\n        step(generator.next(value));\n      } catch (e) {\n        reject(e);\n      }\n    }\n\n    function rejected(value) {\n      try {\n        step(generator[\"throw\"](value));\n      } catch (e) {\n        reject(e);\n      }\n    }\n\n    function step(result) {\n      result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);\n    }\n\n    step((generator = generator.apply(thisArg, _arguments || [])).next());\n  });\n};\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst Awaiters_1 = __webpack_require__(/*! ../../Async/Awaiters */ \"./src/aTGame/Async/Awaiters.ts\");\n\nconst StringUtils_1 = __webpack_require__(/*! ../../Utils/StringUtils */ \"./src/aTGame/Utils/StringUtils.ts\");\n\nconst DefaultDevice_1 = __webpack_require__(/*! ../Device/DefaultDevice */ \"./src/aTGame/Platform/Device/DefaultDevice.ts\");\n\nconst DefaultRecordManager_1 = __webpack_require__(/*! ../Record/DefaultRecordManager */ \"./src/aTGame/Platform/Record/DefaultRecordManager.ts\");\n\nconst EPlatformType_1 = __webpack_require__(/*! ../T/EPlatformType */ \"./src/aTGame/Platform/T/EPlatformType.ts\");\n\nconst WXPlatform_1 = __webpack_require__(/*! ./WXPlatform */ \"./src/aTGame/Platform/PlatformClass/WXPlatform.ts\");\n\nconst PlatformCommonEventId_1 = __webpack_require__(/*! ../Common/PlatformCommonEventId */ \"./src/aTGame/Platform/Common/PlatformCommonEventId.ts\");\n\nconst PlatformManagerProxy_1 = __webpack_require__(/*! ../PlatformManagerProxy */ \"./src/aTGame/Platform/PlatformManagerProxy.ts\");\n\nconst ConsoleEx_1 = __webpack_require__(/*! ../../Console/ConsoleEx */ \"./src/aTGame/Console/ConsoleEx.ts\");\n/**\r\n * OPPO平台实例\r\n */\n\n\nclass OppoPlatform extends WXPlatform_1.default {\n  constructor() {\n    super(...arguments);\n    this.platform = EPlatformType_1.EPlatformType.OPPO;\n    this.safeArea = null;\n    this.recordManager = new DefaultRecordManager_1.default();\n    this.device = new DefaultDevice_1.default();\n    /**\r\n     * 是否支持直接跳转到其他小程序\r\n     */\n\n    this.isSupportJumpOther = true;\n    this._isBannerLoaded = false;\n    this._isVideoLoaded = false;\n    this._isInterstitialLoaded = false;\n    this._isInterstitialCanShow = true;\n    this._nativeAdLoaded = false;\n    this._cacheVideoAD = false;\n  }\n\n  Init(platformData) {\n    this._base = window[\"qg\"];\n\n    if (this._base == null) {\n      console.error(...ConsoleEx_1.default.packError(\"平台初始化错误\", PlatformManagerProxy_1.default.platformStr));\n      return;\n    }\n\n    this.platformData = platformData;\n    this.recordManager.Platform = this;\n\n    this._InitLauchOption();\n\n    this._Login();\n\n    this._InitSystemInfo();\n\n    this.getSystemInfo();\n\n    if (this.systemInfo.platformVersion >= 1051) {// 不需要在进行initAdService\n    } else {\n      this._base.initAdService({\n        appId: platformData.appId,\n        isDebug: true,\n        success: () => {\n          console.log(\"oppo广告\", \"初始化广告服务成功\", platformData); // 不提前进行预加载\n          // this._CreateBannerAd();\n\n          this._CreateVideoAd(); // this._CreateInterstitalAd();\n          // this.intersitialAd = new NativeADUnit(platformData.interstitialId);\n          // this.iconNative = new NativeADUnit(platformData.nativeId);\n          // this.nativeAd = new NativeADUnit(platformData.nativeId);\n\n        },\n        fail: () => {\n          console.error(\"oppo广告\", \"初始化广告服务失败\");\n        }\n      });\n    }\n\n    window[\"iplatform\"] = this;\n  }\n\n  getSystemInfo() {\n    this._base.getSystemInfo({\n      success: res => {\n        this.systemInfo = res;\n        console.log(this.systemInfo);\n      },\n      fail: () => {},\n      complete: () => {}\n    });\n  }\n  /**\r\n   * 上报数据\r\n   */\n\n\n  reportMonitor() {\n    console.log('oppo上报数据', this.systemInfo);\n\n    if (this.systemInfo && this.systemInfo.platformVersion >= 1060) {\n      this._base.reportMonitor('game_scene', 0);\n    }\n  }\n\n  _CheckUpdate() {}\n\n  _Login() {\n    this.loginState = {\n      isLogin: false,\n      code: \"\"\n    };\n    let loginData = {};\n\n    loginData.success = res => {\n      this._OnLoginSuccess(res);\n    };\n\n    loginData.fail = res => {\n      console.error(PlatformManagerProxy_1.default.platformStr, \"登录失败\", res);\n      this.loginState.isLogin = false;\n      this.loginState.code = \"\";\n    };\n\n    loginData.complete = res => {\n      if (this.onLoginEnd != null) {\n        this.onLoginEnd.run();\n      }\n    };\n\n    this._base.login(loginData);\n  }\n\n  _OnLoginSuccess(res) {\n    console.log(PlatformManagerProxy_1.default.platformStr, \"登录成功\", res);\n    this.loginState.isLogin = true;\n    this.loginState.code = res.token;\n  }\n\n  ShareAppMessage(obj, onSuccess, onFailed) {}\n\n  _InitLauchOption() {\n    // 绑定onShow事件\n    this._base.onShow(this._OnShow);\n\n    this._base.onHide(this._OnHide); // 自动获取一次启动参数\n\n\n    let res = this._base.getLaunchOptionsSync();\n\n    this._OnShow(res);\n  }\n  /**\r\n   * 是否可以创建桌面图标\r\n   */\n\n\n  canCreateShortcut() {\n    return new Promise((resolve, reject) => {\n      qg['hasShortcutInstalled']({\n        success: function (res) {\n          // 判断图标是否存在  \n          resolve(res);\n        },\n        fail: function (err) {\n          reject();\n        },\n        complete: function () {}\n      });\n    });\n  }\n  /** 发起创建桌面图标请求 */\n\n\n  createShortcut() {\n    return new Promise((resolve, reject) => {\n      qg['hasShortcutInstalled']({\n        success: function (res) {\n          // 判断图标未存在时，创建图标\n          if (res == false) {\n            qg['installShortcut']({\n              success: function () {\n                resolve();\n              },\n              fail: function (err) {\n                reject();\n              },\n              complete: function () {}\n            });\n          } else {\n            resolve();\n          }\n        },\n        fail: function (err) {\n          reject();\n        },\n        complete: function () {}\n      });\n    });\n  }\n\n  _CreateInterstitalAd() {// if (StringUtils.IsNullOrEmpty(this._platformData.interstitialId)) {\n    //     console.log(\"无有效的插页广告ID,取消加载\");\n    //     return;\n    // }\n    // this._interstitalFailedCount = 0;\n    // let intAdObj = {};\n    // intAdObj[\"adUnitId\"] = this._platformData.interstitialId;\n    // this._intersitialAd = this._base.createInsertAd(intAdObj);\n    // this._intersitialAd.onLoad(() => {\n    //     console.log(\"插页广告加载成功\");\n    //     this._isInterstitialLoaded = true;\n    // });\n    // this._intersitialAd.onClose(() => {\n    //     console.log(\"插页广告关闭\");\n    //     this._isInterstitialLoaded = false;\n    //     this._intersitialAd.load();\n    // });\n    // this._intersitialAd.onError((err) => {\n    //     this._interstitalFailedCount++;\n    //     console.error(\"插页广告加载失败\", err);\n    //     if (this._interstitalFailedCount > 10) {\n    //         console.log(\"第\", this._interstitalFailedCount, \"次重新加载插页广告\");\n    //         // 失败自动加载广告\n    //         this._intersitialAd.load();\n    //     }\n    // });\n  }\n\n  _CreateVideoAd() {\n    if (!this._cacheVideoAD) {\n      console.log(\"当前策略为不缓存视频广告\");\n      return;\n    }\n\n    let createRewardedVideoAd = this._base[\"createRewardedVideoAd\"];\n\n    if (createRewardedVideoAd == null) {\n      console.error(\"无createRewardedVideoAd方法,跳过初始化\");\n      return;\n    }\n\n    if (StringUtils_1.default.IsNullOrEmpty(this.platformData.rewardVideoId)) {\n      console.log(\"无有效的视频广告ID,取消加载\");\n      return;\n    }\n\n    this._videoFailedCount = 0;\n    let videoObj = {};\n    videoObj[\"adUnitId\"] = this.platformData.rewardVideoId;\n    this._rewardVideo = createRewardedVideoAd(videoObj);\n\n    this._rewardVideo.onLoad(() => {\n      console.log(\"视频广告加载成功\");\n      this._isVideoLoaded = true;\n    });\n\n    this._rewardVideo.onError(res => {\n      this._videoFailedCount++;\n      console.error(\"视频广告加载失败\", res);\n\n      if (this._videoFailedCount > 10) {\n        console.log(\"第\", this._videoFailedCount, \"次重新加载视频广告\"); // 失败自动加载广告\n\n        this._rewardVideo.load();\n      }\n    });\n\n    this._rewardVideo.onClose(res => {\n      Laya.stage.event(PlatformCommonEventId_1.PlatformCommonEvent.RESUM_AUDIO);\n      console.log(\"视频回调\", res);\n      let isEnd = res[\"isEnded\"]; // 修复广告bug\n\n      Awaiters_1.default.NextFrame().then(() => {\n        if (isEnd) {\n          if (this._rewardSuccessed) this._rewardSuccessed.run();\n        } else {\n          if (this._rewardSkipped) this._rewardSkipped.run();\n        }\n      });\n    });\n  }\n\n  IsBannerAvaliable() {\n    return this._isBannerLoaded;\n  }\n\n  IsVideoAvaliable() {\n    return this._isVideoLoaded;\n  }\n\n  IsInterstitalAvaliable() {\n    return false; // LTSDK.instance.isADEnable && this._isInterstitialCanShow && CommonSaveData.instance.interstitialCount < 888;\n  }\n\n  IsNativeAvaliable() {\n    return this._nativeAdLoaded;\n  }\n\n  ShowBannerAd() {\n    return __awaiter(this, void 0, void 0, function* () {\n      if (StringUtils_1.default.IsNullOrEmpty(this.platformData.bannerId)) {\n        console.log(\"无有效的banner广告ID,取消加载\");\n        return;\n      }\n\n      if (this._bannerAd) {\n        this._bannerAd.show();\n\n        console.log('展示已有banner');\n        return;\n      }\n\n      this.HideBannerAd();\n      this._bannerAd = this._base.createBannerAd({\n        adUnitId: this.platformData.bannerId\n      });\n      let isBannerLoading = true;\n      let loadSuccess = false;\n\n      this._bannerAd.show().then(res => {\n        console.log(\"banner加载成功\", res);\n\n        if (res['code'] == 0) {\n          loadSuccess = true;\n        }\n\n        isBannerLoading = false;\n      }).catch(res => {\n        console.error(\"banner加载失败\", res);\n        isBannerLoading = false;\n      });\n\n      while (isBannerLoading) {\n        yield Awaiters_1.default.NextFrame();\n      }\n\n      if (loadSuccess) return;\n      console.log(\"banner展示失败,展示native广告\"); // 销毁广告\n\n      if (this._bannerAd) {\n        this._bannerAd.destroy();\n\n        this._bannerAd = null;\n      } // 没有则展示原生\n\n\n      for (let i = 0; i < this.platformData.nativeIconIds.length; ++i) {\n        let ret = yield this._ShowNativeBanner(i);\n\n        if (ret) {\n          break;\n        }\n\n        this._bannerAd.destroy();\n      }\n    });\n  }\n\n  _ShowNativeBanner(index) {\n    return __awaiter(this, void 0, void 0, function* () {\n      let nativeBanner = this.base.createNativeAd({\n        adUnitId: this.platformData.nativeBannerIds[index]\n      }); // 转接对象\n\n      this._bannerAd = nativeBanner;\n      let loadRet = yield nativeBanner.load();\n\n      if (loadRet[\"code\"] == 0) {\n        // 加载成功\n        let adList = loadRet['adList'];\n\n        if (adList == null || adList.length == 0) {\n          console.error(\"native banner加载失败\", loadRet);\n          return false;\n        }\n\n        let adData = adList[0];\n\n        if (adData == null) {\n          console.error(\"native banner加载失败\", loadRet);\n          return false;\n        }\n\n        return true;\n      } else {\n        console.error(\"native banner加载失败\", loadRet);\n        return false;\n      }\n    });\n  }\n\n  HideBannerAd() {\n    if (this._bannerAd) {\n      this._bannerAd.destroy();\n\n      this._bannerAd = null;\n    }\n  }\n\n  ShowNativeAd() {\n    return __awaiter(this, void 0, void 0, function* () {\n      if (!this.IsNativeAvaliable()) {\n        return;\n      } // await this._ShowNative();\n\n    });\n  }\n\n  HideNativeAd() {\n    if (!this.IsNativeAvaliable()) {\n      return;\n    } // this._HideNative();\n\n  } // isNativeInterstitialAvaliable(){\n  //     return this.intersitialAd.canShowAD\n  // }\n\n\n  _DoCacheShowVideo(onSuccess, onSkipped) {\n    if (!this._isVideoLoaded) {\n      console.error(\"视频广告尚未加载好\");\n      return;\n    }\n\n    this._rewardSuccessed = onSuccess;\n    this._rewardSkipped = onSkipped;\n    this._isVideoLoaded = false;\n    Laya.stage.event(PlatformCommonEventId_1.PlatformCommonEvent.PAUSE_AUDIO);\n\n    this._rewardVideo.show();\n  }\n\n  _DoNoCacheShowVideo(onSuccess, onSkipped) {\n    this._rewardSuccessed = onSuccess;\n    this._rewardSkipped = onSkipped;\n\n    if (StringUtils_1.default.IsNullOrEmpty(this.platformData.rewardVideoId)) {\n      console.log(\"无有效的视频广告ID,取消加载\");\n      this._rewardSkipped && this._rewardSkipped.run();\n      return;\n    }\n\n    let createRewardedVideoAd = this._base[\"createRewardedVideoAd\"];\n\n    if (createRewardedVideoAd == null) {\n      console.error(\"无createRewardedVideoAd方法,跳过初始化\");\n      this._rewardSkipped && this._rewardSkipped.run();\n      return;\n    }\n\n    if (this._rewardVideo) {\n      this._rewardVideo.destroy();\n    }\n\n    let videoObj = {};\n    videoObj[\"adUnitId\"] = this.platformData.rewardVideoId; // \"adunit-5631637236cf16b6\";\n\n    this._rewardVideo = createRewardedVideoAd(videoObj);\n    console.log(\"广告创建完成\", videoObj);\n\n    this._rewardVideo.onClose(res => {\n      Laya.stage.event(PlatformCommonEventId_1.PlatformCommonEvent.RESUM_AUDIO);\n      console.log(\"视频回调\", res);\n      let isEnd = res[\"isEnded\"];\n      Awaiters_1.default.NextFrame().then(() => {\n        if (isEnd) {\n          if (this._rewardSuccessed) this._rewardSuccessed.run();\n        } else {\n          if (this._rewardSkipped) this._rewardSkipped.run();\n        }\n      });\n    });\n\n    this._rewardVideo.onError(err => {\n      console.log(\"广告组件出现问题\", err);\n      if (this._rewardSkipped) this._rewardSkipped.run();\n    });\n\n    this._rewardVideo.onLoad(res => {\n      console.log(\"广告加载成功\", res);\n    });\n\n    this._rewardVideo.load().then(() => {\n      this._rewardVideo.show();\n    });\n  }\n\n  ShowRewardVideoAd(onSuccess, onSkipped) {\n    if (this._cacheVideoAD) {\n      this._DoCacheShowVideo(onSuccess, onSkipped);\n    } else {\n      this._DoNoCacheShowVideo(onSuccess, onSkipped);\n    }\n  }\n\n  ShowRewardVideoAdAsync() {\n    return new Promise(function (resolve) {\n      PlatformManagerProxy_1.default.instance.PlatformInstance.ShowRewardVideoAd(Laya.Handler.create(this, () => {\n        resolve(true);\n      }), Laya.Handler.create(this, () => {\n        resolve(false);\n      }));\n    });\n  }\n\n  _DisableInterstitalAd() {\n    return __awaiter(this, void 0, void 0, function* () {\n      this._isInterstitialCanShow = false;\n      yield Awaiters_1.default.Seconds(60);\n      this._isInterstitialCanShow = true;\n    });\n  }\n\n  GetFromAppId() {\n    if (this.lauchOption.referrerInfo == null) {\n      return null;\n    }\n\n    if (StringUtils_1.default.IsNullOrEmpty(this.lauchOption.referrerInfo.appId)) {\n      return null;\n    }\n\n    return this.lauchOption.referrerInfo.appId;\n  }\n  /** 发起创建桌面图标请求 */\n\n\n  CreatShortcut() {\n    return new Promise((resolve, reject) => {\n      qg['hasShortcutInstalled']({\n        success: function (res) {\n          // 判断图标未存在时，创建图标\n          if (res == false) {\n            qg['installShortcut']({\n              success: function () {\n                resolve();\n              },\n              fail: function (err) {\n                reject();\n              },\n              complete: function () {}\n            });\n          } else {\n            resolve();\n          }\n        },\n        fail: function (err) {\n          reject();\n        },\n        complete: function () {}\n      });\n    });\n  }\n\n  LoadSubpackage(name, onSuccess, onFailed, onProgress) {\n    let loadObj = {};\n    loadObj[\"name\"] = name;\n\n    loadObj[\"success\"] = () => {\n      console.log(\"分包加载成功\", name);\n\n      if (onSuccess) {\n        onSuccess.run();\n      }\n    };\n\n    loadObj[\"fail\"] = () => {\n      console.error(\"分包加载失败\", name);\n\n      if (onFailed) {\n        onFailed.run();\n      }\n    };\n\n    let loadTask = this._base.loadSubpackage(loadObj);\n\n    loadTask.onProgressUpdate(res => {\n      console.log(\"分包加载进度\", res);\n\n      if (onProgress) {\n        onProgress.runWith(res.progress / 100);\n      }\n    });\n  }\n\n  RecordEvent(eventId, param) {\n    console.log(\"[记录事件]\", eventId, param);\n  }\n  /**\r\n   * 创建分享视频按钮\r\n   * @param x\r\n   * @param y\r\n   * @param width\r\n   * @param height\r\n   */\n\n\n  CreateShareVideoBtn(x, y, width, height) {}\n  /**\r\n   * 隐藏分享视频按钮\r\n   */\n\n\n  HideShareVideoBtn() {\n    if (this._shareVideoBtn != null) {\n      this._shareVideoBtn.hide();\n    }\n  }\n\n  ShowToast(str) {\n    this._base.showToast({\n      title: str,\n      duration: 2000\n    });\n  }\n\n  OpenGameBox(appIds) {\n    console.error(\"当前平台\", PlatformManagerProxy_1.default.platformStr, \"暂不支持互推游戏盒子\");\n  }\n  /**\r\n   * @param appId oppo vivo传包名\r\n   */\n\n\n  NavigateToApp(appId, path, extra) {\n    return new Promise((resolve, reject) => {\n      Laya.Browser.window.qg.navigateToMiniGame({\n        pkgName: appId,\n        path: path,\n        extraData: extra,\n        success: function () {\n          resolve(true);\n          console.log('oppo小游戏跳转成功');\n        },\n        fail: function (res) {\n          reject(false);\n          console.log('oppo小游戏跳转失败：', JSON.stringify(res));\n        }\n      });\n    });\n  }\n\n}\n\nexports.default = OppoPlatform;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/aTGame/Platform/PlatformClass/OppoPlatform.ts?");
+
+/***/ }),
+
+/***/ "./src/aTGame/Platform/PlatformClass/QQPlatform.ts":
+/*!*********************************************************!*\
+  !*** ./src/aTGame/Platform/PlatformClass/QQPlatform.ts ***!
+  \*********************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst ConsoleEx_1 = __webpack_require__(/*! ../../Console/ConsoleEx */ \"./src/aTGame/Console/ConsoleEx.ts\");\n\nconst StringUtils_1 = __webpack_require__(/*! ../../Utils/StringUtils */ \"./src/aTGame/Utils/StringUtils.ts\");\n\nconst PlatformCommonEventId_1 = __webpack_require__(/*! ../Common/PlatformCommonEventId */ \"./src/aTGame/Platform/Common/PlatformCommonEventId.ts\");\n\nconst PlatformManagerProxy_1 = __webpack_require__(/*! ../PlatformManagerProxy */ \"./src/aTGame/Platform/PlatformManagerProxy.ts\");\n\nconst EPlatformType_1 = __webpack_require__(/*! ../T/EPlatformType */ \"./src/aTGame/Platform/T/EPlatformType.ts\");\n\nconst WXPlatform_1 = __webpack_require__(/*! ./WXPlatform */ \"./src/aTGame/Platform/PlatformClass/WXPlatform.ts\");\n/**\r\n * QQ平台实例\r\n */\n\n\nclass QQPlatform extends WXPlatform_1.default {\n  constructor() {\n    super(...arguments);\n    this.platform = EPlatformType_1.EPlatformType.QQ;\n    this.isBannerShowing = false;\n  }\n\n  Init(platformData) {\n    this._base = window[\"qq\"];\n\n    if (this._base == null) {\n      console.error(...ConsoleEx_1.default.packError(\"平台初始化错误\", PlatformManagerProxy_1.default.platformStr));\n      return;\n    }\n\n    this.platformData = platformData;\n    this.recordManager.Platform = this;\n\n    this._InitLauchOption();\n\n    this._Login();\n\n    this._InitShareInfo();\n\n    this._InitSystemInfo();\n\n    this._CreateBannerAd();\n\n    this._CreateVideoAd();\n\n    this._CreateInterstitalAd();\n\n    window[\"iplatform\"] = this;\n    console.error(\"平台初始化完成\", PlatformManagerProxy_1.default.platformStr);\n  }\n\n  _InitSystemInfo() {\n    try {\n      let systemInfo = this._base.getSystemInfoSync();\n\n      this._cacheScreenScale = systemInfo.screenWidth / Laya.stage.width;\n      this.safeArea = {};\n      this.safeArea.width = systemInfo.windowWidth;\n      this.safeArea.height = systemInfo.windowHeight;\n      this.safeArea.top = systemInfo.statusBarHeight;\n      this.safeArea.bottom = 0;\n      console.log(\"QQ覆写_InitSystemInfo\", this.safeArea);\n    } catch (e) {\n      console.error(e);\n      console.error(\"获取设备信息失败,执行默认初始化\");\n      this.safeArea = null;\n    }\n  }\n\n  _CreateBannerAd(show) {\n    if (StringUtils_1.default.IsNullOrEmpty(this.platformData.bannerId)) {\n      console.log(\"无有效的banner广告ID,取消加载\");\n      return;\n    }\n\n    let windowWidth = this._base.getSystemInfoSync().windowWidth;\n\n    let windowHeight = this._base.getSystemInfoSync().windowHeight;\n\n    let bannerObj = {};\n    bannerObj[\"adUnitId\"] = this.platformData.bannerId; // \"adunit-b48894d44d318e5a\";\n\n    let styleObj = {};\n    styleObj[\"top\"] = windowHeight - 80;\n    styleObj[\"width\"] = 300;\n    styleObj[\"left\"] = (windowWidth - styleObj[\"width\"]) / 2;\n    bannerObj[\"style\"] = styleObj;\n    this._bannerAd = this._base.createBannerAd(bannerObj);\n    this._isBannerLoaded = false;\n\n    this._bannerAd.onLoad(() => {\n      console.log(\"qq banner加载成功\", this._bannerAd);\n      this._isBannerLoaded = true;\n\n      if (show) {\n        this._bannerAd.show();\n      }\n    });\n\n    this._bannerAd.onError(res => {\n      console.error(\"banner广告加载失败\", res);\n    });\n\n    this._bannerAd.onResize(size => {\n      console.log(\"onResize\", size);\n      this._bannerAd.style.top = windowHeight - 80;\n      this._bannerAd.style.left = (windowWidth - 300) / 2;\n      console.log(\"onResize\", this._bannerAd);\n    }); // super._CreateBannerAd();\n\n  }\n\n  IsBannerAvaliable() {\n    return this._isBannerLoaded;\n  }\n\n  IsVideoAvaliable() {\n    return this._isVideoLoaded;\n  }\n\n  IsInterstitalAvaliable() {\n    return this._isInterstitialLoaded;\n  }\n\n  ShowBannerAd() {\n    if (!this.IsBannerAvaliable()) {\n      return;\n    }\n\n    this._bannerAd.show();\n\n    this.isBannerShowing = true;\n    Laya.timer.loop(15 * 1000, this, this.refreshBanner);\n  }\n\n  refreshBanner() {\n    if (this.isBannerShowing) {\n      console.log('refresh banner');\n\n      this._bannerAd.hide();\n\n      this._CreateBannerAd(true);\n    }\n  }\n\n  HideBannerAd() {\n    if (!this.IsBannerAvaliable()) return;\n\n    if (this._bannerAd) {\n      this._bannerAd.hide();\n\n      Laya.timer.clear(this, this.refreshBanner);\n      this.isBannerShowing = false;\n    }\n\n    this._CreateBannerAd();\n  }\n\n  _DoCacheShowVideo(onSuccess, onSkipped) {\n    if (!this._isVideoLoaded) {\n      console.error(\"视频广告尚未加载好\");\n      return;\n    }\n\n    this._rewardSuccessed = onSuccess;\n    this._rewardSkipped = onSkipped;\n    this._isVideoLoaded = false;\n    Laya.stage.event(PlatformCommonEventId_1.PlatformCommonEvent.PAUSE_AUDIO);\n\n    this._rewardVideo.show();\n  }\n\n  _DoNoCacheShowVideo(onSuccess, onSkipped) {\n    this._rewardSuccessed = onSuccess;\n    this._rewardSkipped = onSkipped;\n\n    if (!this._isVideoLoaded || !this._rewardVideo) {\n      if (StringUtils_1.default.IsNullOrEmpty(this.platformData.rewardVideoId)) {\n        console.log(\"无有效的视频广告ID,取消加载\");\n        onSkipped.run();\n        return;\n      }\n\n      let createRewardedVideoAd = this._base[\"createRewardedVideoAd\"];\n\n      if (createRewardedVideoAd == null) {\n        console.error(\"无createRewardedVideoAd方法,跳过初始化\");\n        onSkipped.run();\n        return;\n      }\n\n      this._videoFailedCount = 0;\n      let videoObj = {};\n      videoObj[\"adUnitId\"] = this.platformData.rewardVideoId; // \"adunit-5631637236cf16b6\";\n\n      this._rewardVideo = createRewardedVideoAd(videoObj);\n\n      this._rewardVideo.onLoad(() => {\n        console.log(\"视频广告加载成功\");\n        this._isVideoLoaded = true;\n      });\n\n      this._rewardVideo.onError(res => {\n        this._videoFailedCount++;\n        console.error(\"视频广告加载失败\", res, this._videoFailedCount);\n      });\n\n      this._rewardVideo.onClose(res => {\n        Laya.stage.event(PlatformCommonEventId_1.PlatformCommonEvent.RESUM_AUDIO);\n        console.log(\" NoCache - 视频回调\", res);\n        let isEnd = res[\"isEnded\"];\n        console.log(\"noCache---\", isEnd, \"----\", !!this._rewardSuccessed, \"-----\", !!this._rewardSkipped);\n\n        if (isEnd) {\n          if (this._rewardSuccessed) this._rewardSuccessed.run();\n        } else {\n          if (this._rewardSkipped) this._rewardSkipped.run();\n        }\n      });\n    }\n\n    this._rewardVideo.show().then(() => {//\n    }).catch(err => {\n      console.log(\"广告组件出现问题\", err); // 可以手动加载一次\n\n      this._rewardVideo.load().then(() => {\n        console.log(\"手动加载成功\"); // 加载成功后需要再显示广告\n\n        return this._rewardVideo.show().then(() => {//\n        });\n      });\n    });\n\n    ;\n  }\n\n  ShowRewardVideoAd(onSuccess, onSkipped) {\n    if (this._cacheVideoAD) {\n      this._DoCacheShowVideo(onSuccess, onSkipped);\n    } else {\n      this._DoNoCacheShowVideo(onSuccess, onSkipped);\n    }\n  }\n\n  ShowRewardVideoAdAsync() {\n    return new Promise(function (resolve) {\n      PlatformManagerProxy_1.default.instance.PlatformInstance.ShowRewardVideoAd(Laya.Handler.create(this, () => {\n        resolve(true);\n      }, null, true), Laya.Handler.create(this, () => {\n        resolve(false);\n      }, null, true));\n    });\n  }\n\n  ShowInterstitalAd() {\n    if (!this._isInterstitialLoaded) {\n      console.error(\"插页广告尚未加载好\");\n      return;\n    }\n\n    this._intersitialAd.show();\n  }\n\n  OpenGameBox(appIds = []) {\n    this.showAppBox();\n  }\n  /**\r\n   * 盒子广告\r\n   */\n\n\n  showAppBox() {\n    if (this.appBox) {\n      this.appBox.show();\n    }\n  }\n\n  createAppBox(show) {\n    if (!this.appBox) {\n      this.appBox = this._base.createAppBox({\n        adUnitId: ''\n      });\n    }\n\n    this.appBox.load().then(() => {\n      if (show) {\n        this.appBox.show();\n      }\n    });\n    this.appBox.onClose(() => {\n      console.log('关闭盒子');\n    });\n  }\n\n  hideAppBox() {\n    if (this.appBox) {\n      this.appBox.destroy();\n    }\n  }\n  /**\r\n   * 积木广告 1-5\r\n   */\n\n\n  showBlockAd(count = 1) {\n    let obj = {\n      adUnitId: \"\",\n      style: {\n        left: 55,\n        top: Laya.stage.height / 2\n      },\n      size: count,\n      orientation: 'vertical' //landscape 或者 vertical，积木广告横向展示或者竖向展示\n\n    };\n    this.blockAd = this._base.createBlockAd(obj);\n    this.blockAd.onLoad(() => {\n      console.log('积木广告加载完成');\n      this.blockAd.show().then(() => {\n        console.log('积木展示成功');\n      }).catch(e => {\n        console.error('积木展示失败', e);\n      });\n    });\n    this.blockAd.onError(err => {\n      console.error('积木广告加载错误', err);\n    });\n    this.blockAd.onResize(res => {\n      console.log('积木resize', res);\n    });\n  }\n\n  hideBlockAd() {\n    if (this.blockAd) {\n      this.blockAd.hide();\n      this.blockAd.destroy();\n    }\n  }\n\n}\n\nexports.default = QQPlatform;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/aTGame/Platform/PlatformClass/QQPlatform.ts?");
+
+/***/ }),
+
+/***/ "./src/aTGame/Platform/PlatformClass/QTTPlatform.ts":
+/*!**********************************************************!*\
+  !*** ./src/aTGame/Platform/PlatformClass/QTTPlatform.ts ***!
+  \**********************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst ConsoleEx_1 = __webpack_require__(/*! ../../Console/ConsoleEx */ \"./src/aTGame/Console/ConsoleEx.ts\");\n\nconst PlatformCommonEventId_1 = __webpack_require__(/*! ../Common/PlatformCommonEventId */ \"./src/aTGame/Platform/Common/PlatformCommonEventId.ts\");\n\nconst EPlatformType_1 = __webpack_require__(/*! ../T/EPlatformType */ \"./src/aTGame/Platform/T/EPlatformType.ts\");\n\nconst WXPlatform_1 = __webpack_require__(/*! ./WXPlatform */ \"./src/aTGame/Platform/PlatformClass/WXPlatform.ts\");\n/**\r\n * 趣头条实例\r\n */\n\n\nclass QTTPlatform extends WXPlatform_1.default {\n  constructor() {\n    super(...arguments);\n    this.platform = EPlatformType_1.EPlatformType.QTT;\n  }\n\n  Init(platformData) {\n    this._base = window[\"qttGame\"];\n\n    if (this._base == null) {\n      console.error(...ConsoleEx_1.default.packError(\"平台初始化错误\"));\n      return;\n    }\n\n    this.platformData = platformData;\n    this.recordManager.Platform = this; // this._InitLauchOption();\n    // this._Login();\n    // this._InitShareInfo();\n    // this._InitSystemInfo();\n    // this._CreateBannerAd();\n    // this._CreateVideoAd();\n    // this._CreateInterstitalAd();\n\n    window[\"iplatform\"] = this;\n  }\n\n  IsBannerAvaliable() {\n    return true;\n  }\n\n  ShowBannerAd() {\n    this._base.showBanner({\n      index: 1\n    });\n  }\n\n  HideBannerAd() {\n    this._base.hideBanner();\n  }\n\n  IsVideoAvaliable() {\n    return true;\n  }\n\n  ShowRewardVideoAd(onSuccess, onSkipped) {\n    let options = {};\n    options.index = 1; //广告位置（1，2，3，4...）\n\n    options.gametype = 1; //互动游戏类型，1(砸金蛋)  2(laba)  3(大转盘)\n\n    options.rewardtype = 1; //互动广告框，只有 1\n\n    options.data = {};\n    options.data.title = \"获得奖励\"; //互动抽中奖后的道具提示文字\n\n    Laya.stage.event(PlatformCommonEventId_1.PlatformCommonEvent.PAUSE_AUDIO);\n\n    this._base.showVideo(res => {\n      Laya.stage.event(PlatformCommonEventId_1.PlatformCommonEvent.RESUM_AUDIO);\n\n      if (res == 1) {\n        // 播放完成，发放奖励\n        if (onSuccess) {\n          onSuccess.run();\n        }\n      } else {\n        //res = 0    填充不足\n        //res = 2    提前关闭\n        if (onSkipped) {\n          onSkipped.run();\n        }\n      }\n    }, options);\n  }\n\n  ShowInterstitalAd() {\n    // 趣头条插页广告转接为互动广告\n    this.ShowHDReward();\n  }\n  /**\r\n   * 显示互动广告\r\n   */\n\n\n  ShowHDReward() {\n    let options = {};\n    options.index = 1;\n    options.rewardtype = 1;\n\n    this._base.showHDReward(options);\n  }\n\n  RecordEvent(eventId, param) {\n    console.log(\"记录事件\", eventId, param);\n  }\n\n}\n\nexports.default = QTTPlatform;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/aTGame/Platform/PlatformClass/QTTPlatform.ts?");
+
+/***/ }),
+
+/***/ "./src/aTGame/Platform/PlatformClass/TTPlatform.ts":
+/*!*********************************************************!*\
+  !*** ./src/aTGame/Platform/PlatformClass/TTPlatform.ts ***!
+  \*********************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst ConsoleEx_1 = __webpack_require__(/*! ../../Console/ConsoleEx */ \"./src/aTGame/Console/ConsoleEx.ts\");\n\nconst StringUtils_1 = __webpack_require__(/*! ../../Utils/StringUtils */ \"./src/aTGame/Utils/StringUtils.ts\");\n\nconst TTDevice_1 = __webpack_require__(/*! ../Device/TTDevice */ \"./src/aTGame/Platform/Device/TTDevice.ts\");\n\nconst TTRecordManager_1 = __webpack_require__(/*! ../Record/TTRecordManager */ \"./src/aTGame/Platform/Record/TTRecordManager.ts\");\n\nconst EPlatformType_1 = __webpack_require__(/*! ../T/EPlatformType */ \"./src/aTGame/Platform/T/EPlatformType.ts\");\n\nconst WXPlatform_1 = __webpack_require__(/*! ./WXPlatform */ \"./src/aTGame/Platform/PlatformClass/WXPlatform.ts\");\n/**\r\n * 头条平台实例\r\n */\n\n\nclass TTPlatform extends WXPlatform_1.default {\n  constructor() {\n    super(...arguments);\n    this.platform = EPlatformType_1.EPlatformType.TT;\n    this._showVideoLoad = false;\n  }\n\n  Init(platformData) {\n    this._base = window[\"tt\"];\n\n    if (this._base == null) {\n      console.error(...ConsoleEx_1.default.packError(\"平台初始化错误\"));\n      return;\n    }\n\n    this.platformData = platformData; // 检测是否支持交叉推广\n\n    let tt = this._base;\n    let systemInfo = tt.getSystemInfoSync();\n\n    if (systemInfo.platform == \"ios\") {\n      this.isSupportJumpOther = false;\n    }\n\n    let [major, minor] = systemInfo.SDKVersion.split(\".\");\n\n    if (major >= 1 && minor >= 33) {} else {\n      this.isSupportJumpOther = false;\n    }\n\n    this._InitLauchOption(); // this._Login();\n\n\n    this._InitShareInfo();\n\n    this._InitSystemInfo();\n\n    this._CreateBannerAd();\n\n    this._CreateVideoAd();\n\n    this._CreateInterstitalAd();\n\n    this.recordManager = new TTRecordManager_1.default(this._base);\n    this.recordManager.Platform = this;\n    this.device = new TTDevice_1.default(this._base);\n    window[\"iplatform\"] = this;\n  }\n\n  _CreateBannerAd() {\n    if (StringUtils_1.default.IsNullOrEmpty(this.platformData.bannerId)) {\n      console.log(\"无有效的banner广告ID,取消加载\");\n      return;\n    }\n\n    let windowWidth = this._base.getSystemInfoSync().windowWidth;\n\n    let windowHeight = this._base.getSystemInfoSync().windowHeight;\n\n    let bannerObj = {};\n    bannerObj[\"adUnitId\"] = this.platformData.bannerId; // \"adunit-b48894d44d318e5a\";\n\n    bannerObj[\"adIntervals\"] = 30;\n    let styleObj = {};\n    styleObj[\"left\"] = 0;\n    styleObj[\"top\"] = 0;\n    styleObj[\"width\"] = windowWidth;\n    bannerObj[\"style\"] = styleObj;\n    this._bannerAd = this._base.createBannerAd(bannerObj);\n    this._isBannerLoaded = false;\n\n    if (this._bannerAd) {\n      this._bannerAd.onLoad(() => {\n        console.log(\"banner加载成功\", this._bannerAd);\n        this._isBannerLoaded = true;\n      });\n\n      this._bannerAd.onError(res => {\n        console.error(\"banner广告加载失败\", res);\n        this._bannerAd == null;\n      });\n\n      this._bannerAd.onResize(size => {\n        this._bannerAd.style.top = windowHeight - size.height;\n        this._bannerAd.style.left = (windowWidth - size.width) / 2;\n      });\n    }\n  }\n\n  RecordEvent(eventId, param) {\n    let reportAnalytics = this._base[\"reportAnalytics\"];\n\n    if (reportAnalytics) {\n      if (param == null) {\n        param = {};\n      }\n\n      reportAnalytics(eventId, param);\n    } else {\n      console.error(\"reportAnalytics 方法不存在\");\n    }\n  }\n\n  ShowBannerAd() {\n    if (!this.IsBannerAvaliable()) {\n      return;\n    }\n\n    this._bannerAd.show();\n  }\n\n  ShareAppMessage(shareInfo, onSuccess, onFailed) {\n    console.log(\"分享消息\", shareInfo);\n\n    let shareObj = WXPlatform_1.default._WrapShareInfo(shareInfo);\n\n    shareObj[\"success\"] = () => {\n      if (onSuccess) {\n        onSuccess.run();\n      }\n    };\n\n    shareObj[\"fail\"] = () => {\n      if (onFailed) {\n        onFailed.run();\n      }\n    };\n\n    this._base.shareAppMessage(shareObj);\n  }\n\n  OpenGameBox(appIds) {\n    let openData = [];\n\n    for (let i = 0; i < appIds.length; ++i) {\n      openData.push({\n        appId: appIds[i]\n      });\n    }\n\n    this._base.showMoreGamesModal({\n      appLaunchOptions: openData\n    });\n  }\n\n  NavigateToApp(appid, path, extra) {\n    return new Promise((resolve, reject) => {\n      if (!this.isSupportJumpOther) {\n        reject(false);\n        console.log(\"当前平台不支持小游戏跳转\", this);\n      } else {\n        this._base.showMoreGamesModal({\n          appLaunchOptions: [{\n            appId: this.platformData.appId,\n            query: \"foo=bar&baz=qux\",\n            extraData: {}\n          }],\n\n          success(res) {\n            resolve(true);\n            console.log(\"跳转小游戏成功\", appid);\n          },\n\n          fail(err) {\n            reject(false);\n            console.log(\"跳转小游戏失败\", appid);\n          }\n\n        });\n      }\n    });\n  }\n\n}\n\nexports.default = TTPlatform;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/aTGame/Platform/PlatformClass/TTPlatform.ts?");
+
+/***/ }),
+
+/***/ "./src/aTGame/Platform/PlatformClass/WXPlatform.ts":
+/*!*********************************************************!*\
+  !*** ./src/aTGame/Platform/PlatformClass/WXPlatform.ts ***!
+  \*********************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst Awaiters_1 = __webpack_require__(/*! ../../Async/Awaiters */ \"./src/aTGame/Async/Awaiters.ts\");\n\nconst ConsoleEx_1 = __webpack_require__(/*! ../../Console/ConsoleEx */ \"./src/aTGame/Console/ConsoleEx.ts\");\n\nconst StringUtils_1 = __webpack_require__(/*! ../../Utils/StringUtils */ \"./src/aTGame/Utils/StringUtils.ts\");\n\nconst PlatformCommonEventId_1 = __webpack_require__(/*! ../Common/PlatformCommonEventId */ \"./src/aTGame/Platform/Common/PlatformCommonEventId.ts\");\n\nconst WXDevice_1 = __webpack_require__(/*! ../Device/WXDevice */ \"./src/aTGame/Platform/Device/WXDevice.ts\");\n\nconst PlatformManagerProxy_1 = __webpack_require__(/*! ../PlatformManagerProxy */ \"./src/aTGame/Platform/PlatformManagerProxy.ts\");\n\nconst DefaultRecordManager_1 = __webpack_require__(/*! ../Record/DefaultRecordManager */ \"./src/aTGame/Platform/Record/DefaultRecordManager.ts\");\n\nconst ShareManager_1 = __webpack_require__(/*! ../ShareManager */ \"./src/aTGame/Platform/ShareManager.ts\");\n\nconst EPlatformType_1 = __webpack_require__(/*! ../T/EPlatformType */ \"./src/aTGame/Platform/T/EPlatformType.ts\");\n/**\r\n * 微信平台实例\r\n */\n\n\nclass WXPlatform {\n  constructor() {\n    this.platform = EPlatformType_1.EPlatformType.WX;\n    this.safeArea = null;\n    this.recordManager = new DefaultRecordManager_1.default();\n    this.device = new WXDevice_1.default();\n    this.loginCode = null;\n    /**\r\n     * 是否支持直接跳转到其他小程序\r\n     */\n\n    this.isSupportJumpOther = true;\n    this._isBannerLoaded = false;\n    this._isVideoLoaded = false;\n    this._isInterstitialLoaded = false;\n    this._cacheVideoAD = false;\n    this.NavigateToAppSuccess = null;\n  }\n\n  Init(platformData) {\n    this._base = window[\"wx\"];\n\n    if (this._base == null) {\n      console.error(...ConsoleEx_1.default.packError(\"平台初始化错误\", PlatformManagerProxy_1.default.platformStr));\n      return;\n    }\n\n    this.platformData = platformData;\n    this.recordManager.Platform = this;\n\n    this._InitLauchOption();\n\n    this._Login();\n\n    this._InitShareInfo();\n\n    this._InitSystemInfo();\n\n    this._CreateBannerAd();\n\n    this._CreateVideoAd();\n\n    this._CreateInterstitalAd();\n\n    window[\"iplatform\"] = this;\n  }\n\n  _CheckUpdate() {\n    let updateManager = this._base.getUpdateManager();\n\n    if (updateManager == null) return;\n    updateManager.onCheckForUpdate(function (res) {\n      // 请求完新版本信息的回调\n      console.log(\"onCheckForUpdate\", res.hasUpdate);\n\n      if (res.hasUpdate) {\n        this._base.showToast({\n          title: \"即将有更新请留意\"\n        });\n      }\n    });\n    updateManager.onUpdateReady(() => {\n      this._base.showModal({\n        title: \"更新提示\",\n        content: \"新版本已经准备好，是否立即使用？\",\n        success: function (res) {\n          if (res.confirm) {\n            // 调用 applyUpdate 应用新版本并重启\n            updateManager.applyUpdate();\n          } else {\n            this._base.showToast({\n              icon: \"none\",\n              title: \"小程序下一次「冷启动」时会使用新版本\"\n            });\n          }\n        }\n      });\n    });\n    updateManager.onUpdateFailed(() => {\n      this._base.showToast({\n        title: \"更新失败，下次启动继续...\"\n      });\n    });\n  }\n\n  _Login() {\n    this.loginState = {\n      isLogin: false,\n      code: \"\"\n    };\n    let loginData = {};\n\n    loginData.success = res => {\n      this.loginCode = res.code;\n\n      this._OnLoginSuccess(res);\n\n      console.error(this.loginState);\n    };\n\n    loginData.fail = res => {\n      console.error(PlatformManagerProxy_1.default.platformStr, \"登录失败\", res);\n      this.loginState.isLogin = false;\n      this.loginState.code = \"\";\n    };\n\n    loginData.complete = () => {\n      if (this.onLoginEnd != null) {\n        this.onLoginEnd.run();\n      }\n    };\n\n    this._base.login(loginData);\n  }\n\n  GetStorage(key) {\n    if (this.base && this.base.getStorageSync && key) {\n      try {\n        return this.base.getStorageSync(key);\n      } catch (error) {\n        console.log('getStorageSync error: ', JSON.stringify(error));\n        return null;\n      }\n    }\n  }\n\n  SetStorage(key, data) {\n    if (this.base && this.base.getStorageSync && key) {\n      try {\n        return this.base.setStorageSync(key, data);\n      } catch (error) {\n        console.log('setStorageSync error: ', JSON.stringify(error));\n      }\n    }\n  }\n\n  _OnLoginSuccess(res) {\n    console.log(PlatformManagerProxy_1.default.platformStr, \"登录成功\", res);\n    this.loginState.isLogin = true;\n    this.loginState.code = res.code;\n  }\n\n  _InitLauchOption() {\n    // 绑定onShow事件\n    this._base.onShow(this._OnShow);\n\n    this._base.onHide(this._OnHide); // 自动获取一次启动参数\n\n\n    let res = this._base.getLaunchOptionsSync();\n\n    this._OnShow(res);\n  }\n\n  _InitShareInfo() {\n    this._base.showShareMenu({\n      withShareTicket: true,\n      success: res => {\n        console.log(\"InitShareSuccess\", res);\n      },\n      fail: res => {\n        console.log(\"InitShareFailed\", res);\n      },\n      complete: res => {\n        console.log(\"InitShareComplete\", res);\n      }\n    });\n\n    this._base.onShareAppMessage(() => {\n      let shareInfo = ShareManager_1.default.instance.GetShareInfo();\n      return WXPlatform._WrapShareInfo(shareInfo);\n    });\n  }\n\n  static _WrapShareInfo(shareInfo) {\n    let shareObj = {};\n\n    if (shareInfo.shareTitle) {\n      shareObj[\"title\"] = shareInfo.shareTitle;\n    }\n\n    if (shareInfo.shareImg) {\n      shareObj[\"imageUrl\"] = shareInfo.shareImg;\n    }\n\n    if (shareInfo.sharePath) {\n      shareObj[\"query\"] = {};\n      let pathSplit = shareInfo.sharePath.split(\"?\");\n      let params = pathSplit[1].split(\"&\");\n\n      for (let getParam of params) {\n        let splitParam = getParam.split(\"=\");\n        shareObj[\"query\"][splitParam[0]] = splitParam[1];\n      }\n    }\n\n    return shareObj;\n  }\n\n  _InitSystemInfo() {\n    this.base = this._base;\n\n    try {\n      this.systemInfo = this._base.getSystemInfoSync();\n      console.log(\"系统信息已获取\", this.systemInfo);\n      this.safeArea = this.systemInfo.safeArea;\n      this._cacheScreenScale = this.systemInfo.screenWidth / Laya.stage.width;\n    } catch (e) {\n      console.error(e);\n      console.error(\"获取设备信息失败,执行默认初始化\");\n      this.safeArea = null;\n    }\n  }\n\n  _CreateInterstitalAd() {\n    if (StringUtils_1.default.IsNullOrEmpty(this.platformData.interstitialId)) {\n      console.log(\"无有效的插页广告ID,取消加载\");\n      return;\n    }\n\n    this._interstitalFailedCount = 0;\n    let intAdObj = {};\n    intAdObj[\"adUnitId\"] = this.platformData.interstitialId;\n    this._intersitialAd = this._base.createInterstitialAd(intAdObj);\n    if (!this._intersitialAd) return;\n\n    this._intersitialAd.onLoad(() => {\n      console.log(\"插页广告加载成功\");\n      this._isInterstitialLoaded = true;\n    });\n\n    this._intersitialAd.onError(err => {\n      this._interstitalFailedCount++;\n      console.error(\"插页广告加载失败\", err);\n\n      if (this._interstitalFailedCount > 10) {\n        console.log(\"第\", this._interstitalFailedCount, \"次重新加载插页广告\"); // 失败自动加载广告\n\n        this._intersitialAd.load();\n      }\n    });\n  }\n\n  _CreateVideoAd() {\n    console.log('vedio ad id', this.platformData.rewardVideoId);\n\n    if (!this._cacheVideoAD) {\n      console.log(\"当前策略为不缓存视频广告\");\n      return;\n    }\n\n    let createRewardedVideoAd = this._base[\"createRewardedVideoAd\"];\n\n    if (createRewardedVideoAd == null) {\n      console.error(\"无createRewardedVideoAd方法,跳过初始化\");\n      return;\n    }\n\n    if (StringUtils_1.default.IsNullOrEmpty(this.platformData.rewardVideoId)) {\n      console.log(\"无有效的视频广告ID,取消加载\");\n      return;\n    }\n\n    this._videoFailedCount = 0;\n    let videoObj = {};\n    videoObj[\"adUnitId\"] = this.platformData.rewardVideoId; // \"adunit-5631637236cf16b6\";\n\n    this._rewardVideo = createRewardedVideoAd(videoObj);\n\n    this._rewardVideo.onLoad(() => {\n      console.log(\"视频广告加载成功\");\n      this._isVideoLoaded = true;\n    });\n\n    this._rewardVideo.onError(res => {\n      this._videoFailedCount++;\n      console.error(\"视频广告加载失败\", res);\n\n      if (this._videoFailedCount > 10) {\n        console.log(\"第\", this._videoFailedCount, \"次重新加载视频广告\"); // 失败自动加载广告\n\n        this._rewardVideo.load();\n      }\n    });\n\n    this._rewardVideo.onClose(res => {\n      Laya.stage.event(PlatformCommonEventId_1.PlatformCommonEvent.RESUM_AUDIO);\n      console.log(\"视频回调\", res);\n      let isEnd = res[\"isEnded\"]; // 修复广告bug\n\n      Awaiters_1.default.NextFrame().then(() => {\n        if (isEnd) {\n          if (this._rewardSuccessed) this._rewardSuccessed.run();\n        } else {\n          if (this._rewardSkipped) this._rewardSkipped.run();\n        }\n      });\n    });\n  }\n\n  _CreateBannerAd() {\n    if (StringUtils_1.default.IsNullOrEmpty(this.platformData.bannerId)) {\n      console.log(\"无有效的banner广告ID,取消加载\");\n      return;\n    }\n\n    let windowWidth = this._base.getSystemInfoSync().windowWidth;\n\n    let windowHeight = this._base.getSystemInfoSync().windowHeight;\n\n    let bannerObj = {};\n    bannerObj[\"adUnitId\"] = this.platformData.bannerId; // \"adunit-b48894d44d318e5a\";\n\n    bannerObj[\"adIntervals\"] = 30;\n    let styleObj = {};\n    styleObj[\"left\"] = 0;\n    styleObj[\"top\"] = 0;\n    styleObj[\"width\"] = 300;\n    bannerObj[\"style\"] = styleObj;\n    this._bannerAd = this._base.createBannerAd(bannerObj);\n    this._isBannerLoaded = false;\n\n    this._bannerAd.onLoad(() => {\n      console.log(\"banner加载成功\");\n      this._isBannerLoaded = true;\n      this._bannerAd.style.top = windowHeight - this._bannerAd.style.realHeight;\n      this._bannerAd.style.left = (windowWidth - this._bannerAd.style.realWidth) / 2;\n    });\n\n    this._bannerAd.onError(res => {\n      console.error(\"banner广告加载失败\", res);\n    });\n  }\n\n  IsBannerAvaliable() {\n    return this._isBannerLoaded;\n  }\n\n  IsVideoAvaliable() {\n    return this._isVideoLoaded;\n  }\n\n  IsInterstitalAvaliable() {\n    return this._isInterstitialLoaded;\n  }\n\n  ShowBannerAd() {\n    if (!this.IsBannerAvaliable()) {\n      return;\n    }\n\n    this._bannerAd.show();\n  }\n\n  HideBannerAd() {\n    this._bannerAd.hide();\n  }\n\n  _DoCacheShowVideo(onSuccess, onSkipped) {\n    if (!this._isVideoLoaded) {\n      console.error(\"视频广告尚未加载好\");\n      return;\n    }\n\n    this._rewardSuccessed = onSuccess;\n    this._rewardSkipped = onSkipped;\n    this._isVideoLoaded = false;\n    Laya.stage.event(PlatformCommonEventId_1.PlatformCommonEvent.PAUSE_AUDIO);\n\n    this._rewardVideo.show();\n  }\n\n  _DoNoCacheShowVideo(onSuccess, onSkipped) {\n    this._rewardSuccessed = onSuccess;\n    this._rewardSkipped = onSkipped;\n\n    if (StringUtils_1.default.IsNullOrEmpty(this.platformData.rewardVideoId)) {\n      console.log(\"无有效的视频广告ID,取消加载\");\n      onSkipped.run();\n      return;\n    }\n\n    let createRewardedVideoAd = this._base[\"createRewardedVideoAd\"];\n\n    if (createRewardedVideoAd == null) {\n      console.error(\"无createRewardedVideoAd方法,跳过初始化\");\n      onSkipped.run();\n      return;\n    }\n\n    this._videoFailedCount = 0;\n    let videoObj = {};\n    videoObj[\"adUnitId\"] = this.platformData.rewardVideoId; // \"adunit-5631637236cf16b6\";\n\n    if (this._rewardVideo) {\n      this._rewardVideo.offClose(this.onVideoClose);\n    }\n\n    this._rewardVideo = createRewardedVideoAd(videoObj);\n\n    this._rewardVideo.onLoad(() => {\n      console.log(\"视频广告加载成功\");\n      this._isVideoLoaded = true;\n    });\n\n    this._rewardVideo.onError(res => {\n      this._videoFailedCount++;\n      console.error(\"视频广告加载失败\", res, this._videoFailedCount);\n    });\n\n    this._rewardVideo.onClose(res => {\n      Laya.stage.event(PlatformCommonEventId_1.PlatformCommonEvent.RESUM_AUDIO);\n      console.log(\"视频回调\", res);\n      let isEnd = res[\"isEnded\"];\n      Awaiters_1.default.NextFrame().then(() => {\n        if (isEnd) {\n          if (this._rewardSuccessed) this._rewardSuccessed.run();\n        } else {\n          if (this._rewardSkipped) this._rewardSkipped.run();\n        }\n      });\n    });\n\n    this._rewardVideo.load().then(() => {\n      console.log(\"激励视频 加载成功\"); // 加载成功后 再显示广告\n\n      return this._rewardVideo.show().then(() => {//\n      }).catch(err => {\n        console.error(err);\n      });\n      ;\n    });\n  }\n\n  onVideoClose(res) {\n    Laya.stage.event(PlatformCommonEventId_1.PlatformCommonEvent.RESUM_AUDIO);\n    console.log(\"视频回调\", res);\n    let isEnd = res[\"isEnded\"];\n    Awaiters_1.default.NextFrame().then(() => {\n      if (isEnd) {\n        if (this._rewardSuccessed) this._rewardSuccessed.run();\n      } else {\n        if (this._rewardSkipped) this._rewardSkipped.run();\n      }\n    });\n  }\n\n  ShowRewardVideoAd(onSuccess, onSkipped) {\n    if (this._cacheVideoAD) {\n      this._DoCacheShowVideo(onSuccess, onSkipped);\n    } else {\n      this._DoNoCacheShowVideo(onSuccess, onSkipped);\n    }\n  }\n\n  ShowRewardVideoAdAsync() {\n    return new Promise(function (resolve) {\n      PlatformManagerProxy_1.default.instance.PlatformInstance.ShowRewardVideoAd(Laya.Handler.create(this, () => {\n        resolve(true);\n      }), Laya.Handler.create(this, () => {\n        resolve(false);\n      }));\n    });\n  }\n\n  ShowInterstitalAd() {\n    if (!this._isInterstitialLoaded) {\n      console.error(\"插页广告尚未加载好\");\n      return;\n    }\n\n    this._intersitialAd.show();\n  }\n\n  GetFromAppId() {\n    if (this.lauchOption.referrerInfo == null) {\n      return null;\n    }\n\n    if (StringUtils_1.default.IsNullOrEmpty(this.lauchOption.referrerInfo.appId)) {\n      return null;\n    }\n\n    return this.lauchOption.referrerInfo.appId;\n  }\n  /**\r\n   * 小游戏回到前台的事件\r\n   */\n\n\n  _OnShow(res) {\n    console.log(PlatformManagerProxy_1.default.platformStr, \"OnShow\", res);\n    PlatformManagerProxy_1.default.instance.PlatformInstance.lauchOption = res;\n\n    PlatformManagerProxy_1.default.instance.PlatformInstance._CheckUpdate();\n\n    this.NavigateToAppSuccess = null;\n    Awaiters_1.default.NextFrame().then(() => {\n      if (PlatformManagerProxy_1.default.instance.PlatformInstance.onResume) {\n        PlatformManagerProxy_1.default.instance.PlatformInstance.onResume.runWith(res);\n      }\n    });\n  }\n  /**\r\n   * 小游戏退出前台的事件\r\n   */\n\n\n  _OnHide(res) {\n    console.log(PlatformManagerProxy_1.default.platformStr, \"OnHide\", res);\n\n    if (PlatformManagerProxy_1.default.instance.PlatformInstance.onPause) {\n      PlatformManagerProxy_1.default.instance.PlatformInstance.onPause.runWith(res);\n    }\n\n    if (this.NavigateToAppSuccess) {\n      this.NavigateToAppSuccess();\n    }\n  }\n\n  ShareAppMessage(shareInfo, onSuccess, onFailed) {\n    console.log(\"分享消息\", shareInfo);\n\n    let shareObj = WXPlatform._WrapShareInfo(shareInfo);\n\n    this._base.shareAppMessage(shareObj);\n\n    if (onSuccess) {\n      onSuccess.run();\n    }\n  }\n\n  LoadSubpackage(name, onSuccess, onFailed, onProgress) {\n    if (this._base['loadSubpackage'] == null) {\n      console.log(\"无加载子包方法,跳过加载子包\", name);\n\n      if (onSuccess) {\n        onSuccess.run();\n      }\n\n      return;\n    }\n\n    let loadObj = {};\n    loadObj[\"name\"] = name;\n\n    loadObj[\"success\"] = () => {\n      console.log(\"分包加载成功\", name);\n\n      if (onSuccess) {\n        onSuccess.run();\n      }\n    };\n\n    loadObj[\"fail\"] = () => {\n      console.error(\"分包加载失败\", name);\n\n      if (onFailed) {\n        onFailed.run();\n      }\n    };\n\n    let loadTask = this._base.loadSubpackage(loadObj);\n\n    loadTask.onProgressUpdate(res => {\n      if (Laya.Browser.onMobile) {\n        console.log(\"分包加载进度\", res);\n      }\n\n      if (onProgress) {\n        onProgress.runWith(res.progress / 100);\n      }\n    });\n  }\n\n  RecordEvent(eventId, param) {\n    console.log(\"记录事件\", eventId, param);\n    let aldSendEvent = this._base[\"aldSendEvent\"];\n\n    if (aldSendEvent == null) {\n      console.error(\"阿拉丁sdk尚未接入,请检查配置\");\n      return;\n    }\n\n    if (param != null) {\n      aldSendEvent(eventId, param);\n    } else {\n      aldSendEvent(eventId);\n    }\n  }\n  /**\r\n   * 创建分享视频按钮\r\n   * @param x\r\n   * @param y\r\n   * @param width\r\n   * @param height\r\n   */\n\n\n  CreateShareVideoBtn(x, y, width, height) {\n    let btnObj = {};\n    btnObj.style = {\n      left: x * this._cacheScreenScale,\n      top: y * this._cacheScreenScale,\n      height: height * this._cacheScreenScale,\n      width: width * this._cacheScreenScale\n    };\n    btnObj.share = {\n      query: {\n        tick: 1\n      },\n      bgm: \"\",\n      timeRange: [0, 60 * 1000]\n    };\n\n    if (this._shareVideoBtn == null) {\n      this._shareVideoBtn = this._base.createGameRecorderShareButton(btnObj);\n    } else {\n      this._shareVideoBtn.show();\n    }\n  }\n  /**\r\n   * 隐藏分享视频按钮\r\n   */\n\n\n  HideShareVideoBtn() {\n    if (this._shareVideoBtn != null) {\n      this._shareVideoBtn.hide();\n    }\n  }\n\n  ShowToast(str) {\n    this._base.showToast({\n      title: str,\n      duration: 2000\n    });\n  }\n\n  OpenGameBox(appIds) {\n    console.error(\"当前平台\", PlatformManagerProxy_1.default.platformStr, \"暂不支持互推游戏盒子\");\n  }\n\n  NavigateToApp(appid, path, extra, showGC, isbanner, adid) {\n    return new Promise((resolve, reject) => {\n      if (showGC) {// GlobalUnit.gameManager.GameOver();\n      } // this.NavigateToAppSuccess = null;\n\n\n      wx.navigateToMiniProgram({\n        appId: appid,\n        path: path,\n        extraData: extra,\n        envVersion: '',\n        success: res => {\n          console.log('小游戏跳转成功', res);\n          resolve(true);\n        },\n        fail: () => {\n          console.log('小游戏跳转失败：');\n          reject(false);\n\n          if (showGC) {//\n          }\n        },\n        complete: () => {}\n      });\n    });\n  }\n\n  createShortcut() {\n    console.log('暂未实现');\n  }\n\n}\n\nexports.default = WXPlatform;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/aTGame/Platform/PlatformClass/WXPlatform.ts?");
+
+/***/ }),
+
+/***/ "./src/aTGame/Platform/PlatformManager.ts":
+/*!************************************************!*\
+  !*** ./src/aTGame/Platform/PlatformManager.ts ***!
+  \************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst BDData_1 = __webpack_require__(/*! ../../cFrameBridge/Platform/Data/BDData */ \"./src/cFrameBridge/Platform/Data/BDData.ts\");\n\nconst OPPOData_1 = __webpack_require__(/*! ../../cFrameBridge/Platform/Data/OPPOData */ \"./src/cFrameBridge/Platform/Data/OPPOData.ts\");\n\nconst QQData_1 = __webpack_require__(/*! ../../cFrameBridge/Platform/Data/QQData */ \"./src/cFrameBridge/Platform/Data/QQData.ts\");\n\nconst QTTData_1 = __webpack_require__(/*! ../../cFrameBridge/Platform/Data/QTTData */ \"./src/cFrameBridge/Platform/Data/QTTData.ts\");\n\nconst TTData_1 = __webpack_require__(/*! ../../cFrameBridge/Platform/Data/TTData */ \"./src/cFrameBridge/Platform/Data/TTData.ts\");\n\nconst WXData_1 = __webpack_require__(/*! ../../cFrameBridge/Platform/Data/WXData */ \"./src/cFrameBridge/Platform/Data/WXData.ts\");\n\nconst ConsoleEx_1 = __webpack_require__(/*! ../Console/ConsoleEx */ \"./src/aTGame/Console/ConsoleEx.ts\");\n\nconst BDPlatform_1 = __webpack_require__(/*! ./PlatformClass/BDPlatform */ \"./src/aTGame/Platform/PlatformClass/BDPlatform.ts\");\n\nconst DefaultPlatform_1 = __webpack_require__(/*! ./PlatformClass/DefaultPlatform */ \"./src/aTGame/Platform/PlatformClass/DefaultPlatform.ts\");\n\nconst OppoPlatform_1 = __webpack_require__(/*! ./PlatformClass/OppoPlatform */ \"./src/aTGame/Platform/PlatformClass/OppoPlatform.ts\");\n\nconst QQPlatform_1 = __webpack_require__(/*! ./PlatformClass/QQPlatform */ \"./src/aTGame/Platform/PlatformClass/QQPlatform.ts\");\n\nconst QTTPlatform_1 = __webpack_require__(/*! ./PlatformClass/QTTPlatform */ \"./src/aTGame/Platform/PlatformClass/QTTPlatform.ts\");\n\nconst TTPlatform_1 = __webpack_require__(/*! ./PlatformClass/TTPlatform */ \"./src/aTGame/Platform/PlatformClass/TTPlatform.ts\");\n\nconst WXPlatform_1 = __webpack_require__(/*! ./PlatformClass/WXPlatform */ \"./src/aTGame/Platform/PlatformClass/WXPlatform.ts\");\n\nconst PlatformManagerProxy_1 = __webpack_require__(/*! ./PlatformManagerProxy */ \"./src/aTGame/Platform/PlatformManagerProxy.ts\");\n/**\r\n * 平台管理器\r\n */\n\n\nclass PlatformManager {\n  static get instance() {\n    if (this._instance == null) {\n      this._instance = new PlatformManager();\n    }\n\n    return this._instance;\n  }\n  /** 获取平台实例 */\n\n\n  static get PlatformInstance() {\n    if (!this.instance.m_platformInstance) {\n      console.error(...ConsoleEx_1.default.packError('还没有设置过平台实例代理！'));\n    }\n\n    return this.instance.m_platformInstance;\n  }\n  /**\r\n   * 初始化平台\r\n   * @param appId\r\n   */\n\n\n  init() {\n    if (this.m_platformInstance != null) {\n      console.error(...ConsoleEx_1.default.packError(\"已调用过平台创建为\", PlatformManagerProxy_1.default.GetPlatformStr(this.m_platformInstance.platform), \"不能重复创建\"));\n      return this.m_platformInstance;\n    }\n\n    let isQTT = window[\"qttGame\"] != null;\n    let isTT = window[\"tt\"] != null; //获取平台实例\n\n    let result;\n\n    if (isTT) {\n      result = new TTPlatform_1.default(); //\n\n      this.m_platformData = new TTData_1.default();\n    } else if (Laya.Browser.onMiniGame) {\n      result = new WXPlatform_1.default(); //\n\n      this.m_platformData = new WXData_1.default();\n    } else if (Laya.Browser.onBDMiniGame) {\n      result = new BDPlatform_1.default(); //\n\n      this.m_platformData = new BDData_1.default();\n    } else if (isQTT) {\n      result = new QTTPlatform_1.default(); //\n\n      this.m_platformData = new QTTData_1.default();\n    } else if (Laya.Browser.onQQMiniGame) {\n      result = new QQPlatform_1.default(); //\n\n      this.m_platformData = new QQData_1.default();\n    } else if (Laya.Browser.onQGMiniGame) {\n      result = new OppoPlatform_1.default(); //\n\n      this.m_platformData = new OPPOData_1.default();\n    } else {\n      console.warn(...ConsoleEx_1.default.packWarn(\"未识别平台,默认创建为web\"));\n      result = new DefaultPlatform_1.default();\n    }\n\n    this.m_platformInstance = result; //设置代理\n\n    PlatformManagerProxy_1.default.instance.PlatformInstance = result; //设置到全局\n\n    window['$Platform'] = this.m_platformInstance; //\n\n    console.log(...ConsoleEx_1.default.packPlatform(\"平台实例创建完成\", PlatformManagerProxy_1.default.GetPlatformStr(this.m_platformInstance.platform)));\n  }\n  /**\r\n   * 初始化平台\r\n   */\n\n\n  initPlatform() {\n    //\n    this.m_platformInstance.Init(this.m_platformData); //\n\n    console.log(...ConsoleEx_1.default.packPlatform('平台初始化完成'));\n  }\n\n}\n\nexports.default = PlatformManager;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/aTGame/Platform/PlatformManager.ts?");
+
+/***/ }),
+
+/***/ "./src/aTGame/Platform/PlatformManagerProxy.ts":
+/*!*****************************************************!*\
+  !*** ./src/aTGame/Platform/PlatformManagerProxy.ts ***!
+  \*****************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst ConsoleEx_1 = __webpack_require__(/*! ../Console/ConsoleEx */ \"./src/aTGame/Console/ConsoleEx.ts\");\n\nconst RootClassProxy_1 = __webpack_require__(/*! ../Root/RootClassProxy */ \"./src/aTGame/Root/RootClassProxy.ts\");\n\nconst EPlatformType_1 = __webpack_require__(/*! ./T/EPlatformType */ \"./src/aTGame/Platform/T/EPlatformType.ts\");\n/**\r\n * 平台代理类\r\n */\n\n\nclass PlatformManagerProxy extends RootClassProxy_1.default {\n  static get instance() {\n    if (this._instance == null) {\n      this._instance = new PlatformManagerProxy();\n    }\n\n    return this._instance;\n  }\n  /** 获取平台实例 */\n\n\n  get PlatformInstance() {\n    if (!this.m_platformInstance) {\n      console.error(...ConsoleEx_1.default.packError('还没有设置过平台实例代理！'));\n    }\n\n    return this.m_platformInstance;\n  }\n  /** 设置平台实例 */\n\n\n  set PlatformInstance(_instance) {\n    this.m_platformInstance = _instance;\n  }\n  /**\r\n   * 获取当前平台名字\r\n   */\n\n\n  static get platformStr() {\n    return PlatformManagerProxy.GetPlatformStr(this._instance.m_platformInstance.platform);\n  }\n  /**\r\n   * 获取平台名字\r\n   * @param platformEnum 平台类型\r\n   */\n\n\n  static GetPlatformStr(platformEnum) {\n    switch (platformEnum) {\n      case EPlatformType_1.EPlatformType.None:\n        return \"未识别\";\n\n      case EPlatformType_1.EPlatformType.Web:\n        return \"网页\";\n\n      case EPlatformType_1.EPlatformType.BD:\n        return \"百度\";\n\n      case EPlatformType_1.EPlatformType.OPPO:\n        return \"Oppo\";\n\n      case EPlatformType_1.EPlatformType.QQ:\n        return \"QQ\";\n\n      case EPlatformType_1.EPlatformType.TT:\n        return \"头条\";\n\n      case EPlatformType_1.EPlatformType.VIVO:\n        return \"Vivo\";\n\n      case EPlatformType_1.EPlatformType.WX:\n        return \"微信\";\n\n      case EPlatformType_1.EPlatformType.QTT:\n        return \"趣头条\";\n\n      default:\n        return \"未定义\" + platformEnum;\n    }\n  }\n\n}\n\nexports.default = PlatformManagerProxy;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/aTGame/Platform/PlatformManagerProxy.ts?");
+
+/***/ }),
+
+/***/ "./src/aTGame/Platform/Record/DefaultRecordManager.ts":
+/*!************************************************************!*\
+  !*** ./src/aTGame/Platform/Record/DefaultRecordManager.ts ***!
+  \************************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst PlatformManagerProxy_1 = __webpack_require__(/*! ../PlatformManagerProxy */ \"./src/aTGame/Platform/PlatformManagerProxy.ts\");\n/**\r\n * 默认录屏管理器\r\n */\n\n\nclass DefaultRecordManager {\n  constructor() {\n    this.supportRecord = false;\n    this.isRecording = false;\n    this.isPausing = false;\n    this.isRecordSuccess = false;\n  }\n\n  StartRecord(onStart, onOverTime) {\n    console.log(\"该平台\" + PlatformManagerProxy_1.default.platformStr + \"不支持录制视频\");\n  }\n\n  StopRecord(onStop) {\n    console.log(\"该平台\" + PlatformManagerProxy_1.default.platformStr + \"不支持录制视频\");\n  }\n\n  Pause(onPause) {\n    console.log(\"该平台\" + PlatformManagerProxy_1.default.platformStr + \"不支持录制视频\");\n  }\n\n  Resume(onReume) {\n    console.log(\"该平台\" + PlatformManagerProxy_1.default.platformStr + \"不支持录制视频\");\n  }\n\n  RecordClip(timeRange) {\n    console.log(\"该平台\" + PlatformManagerProxy_1.default.platformStr + \"不支持录制视频\");\n  }\n\n  ShareVideo(onSuccess, onCancel, onFailed) {\n    if (onFailed) {\n      onFailed.run();\n    }\n  }\n\n}\n\nexports.default = DefaultRecordManager;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/aTGame/Platform/Record/DefaultRecordManager.ts?");
+
+/***/ }),
+
+/***/ "./src/aTGame/Platform/Record/TTRecordManager.ts":
+/*!*******************************************************!*\
+  !*** ./src/aTGame/Platform/Record/TTRecordManager.ts ***!
+  \*******************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst DefaultRecordManager_1 = __webpack_require__(/*! ./DefaultRecordManager */ \"./src/aTGame/Platform/Record/DefaultRecordManager.ts\");\n/**\r\n * 头条录屏管理器\r\n */\n\n\nclass TTRecordManager extends DefaultRecordManager_1.default {\n  constructor(base) {\n    super();\n    this.supportRecord = true;\n    this._base = base;\n    this.isRecording = false;\n    this.isRecordSuccess = false;\n    this.isPausing = false;\n    this._nativeManager = this._base.getGameRecorderManager();\n\n    this._nativeManager.onStart(res => {\n      console.log(\"平台开始录制\", res);\n      this.isRecording = true;\n      this.isRecordSuccess = false;\n      this._cacheStartHandle && this._cacheStartHandle.run();\n    });\n\n    this._nativeManager.onStop(res => {\n      console.log(\"平台停止录制\", res);\n      this.videoSavePath = res.videoPath;\n      this.isRecording = false;\n      this.isRecordSuccess = true;\n\n      if (this._cacheStopHandle) {\n        this._cacheStopHandle.run();\n      } else if (this._cacheOverTimeHandle) {\n        this._cacheOverTimeHandle.run();\n      }\n    });\n\n    this._nativeManager.onError(err => {\n      console.log(\"录制发生错误\", err);\n      this.isRecordSuccess = false;\n      this.isRecording = false;\n    });\n\n    this._nativeManager.onPause(res => {\n      console.log(\"暂停录制视频\", res);\n      this.isPausing = true;\n      this._cachePauseHandle && this._cachePauseHandle.run();\n    });\n\n    this._nativeManager.onResume(res => {\n      console.log(\"暂停录制视频\", res);\n      this.isPausing = false;\n      this._cacheResumeHandle && this._cacheResumeHandle.run();\n    });\n  }\n\n  StartRecord(onStart, onOverTime) {\n    console.log(\"调用开始录屏\");\n    this._cacheStartHandle = onStart;\n    this._cacheOverTimeHandle = onOverTime;\n    this._cacheStopHandle = null;\n\n    this._nativeManager.start({\n      duration: 300\n    });\n  }\n\n  Pause(onPause) {\n    if (!this.isRecording) {\n      console.error(\"当前未开始录制,无法暂停录制\");\n      return;\n    }\n\n    if (this.isPausing) {\n      console.log(\"当前录制状态已暂停\");\n      return;\n    }\n\n    console.log(\"调用暂停录制\");\n    this._cachePauseHandle = onPause;\n\n    this._nativeManager.pause();\n  }\n\n  Resume(onReume) {\n    if (!this.isRecording) {\n      console.error(\"当前未开始录制,无法恢复录制\");\n      return;\n    }\n\n    if (!this.isPausing) {\n      console.log(\"当前录制状态正在进行中\");\n      return;\n    }\n\n    console.log(\"调用恢复录制\");\n    this._cacheResumeHandle = onReume;\n\n    this._nativeManager.resume();\n  }\n\n  RecordClip(timeRange) {\n    if (!this.isRecording) {\n      console.error(\"当前未开始录制,无法记录精彩时刻\");\n      return;\n    }\n\n    if (this.isPausing) {\n      console.log(\"当前录制状态已暂停,无法记录精彩时刻\");\n      return;\n    }\n\n    if (timeRange == null) {\n      this._nativeManager.recordClip({});\n    } else {\n      this._nativeManager.recordClip({\n        timeRange: timeRange\n      });\n    }\n  }\n\n  StopRecord(onStop) {\n    console.log(\"调用结束录屏\");\n    this._cacheStopHandle = onStop;\n\n    this._nativeManager.stop();\n  }\n\n  ShareVideo(onSuccess, onCancel, onFailed) {\n    if (this.isRecordSuccess) {\n      let shareData = {\n        channel: \"video\",\n        title: \"\",\n        desc: \"\",\n        imageUrl: \"\",\n        templateId: this.Platform.platformData.shareId,\n        query: \"\",\n        extra: {\n          videoPath: this.videoSavePath,\n          videoTopics: ['抖音小游戏', '猫眼金币跑酷']\n        },\n\n        success() {\n          if (onSuccess) {\n            onSuccess.run();\n          }\n        },\n\n        fail(e) {\n          if (onCancel) {\n            onCancel.run();\n          }\n        }\n\n      };\n\n      this._base.shareAppMessage(shareData);\n    } else {\n      console.log(\"无视频可以分享\");\n\n      if (onFailed) {\n        onFailed.run();\n      }\n    }\n  }\n\n}\n\nexports.default = TTRecordManager;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/aTGame/Platform/Record/TTRecordManager.ts?");
+
+/***/ }),
+
+/***/ "./src/aTGame/Platform/Record/WebRecordManager.ts":
+/*!********************************************************!*\
+  !*** ./src/aTGame/Platform/Record/WebRecordManager.ts ***!
+  \********************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\nexports.WebRecordManager = void 0;\n\nconst DefaultRecordManager_1 = __webpack_require__(/*! ./DefaultRecordManager */ \"./src/aTGame/Platform/Record/DefaultRecordManager.ts\");\n/**\r\n * web录屏工具\r\n */\n\n\nclass WebRecordManager extends DefaultRecordManager_1.default {\n  constructor() {\n    super(...arguments);\n    this.supportRecord = false;\n  }\n\n  ShareVideo(onSuccess, onCancel, onFailed) {\n    if (this.supportRecord) {\n      console.log(\"强制模拟成功\");\n\n      if (onSuccess) {\n        onSuccess.run();\n      }\n    } else {\n      console.log(\"强制模拟失败\");\n\n      if (onFailed) {\n        onFailed.run();\n      }\n    }\n  }\n\n}\n\nexports.WebRecordManager = WebRecordManager;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/aTGame/Platform/Record/WebRecordManager.ts?");
+
+/***/ }),
+
+/***/ "./src/aTGame/Platform/ShareManager.ts":
+/*!*********************************************!*\
+  !*** ./src/aTGame/Platform/ShareManager.ts ***!
+  \*********************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst MathUtils_1 = __webpack_require__(/*! ../Utils/MathUtils */ \"./src/aTGame/Utils/MathUtils.ts\");\n\nconst PlatformManagerProxy_1 = __webpack_require__(/*! ./PlatformManagerProxy */ \"./src/aTGame/Platform/PlatformManagerProxy.ts\");\n\nconst ShareInfo_1 = __webpack_require__(/*! ./T/ShareInfo */ \"./src/aTGame/Platform/T/ShareInfo.ts\");\n/**\r\n * 分享管理器\r\n */\n\n\nclass ShareManager {\n  constructor() {\n    this._shareInfoList = [];\n  }\n\n  static get instance() {\n    if (this._instance == null) {\n      this._instance = new ShareManager();\n    }\n\n    return this._instance;\n  }\n\n  AddShareInfo(shareInfo) {\n    for (let getInfo of this._shareInfoList) {\n      if (getInfo.shareId == shareInfo.shareId) return;\n    }\n\n    this._shareInfoList.push(shareInfo);\n  }\n\n  GetShareInfo(id = null) {\n    if (this._shareInfoList.length == 0) {\n      let fakeShareInfo = new ShareInfo_1.ShareInfo();\n      return fakeShareInfo;\n    }\n\n    if (id != null) {\n      for (let shareInfo of this._shareInfoList) {\n        if (shareInfo.shareId == id) return shareInfo;\n      }\n    }\n\n    let randomShare = MathUtils_1.default.RandomFromArray(this._shareInfoList);\n    return randomShare;\n  }\n\n  ShareAppMessage(shareInfo) {\n    PlatformManagerProxy_1.default.instance.PlatformInstance.ShareAppMessage(shareInfo, Laya.Handler.create(this, () => {\n      console.log(\"分享成功\");\n    }), null);\n  }\n\n}\n\nexports.default = ShareManager;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/aTGame/Platform/ShareManager.ts?");
+
+/***/ }),
+
+/***/ "./src/aTGame/Platform/T/EPlatformType.ts":
+/*!************************************************!*\
+  !*** ./src/aTGame/Platform/T/EPlatformType.ts ***!
+  \************************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\nexports.EPlatformType = void 0;\n/**\r\n * 平台类型枚举\r\n */\n\nvar EPlatformType;\n\n(function (EPlatformType) {\n  /** 未定义 */\n  EPlatformType[\"None\"] = \"EPlatformType_None\";\n  /** 网页平台 */\n\n  EPlatformType[\"Web\"] = \"EPlatformType_Web\";\n  /** 微信小游戏 */\n\n  EPlatformType[\"WX\"] = \"EPlatformType_WX\";\n  /** 头条，抖音小游戏 */\n\n  EPlatformType[\"TT\"] = \"EPlatformType_TT\";\n  /** QQ小游戏 */\n\n  EPlatformType[\"QQ\"] = \"EPlatformType_QQ\";\n  /** VIVO小游戏 */\n\n  EPlatformType[\"VIVO\"] = \"EPlatformType_VIVO\";\n  /** OPPO小游戏 */\n\n  EPlatformType[\"OPPO\"] = \"EPlatformType_OPPO\";\n  /** 百度小游戏 */\n\n  EPlatformType[\"BD\"] = \"EPlatformType_BD\";\n  /** 小米戏游戏 */\n\n  EPlatformType[\"KG\"] = \"EPlatformType_KG\";\n  /** 阿里小游戏 */\n\n  EPlatformType[\"Alipay\"] = \"EPlatformType_Alipay\";\n  /** 华为小游戏 */\n\n  EPlatformType[\"HW\"] = \"EPlatformType_HW\";\n  /** 趣头条 */\n\n  EPlatformType[\"QTT\"] = \"EPlatformType_QTT\";\n})(EPlatformType = exports.EPlatformType || (exports.EPlatformType = {}));\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/aTGame/Platform/T/EPlatformType.ts?");
+
+/***/ }),
+
+/***/ "./src/aTGame/Platform/T/ShareInfo.ts":
+/*!********************************************!*\
+  !*** ./src/aTGame/Platform/T/ShareInfo.ts ***!
+  \********************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\nexports.ShareInfo = void 0;\n/**\r\n * 分享书籍实例\r\n */\n\nclass ShareInfo {}\n\nexports.ShareInfo = ShareInfo;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/aTGame/Platform/T/ShareInfo.ts?");
+
+/***/ }),
+
+/***/ "./src/aTGame/Res/EKeyResName.ts":
+/*!***************************************!*\
+  !*** ./src/aTGame/Res/EKeyResName.ts ***!
+  \***************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\nexports.EKeyResName = void 0;\n/**\r\n * 关键资源点名字枚举\r\n */\n\nvar EKeyResName;\n\n(function (EKeyResName) {\n  /** 根目录 */\n  EKeyResName[\"RootRes\"] = \"res\";\n  /** 配置表目录 */\n\n  EKeyResName[\"Config\"] = \"Config\";\n  /** 字体目录 */\n\n  EKeyResName[\"Font\"] = \"Font\";\n  /** FGUI资源目录 */\n\n  EKeyResName[\"FGUI\"] = \"FGUI\";\n  /** 关卡配置表目录 */\n\n  EKeyResName[\"LvConfig\"] = \"LvConfig\";\n  /** 其它目录 */\n\n  EKeyResName[\"Other\"] = \"Other\";\n  /** icon目录 */\n\n  EKeyResName[\"icon\"] = \"icon\";\n  /** img目录 */\n\n  EKeyResName[\"img\"] = \"img\";\n  /** 音乐文件目录 */\n\n  EKeyResName[\"music\"] = \"music\";\n  /** 音效文件目录 */\n\n  EKeyResName[\"sound\"] = \"sound\";\n  /** 皮肤文件目录 */\n\n  EKeyResName[\"skin\"] = \"skin\";\n})(EKeyResName = exports.EKeyResName || (exports.EKeyResName = {}));\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/aTGame/Res/EKeyResName.ts?");
+
+/***/ }),
+
+/***/ "./src/aTGame/Res/EssentialResUrls.ts":
+/*!********************************************!*\
+  !*** ./src/aTGame/Res/EssentialResUrls.ts ***!
+  \********************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst ELevelSceneName_1 = __webpack_require__(/*! ../../cFrameBridge/Config/ELevelSceneName */ \"./src/cFrameBridge/Config/ELevelSceneName.ts\");\n\nconst ConsoleEx_1 = __webpack_require__(/*! ../Console/ConsoleEx */ \"./src/aTGame/Console/ConsoleEx.ts\");\n\nconst EKeyResName_1 = __webpack_require__(/*! ./EKeyResName */ \"./src/aTGame/Res/EKeyResName.ts\");\n\nconst KeyResManager_1 = __webpack_require__(/*! ./KeyResManager */ \"./src/aTGame/Res/KeyResManager.ts\");\n/**\r\n * 必要的游戏资源路径\r\n * 游戏必须要得资源，会在游戏加载时被默认加载\r\n */\n\n\nclass EssentialResUrls {\n  /**\r\n   * 获取所有的其他资源列表\r\n   * 资源列表必须在EssentialResUrls类中获取，便于清理\r\n   */\n  static EssentialOtherResUrl() {\n    let _URLs = []; //添加资源\n    //\n    //\n\n    return _URLs;\n  } //* ----------单个资源---------- *//\n\n  /**\r\n   * 获取关卡配置文件\r\n   * @param _name 场景名字\r\n   */\n\n\n  static levelConfigURL(_name) {\n    return KeyResManager_1.default.instance.getResURL(EKeyResName_1.EKeyResName.LvConfig) + _name + '.json';\n  }\n  /**\r\n   * 获取配置表RUL\r\n   * @param _name 配置表名字\r\n   */\n\n\n  static ConfigURL(_name) {\n    return KeyResManager_1.default.instance.getResURL(EKeyResName_1.EKeyResName.Config) + _name;\n  }\n  /**\r\n   * FGUI包\r\n   * @param _name 包名\r\n   */\n\n\n  static FGUIPack(_name) {\n    return KeyResManager_1.default.instance.getResURL(EKeyResName_1.EKeyResName.FGUI) + _name;\n  }\n  /**\r\n   * 字体地址\r\n   * @param _name 字体名字，加后缀\r\n   */\n\n\n  static fontURL(_name) {\n    return KeyResManager_1.default.instance.getResURL(EKeyResName_1.EKeyResName.Font) + _name;\n  }\n  /**\r\n   * 预制体资源路径\r\n   * @param prefab 预制体名字\r\n   */\n\n\n  static prefab_url(prefab) {\n    //先在缓存中查找场景名字\n    if (this._prefabsSceneCache[prefab]) {\n      return KeyResManager_1.default.instance.getResURL(EKeyResName_1.EKeyResName[this._prefabsSceneCache[prefab]]) + 'Conventional/' + prefab + '.lh';\n    } //判断该预制体在那个场景中被导出的\n\n\n    for (let _i in this._AllScenePrefabsNames) {\n      if (this._AllScenePrefabsNames[_i].indexOf('@' + prefab + '@') != -1) {\n        //添加到缓存\n        this._prefabsSceneCache[prefab] = _i; //\n\n        return KeyResManager_1.default.instance.getResURL(EKeyResName_1.EKeyResName[_i]) + 'Conventional/' + prefab + '.lh';\n      }\n    } //\n\n\n    console.error(...ConsoleEx_1.default.packError('没有在场景找到预制体', prefab, '可能是没有导出场景预制体列表导致的。'));\n  }\n\n}\n\nexports.default = EssentialResUrls; //所有预制体名字列表\n\nEssentialResUrls._AllScenePrefabsNames = new ELevelSceneName_1.AllScenePrefabsNames();\nEssentialResUrls._prefabsSceneCache = {};\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/aTGame/Res/EssentialResUrls.ts?");
+
+/***/ }),
+
+/***/ "./src/aTGame/Res/KeyResManager.ts":
+/*!*****************************************!*\
+  !*** ./src/aTGame/Res/KeyResManager.ts ***!
+  \*****************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst ELevelSceneName_1 = __webpack_require__(/*! ../../cFrameBridge/Config/ELevelSceneName */ \"./src/cFrameBridge/Config/ELevelSceneName.ts\");\n\nconst FrameCDNURL_1 = __webpack_require__(/*! ../../cFrameBridge/FrameCDNURL */ \"./src/cFrameBridge/FrameCDNURL.ts\");\n\nconst FrameSubpackages_1 = __webpack_require__(/*! ../../cFrameBridge/FrameSubpackages */ \"./src/cFrameBridge/FrameSubpackages.ts\");\n\nconst ConsoleEx_1 = __webpack_require__(/*! ../Console/ConsoleEx */ \"./src/aTGame/Console/ConsoleEx.ts\");\n\nconst EKeyResName_1 = __webpack_require__(/*! ./EKeyResName */ \"./src/aTGame/Res/EKeyResName.ts\");\n/**\r\n * 关键资源点列表管理器\r\n */\n\n\nclass KeyResManager {\n  constructor() {\n    //关键资源列表\n    this.m_KeyResList = {}; //副本\n\n    this.m_KeyResList_ = {}; //注册关键资源目录\n\n    this.m_KeyResList = {\n      [EKeyResName_1.EKeyResName.RootRes]: EKeyResName_1.EKeyResName.RootRes + '/',\n      [EKeyResName_1.EKeyResName.Config]: EKeyResName_1.EKeyResName.RootRes + '/' + EKeyResName_1.EKeyResName.Config + '/',\n      [EKeyResName_1.EKeyResName.FGUI]: EKeyResName_1.EKeyResName.RootRes + '/' + EKeyResName_1.EKeyResName.FGUI + '/',\n      [EKeyResName_1.EKeyResName.LvConfig]: EKeyResName_1.EKeyResName.RootRes + '/' + EKeyResName_1.EKeyResName.LvConfig + '/',\n      [EKeyResName_1.EKeyResName.Font]: EKeyResName_1.EKeyResName.RootRes + '/' + EKeyResName_1.EKeyResName.Font + '/',\n      [EKeyResName_1.EKeyResName.Other]: EKeyResName_1.EKeyResName.RootRes + '/' + EKeyResName_1.EKeyResName.Other + '/',\n      [EKeyResName_1.EKeyResName.icon]: EKeyResName_1.EKeyResName.RootRes + '/' + EKeyResName_1.EKeyResName.Other + '/' + EKeyResName_1.EKeyResName.icon + '/',\n      [EKeyResName_1.EKeyResName.img]: EKeyResName_1.EKeyResName.RootRes + '/' + EKeyResName_1.EKeyResName.Other + '/' + EKeyResName_1.EKeyResName.img + '/',\n      [EKeyResName_1.EKeyResName.music]: EKeyResName_1.EKeyResName.RootRes + '/' + EKeyResName_1.EKeyResName.Other + '/' + EKeyResName_1.EKeyResName.music + '/',\n      [EKeyResName_1.EKeyResName.sound]: EKeyResName_1.EKeyResName.RootRes + '/' + EKeyResName_1.EKeyResName.Other + '/' + EKeyResName_1.EKeyResName.sound + '/',\n      [EKeyResName_1.EKeyResName.skin]: EKeyResName_1.EKeyResName.RootRes + '/' + EKeyResName_1.EKeyResName.Other + '/' + EKeyResName_1.EKeyResName.skin + '/'\n    }; //注入预制体目录\n\n    let _AllPrefabNames = new ELevelSceneName_1.AllScenePrefabsNames();\n\n    for (let _i in _AllPrefabNames) {\n      EKeyResName_1.EKeyResName[_i] = _i;\n      this.m_KeyResList[EKeyResName_1.EKeyResName[_i]] = EKeyResName_1.EKeyResName.RootRes + '/' + EKeyResName_1.EKeyResName[_i] + '/'; //\n\n      console.log(...ConsoleEx_1.default.packLogLight('注入预制体资源路径', this.m_KeyResList[EKeyResName_1.EKeyResName[_i]]));\n    } // console.log(this.m_KeyResList);\n    //复制一个副本\n\n\n    for (let _i in this.m_KeyResList) {\n      this.m_KeyResList_[_i] = this.m_KeyResList[_i];\n    } //\n\n\n    this.setRes();\n  }\n  /** 单例 */\n\n\n  static get instance() {\n    if (this._instance == null) {\n      this._instance = new KeyResManager();\n    } //\n\n\n    return this._instance;\n  }\n\n  //重置资源路径\n  setRes() {\n    //重置分包资源路径\n    for (let _o of FrameSubpackages_1.default.subpackages) {\n      this.editKeyResList(_o.name, _o.root);\n    } //重置cdn资源路径\n\n\n    for (let _o of FrameCDNURL_1.default.CDNURLs) {\n      this.editKeyResList(_o.name, _o.root);\n    }\n  }\n  /**\r\n   * 判断是否存在某个关键点key\r\n   * @param _key 关键点key\r\n   */\n\n\n  ifKeyRes(_key) {\n    let _if = false;\n\n    for (let _i in EKeyResName_1.EKeyResName) {\n      if (_key == EKeyResName_1.EKeyResName[_i]) {\n        _if = true;\n        break;\n      }\n    }\n\n    return _if;\n  }\n  /**\r\n   * 获取一个关键点资源的路径\r\n   * @param _key 关键点key\r\n   */\n\n\n  getResURL(_key) {\n    return this.m_KeyResList[_key];\n  }\n  /**\r\n   * 修改关键点资源路径\r\n   * @param _key 关键点key\r\n   * @param _str 路径\r\n   */\n\n\n  editKeyResList(_key, _str) {\n    let _replace = this.m_KeyResList_[_key];\n\n    if (!_replace) {\n      console.warn(...ConsoleEx_1.default.packWarn('修改资源路径失败，没有' + _key + '这个关键路径！'));\n      return;\n    } else {\n      console.log(...ConsoleEx_1.default.packLog('修改关键点资源路径', _replace, '替换成', _str));\n    } //替换所有资源路径中的关键点路径\n\n\n    for (let _i in this.m_KeyResList) {\n      this.m_KeyResList[_i] = this.m_KeyResList[_i].replace(_replace, _str);\n    } //\n\n\n    this.m_KeyResList_[_key] = _str;\n  }\n\n}\n\nexports.default = KeyResManager;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/aTGame/Res/KeyResManager.ts?");
+
+/***/ }),
+
+/***/ "./src/aTGame/Res/ResLoad.ts":
+/*!***********************************!*\
+  !*** ./src/aTGame/Res/ResLoad.ts ***!
+  \***********************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst ConsoleEx_1 = __webpack_require__(/*! ../Console/ConsoleEx */ \"./src/aTGame/Console/ConsoleEx.ts\");\n/**\r\n * 资源加载类\r\n */\n\n\nclass ResLoad {\n  /**\r\n   * 加载资源\r\n   * @param urls 资源路径\r\n   * @param onCompleted 完成回调\r\n   * @param onProgress\r\n   */\n  static Load(urls, onCompleted, onProgress = null) {\n    if (onProgress && onProgress.once) {\n      onProgress.once = false;\n    } //判断是否有内容需要加载\n\n\n    if (!urls || urls.length == 0) {\n      onCompleted.run();\n      onProgress.run();\n      return;\n    }\n\n    Laya.loader.create(urls, onCompleted, onProgress);\n  }\n  /**\r\n   * 加载2D资源\r\n   * @param urls 资源路径\r\n   * @param onCompleted 完成时回调\r\n   * @param onProgress\r\n   */\n\n\n  static Load2d(urls, onCompleted, onProgress = null) {\n    if (onProgress && onProgress.once) {\n      onProgress.once = false;\n    } //判断是否有内容需要加载\n\n\n    if (!urls || urls.length == 0) {\n      onCompleted.run();\n      onProgress.run();\n      return;\n    }\n\n    Laya.loader.load(urls, onCompleted, onProgress);\n  }\n  /**\r\n   * 异步加载资源\r\n   * @param urls 资源路径\r\n   * @param onProgress\r\n   */\n\n\n  static LoadAsync(urls, onProgress = null) {\n    //\n    return new Promise(resolve => {\n      ResLoad.Load(urls, Laya.Handler.create(null, () => {\n        resolve();\n      }), onProgress);\n    });\n  }\n  /**\r\n   * 异步加载2D资源\r\n   * @param urls 资源路径\r\n   * @param onProgress\r\n   */\n\n\n  static Load2dAsync(urls, onProgress = null) {\n    //\n    return new Promise(function (resolve) {\n      ResLoad.Load2d(urls, Laya.Handler.create(null, () => {\n        resolve();\n      }), onProgress);\n    });\n  }\n  /**\r\n   * 获取资源\r\n   * @param resUrl 资源路径\r\n   * @param noClone 是否不获取克隆的资源\r\n   */\n\n\n  static Get(resUrl, noClone = false) {\n    let getRes = Laya.loader.getRes(resUrl);\n\n    if (getRes == null) {\n      console.error(...ConsoleEx_1.default.packError(\"资源尚未加载\", resUrl));\n      return null;\n    }\n\n    return noClone ? getRes : getRes.clone();\n  }\n  /**\r\n   * 加载并获取资源\r\n   * @param resUrl 资源路径\r\n   * @param noClone 是否获取克隆的资源\r\n   */\n\n\n  static LoadAndGet(resUrl, noClone = false) {\n    return new Promise(r => {\n      ResLoad.LoadAsync(resUrl).then(_data => {\n        r(ResLoad.Get(resUrl, noClone));\n      });\n    });\n  }\n  /**\r\n   * 清理指定资源地址缓存。\r\n   * @param resUrl 资源路径\r\n   */\n\n\n  static Unload(resUrl) {\n    Laya.loader.clearRes(resUrl);\n  }\n\n}\n\nexports.default = ResLoad;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/aTGame/Res/ResLoad.ts?");
+
+/***/ }),
+
+/***/ "./src/aTGame/Res/ResUrl.ts":
+/*!**********************************!*\
+  !*** ./src/aTGame/Res/ResUrl.ts ***!
+  \**********************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst EKeyResName_1 = __webpack_require__(/*! ./EKeyResName */ \"./src/aTGame/Res/EKeyResName.ts\");\n\nconst KeyResManager_1 = __webpack_require__(/*! ./KeyResManager */ \"./src/aTGame/Res/KeyResManager.ts\");\n/**\r\n * 资源公共根路径\r\n */\n\n\nclass ResUrl {\n  /**\r\n   * 音乐文件路径\r\n   * @param name 文件名称\r\n   */\n  static music_url(name) {\n    return KeyResManager_1.default.instance.getResURL(EKeyResName_1.EKeyResName.music) + name + '.mp3';\n  }\n  /**\r\n   * 音效资源路径\r\n   * @param name 音效名字\r\n   */\n\n\n  static sound_url(name) {\n    return KeyResManager_1.default.instance.getResURL(EKeyResName_1.EKeyResName.sound) + name + '.mp3';\n  }\n  /**\r\n   * 图标资源路径\r\n   * @param name 图标名称\r\n   */\n\n\n  static icon_url(name) {\n    return KeyResManager_1.default.instance.getResURL(EKeyResName_1.EKeyResName.icon) + name + '.png';\n  }\n  /**\r\n   * 图片资源路径\r\n   * @param name 图片资源名字\r\n   * @param _suffix 图片资源后缀\r\n   */\n\n\n  static img_url(name, _suffix = 'png') {\n    return KeyResManager_1.default.instance.getResURL(EKeyResName_1.EKeyResName.img) + name + '.' + _suffix;\n  }\n  /**\r\n   * 皮肤资源路径\r\n   * @param name 皮肤名称\r\n   * @param _suffix 皮肤资源后缀\r\n   */\n\n\n  static skin_url(name, _suffix = 'png') {\n    return KeyResManager_1.default.instance.getResURL(EKeyResName_1.EKeyResName.skin) + name + '.' + _suffix;\n  }\n\n}\n\nexports.default = ResUrl;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/aTGame/Res/ResUrl.ts?");
+
+/***/ }),
+
+/***/ "./src/aTGame/Root/RootClassProxy.ts":
+/*!*******************************************!*\
+  !*** ./src/aTGame/Root/RootClassProxy.ts ***!
+  \*******************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n/**\r\n * 类代理类基类 (为需要双向引用的类代理数据)\r\n * 在该类里面引入的其他类必须没有循环代理问题\r\n * ! 注意！只能处理静态或者单例类型，并且必须在使用前初始化\r\n * ! 初始化不要写到constructor方法里面,写到主动调用的方法里面\r\n */\n\nclass RootClassProxy {\n  /** 获取代理数据 */\n  static get Datas() {\n    return this.m_datas;\n  }\n  /** 设置代理数据 */\n\n\n  static set Datas(_data) {\n    this.m_datas = _data;\n  }\n  /** 获取代理数据 */\n\n\n  static get Handlers() {\n    return this.m_handlers;\n  }\n  /** 设置代理数据 */\n\n\n  static set Handlers(_handler) {\n    this.m_handlers = _handler;\n  }\n\n}\n\nexports.default = RootClassProxy; //是否已经设置过代理\n\nRootClassProxy.m_ifSetProxy = false;\n/**\r\n * 踩坑\r\n * 循环依赖问题产生原因\r\n * 不是a导入了b，b又导入a引起的\r\n * 而是a文件实例化了b，b文件有实例化了a引起了\r\n */\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/aTGame/Root/RootClassProxy.ts?");
+
+/***/ }),
+
+/***/ "./src/aTGame/Test/ConsoleTest.ts":
+/*!****************************************!*\
+  !*** ./src/aTGame/Test/ConsoleTest.ts ***!
+  \****************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst ConsoleEx_1 = __webpack_require__(/*! ../Console/ConsoleEx */ \"./src/aTGame/Console/ConsoleEx.ts\");\n\nconst RootTest_1 = __webpack_require__(/*! ./RootTest */ \"./src/aTGame/Test/RootTest.ts\");\n/**\r\n * 打印测试\r\n */\n\n\nclass ConsoleTest extends RootTest_1.default {\n  constructor() {\n    super(...arguments); // 打印字符串\n\n    this._consoleExStr = '输出测试';\n  } //开始测试\n\n\n  startTest() {\n    //\n    console.log('->开启测试<-'); //\n\n    console.log(...ConsoleEx_1.default.packLog(this._consoleExStr));\n    console.warn(...ConsoleEx_1.default.packWarn(this._consoleExStr));\n    console.error(...ConsoleEx_1.default.packError(this._consoleExStr));\n  }\n\n}\n\nexports.default = ConsoleTest;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/aTGame/Test/ConsoleTest.ts?");
+
+/***/ }),
+
+/***/ "./src/aTGame/Test/MainTest.ts":
+/*!*************************************!*\
+  !*** ./src/aTGame/Test/MainTest.ts ***!
+  \*************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst ConsoleTest_1 = __webpack_require__(/*! ./ConsoleTest */ \"./src/aTGame/Test/ConsoleTest.ts\");\n\nconst RootTest_1 = __webpack_require__(/*! ./RootTest */ \"./src/aTGame/Test/RootTest.ts\");\n/**\r\n * 测试类入口\r\n */\n\n\nclass MainTest extends RootTest_1.default {\n  //开始测试\n  startTest() {\n    //开始测试\n    new ConsoleTest_1.default().startTest();\n  }\n\n}\n\nexports.default = MainTest;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/aTGame/Test/MainTest.ts?");
+
+/***/ }),
+
+/***/ "./src/aTGame/Test/RootTest.ts":
+/*!*************************************!*\
+  !*** ./src/aTGame/Test/RootTest.ts ***!
+  \*************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n/**\r\n * 测试类基类\r\n */\n\nclass RootTest {\n  /**\r\n   * 开始测试\r\n   */\n  startTest() {}\n\n}\n\nexports.default = RootTest;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/aTGame/Test/RootTest.ts?");
+
+/***/ }),
+
+/***/ "./src/aTGame/UI/FGUI/BaseUIManager.ts":
+/*!*********************************************!*\
+  !*** ./src/aTGame/UI/FGUI/BaseUIManager.ts ***!
+  \*********************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst ConsoleEx_1 = __webpack_require__(/*! ../../Console/ConsoleEx */ \"./src/aTGame/Console/ConsoleEx.ts\");\n\nconst ArrayUtils_1 = __webpack_require__(/*! ../../Utils/ArrayUtils */ \"./src/aTGame/Utils/ArrayUtils.ts\");\n/**\r\n * UI管理器基类\r\n * 因配合UIStateManagerProxy类一起管理UI\r\n */\n\n\nclass BaseUIManager {\n  //\n  constructor() {\n    //\n    this.initUIMediator(); //\n\n    this._initUIMediator();\n  }\n  /** 初始化UI调度者列表和代理类 */\n\n\n  initUIMediator() {} //初始化UI列表之后\n\n\n  _initUIMediator() {\n    if (!this.m_UIMediator) {\n      console.error(...ConsoleEx_1.default.packError('没有注册UI状态列表'));\n    }\n\n    let _length = 0;\n\n    for (let _i in this.m_UIMediator) {\n      _length++;\n\n      if (typeof this.m_UIMediator[_i] == \"undefined\" || !this.m_UIMediator[_i]) {\n        console.warn(...ConsoleEx_1.default.packWarn('有一个UIMediator不存在', _i));\n      }\n    }\n\n    if (_length == 0) {\n      console.warn(...ConsoleEx_1.default.packWarn('UI状态列表长度为0'));\n    } //判断是否注册UI代理\n\n\n    if (!this.m_UIProxy) {\n      console.warn(...ConsoleEx_1.default.packWarn('没有注册UI代理类。'));\n    }\n\n    this.m_UIProxy.setProxyMediatroList(this.m_UIMediator); //\n\n    let _serialNumber;\n\n    let _serialNumberLenth;\n\n    for (let _i in this.m_UIMediator) {\n      this.m_UIMediator[_i].keyId = _i; //检测树形结构\n\n      _serialNumber = [];\n      this.getUIBelongSerialNumber(this.m_UIMediator[_i], _serialNumber); //检测是否有重复使用的附属UI\n\n      _serialNumberLenth = _serialNumber.length;\n      _serialNumber = ArrayUtils_1.default.Unique(_serialNumber);\n\n      if (_serialNumberLenth != _serialNumber.length) {\n        console.error(...ConsoleEx_1.default.packError('UI调度者', _i, '的附属UI有重复出现！'));\n      }\n    }\n  } //获取一个UI调度者的附属UI序号列表\n\n\n  getUIBelongSerialNumber(_UIMed, _numbers, _ifR = false) {\n    if (_UIMed.belongDownUIMediator.length > 0) {\n      _UIMed.belongDownUIMediator.forEach(item => {\n        this.getUIBelongSerialNumber(item, _numbers, true);\n      });\n    } //判断是否为附属UI\n\n\n    if (!_ifR) {\n      if (_UIMed.ifBelongUIMediator) {\n        console.warn(...ConsoleEx_1.default.packWarn('注意！有一个附属UI调度者被添加进了UI管理器列表中，它将不会被显示。'));\n      }\n    } else {\n      if (!_UIMed.ifBelongUIMediator) {\n        console.warn(...ConsoleEx_1.default.packWarn('注意！有一个不是附属的UI调度者被添加进了附属列表中'));\n      }\n    }\n\n    _numbers.push(_UIMed.serialNumber); //\n\n\n    if (_UIMed.belongUpUIMediator.length > 0) {\n      _UIMed.belongUpUIMediator.forEach(item => {\n        this.getUIBelongSerialNumber(item, _numbers, true);\n      });\n    }\n  }\n\n}\n\nexports.default = BaseUIManager;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/aTGame/UI/FGUI/BaseUIManager.ts?");
+
+/***/ }),
+
+/***/ "./src/aTGame/UI/FGUI/BaseUIMediator.ts":
+/*!**********************************************!*\
+  !*** ./src/aTGame/UI/FGUI/BaseUIMediator.ts ***!
+  \**********************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst ESpecialUIIndex_1 = __webpack_require__(/*! ./ESpecialUIIndex */ \"./src/aTGame/UI/FGUI/ESpecialUIIndex.ts\");\n\nconst EUILayer_1 = __webpack_require__(/*! ./EUILayer */ \"./src/aTGame/UI/FGUI/EUILayer.ts\");\n\nconst FGuiData_1 = __webpack_require__(/*! ./FGuiData */ \"./src/aTGame/UI/FGUI/FGuiData.ts\");\n\nconst FGuiRootManager_1 = __webpack_require__(/*! ./FGuiRootManager */ \"./src/aTGame/UI/FGUI/FGuiRootManager.ts\");\n/**\r\n * UI调度者基类(用来控制UI界面)\r\n * 说明：\r\n * 单页面一定要单例，且可以通过管理器调用，多个就不行了\r\n * 在显示或者隐藏回调中不要使用UI状态管理器设置某个UI的状态\r\n * 不主动打开当前页面无关的页面，如果实在要打开就发送事件通过UI管理器打开\r\n * 不主动调用Show，Hide方法显示和隐藏其他UI，需要就通过UI状态管理器打开和关闭\r\n * 可以自己调用自己的Show，Hide方法，但是不能就再UI管理器中打开了\r\n * 尽量不主动监听一些与页面无关的UI事件,可以自由发出事件\r\n * 附属UI会在自身UI显示时一起显示，隐藏时一起隐藏，\r\n */\n\n\nclass BaseUIMediator {\n  //\n  constructor() {\n    /** UI层级类型，必须在初始化时设置 */\n    this._layer = EUILayer_1.EUILayer.Panel; // 附属UI\n\n    /** 是否属于附属UI调度者 */\n\n    this._ifBelongUIMediator = false;\n    /** 属于该UI之下的UI调度者列表 */\n\n    this._belongDownUIMediator = [];\n    /** 属于该UI之下的UI调度者列表 */\n\n    this._belongUpUIMediator = []; //\n\n    /** 是否显示 */\n\n    this._isShow = false; //设置一个唯一的序号\n\n    this.m_serialNumber = BaseUIMediatorGlobalSerialNumber.GlobalSerialNumber;\n  }\n  /** 当前ui实例 */\n\n\n  get ui() {\n    return this._ui;\n  }\n  /** 获取唯一序号 */\n\n\n  get serialNumber() {\n    return this.m_serialNumber;\n  }\n  /** ui层级 */\n\n\n  get layer() {\n    return this._layer;\n  }\n  /** fgui数据 */\n\n\n  get _fguiData() {\n    return new FGuiData_1.default();\n  }\n  /** 获取是否属于附属UI调度者 */\n\n\n  get ifBelongUIMediator() {\n    return this._ifBelongUIMediator;\n  }\n  /** 获取下层的附属UI */\n\n\n  get belongDownUIMediator() {\n    return this._belongDownUIMediator;\n  }\n  /** 获取上层的附属UI */\n\n\n  get belongUpUIMediator() {\n    return this._belongUpUIMediator;\n  }\n  /** 是否显示 */\n\n\n  get isShow() {\n    return this._isShow;\n  }\n  /** 是否删除 */\n\n\n  get isDispose() {\n    return this.ui.isDisposed;\n  }\n  /** 设置keyId */\n\n\n  set keyId(_s) {\n    this.m_keyId = _s;\n  }\n  /** 获取keyId */\n\n\n  get keyId() {\n    return this.m_keyId;\n  } //设置ui到最顶层\n\n\n  setUIToTopShow() {\n    //先判断是否存在ui\n    if (this._ui) {\n      FGuiRootManager_1.default.setUIToTopShow(this._ui, this._layer);\n    }\n  }\n  /**\r\n   * 显示UI\r\n   */\n\n\n  Show() {\n    //判断是否已经显示过了\n    if (this._isShow) {\n      //直接设置层级\n      this.setUIToTopShow();\n      return;\n    } //显示前回调\n\n\n    this.OnshowBefore(); //\n\n    this._isShow = true; //判断是不是真的删除了这个UI(为null或者被删除)\n\n    if (!this._ui || this._ui && this._ui.isDisposed) {\n      //添加ui\n      this._ui = FGuiRootManager_1.default.AddUI(this._classDefine, this._fguiData, this._layer); //判断是否是单页面\n\n      if (this._layer == EUILayer_1.EUILayer.OneUI) {\n        FGuiRootManager_1.default.oneUIs.push(this);\n      }\n    } else {\n      this.ui.visible = true;\n    } //设置该ui层级为最高层\n\n\n    this.setUIToTopShow(); //显示结束回调\n\n    this._OnShow(); //播放动画\n\n\n    if (this._ui[ESpecialUIIndex_1.ESpecialUIIndex.anim_enter]) {\n      let anim = this._ui[ESpecialUIIndex_1.ESpecialUIIndex.anim_enter];\n      anim.play(Laya.Handler.create(this, this._CallEnterAnimEnd));\n    } else {\n      //\n      this.OnEnterAnimEnd();\n    }\n  } //播放动画完成\n\n\n  _CallEnterAnimEnd() {\n    this.OnEnterAnimEnd();\n  }\n  /**\r\n   * 进入动画回调,使用时覆盖即可\r\n   */\n\n\n  OnEnterAnimEnd() {}\n  /** 显示之前调用 */\n\n\n  OnshowBefore() {}\n  /** 显示之后调用 */\n\n\n  _OnShow() {}\n  /**\r\n   * 隐藏\r\n   * @param dispose 是否删除\r\n   */\n\n\n  Hide(dispose = true) {\n    if (this._ui == null) return;\n    if (this._ui.isDisposed) return;\n    if (!this._isShow) return;\n    this._isShow = false;\n    this.OnHideBefore(); //播放动画\n\n    if (this._ui[ESpecialUIIndex_1.ESpecialUIIndex.anim_exit]) {\n      let anim = this._ui[ESpecialUIIndex_1.ESpecialUIIndex.anim_exit];\n      anim.play(Laya.Handler.create(this, this._DoHide, [dispose]));\n    } else {\n      this._DoHide(dispose);\n    }\n  } //隐藏之后\n\n\n  _DoHide(dispose) {\n    //判断是否删除\n    if (dispose) {\n      this._ui.dispose();\n    } else {\n      this._ui.visible = false;\n    } //\n\n\n    this._OnHide();\n  }\n  /** 隐藏之前调用 */\n\n\n  OnHideBefore() {}\n  /** 隐藏之后调用 */\n\n\n  _OnHide() {}\n\n}\n\nexports.default = BaseUIMediator;\n/**\r\n * 基类UI调度者序号管理\r\n */\n\nclass BaseUIMediatorGlobalSerialNumber {\n  /** 获取一个全局的序号 */\n  static get GlobalSerialNumber() {\n    this.m_GlobalSerialNumber++;\n    return this.m_GlobalSerialNumber;\n  }\n\n}\n\nBaseUIMediatorGlobalSerialNumber.m_GlobalSerialNumber = 0;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/aTGame/UI/FGUI/BaseUIMediator.ts?");
+
+/***/ }),
+
+/***/ "./src/aTGame/UI/FGUI/ESpecialUIIndex.ts":
+/*!***********************************************!*\
+  !*** ./src/aTGame/UI/FGUI/ESpecialUIIndex.ts ***!
+  \***********************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\nexports.ESpecialUIIndex = void 0;\n/**\r\n * 特殊用途UI索引名字\r\n */\n\nvar ESpecialUIIndex;\n\n(function (ESpecialUIIndex) {\n  /** 进入动画 */\n  ESpecialUIIndex[\"anim_enter\"] = \"m_anim_enter\";\n  /** 离开动画 */\n\n  ESpecialUIIndex[\"anim_exit\"] = \"m_anim_exit\";\n})(ESpecialUIIndex = exports.ESpecialUIIndex || (exports.ESpecialUIIndex = {}));\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/aTGame/UI/FGUI/ESpecialUIIndex.ts?");
+
+/***/ }),
+
+/***/ "./src/aTGame/UI/FGUI/EUILayer.ts":
+/*!****************************************!*\
+  !*** ./src/aTGame/UI/FGUI/EUILayer.ts ***!
+  \****************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\nexports.EUILayer = void 0;\n/**\r\n * UI分层,按顺序显示\r\n */\n\nvar EUILayer;\n\n(function (EUILayer) {\n  /** 背景页面 */\n  EUILayer[\"Bg\"] = \"EUILayer_Bg\";\n  /** 主界面  永远存在 */\n\n  EUILayer[\"Main\"] = \"EUILayer_Main\";\n  /** 单UI 只能存在一个 */\n\n  EUILayer[\"OneUI\"] = \"EUILayer_OneUI\";\n  /** 面板  可以有很多 */\n\n  EUILayer[\"Panel\"] = \"EUILayer_Panel\";\n  /** 弹窗 */\n\n  EUILayer[\"Popup\"] = \"EUILayer_Popup\";\n  /** 道具 */\n\n  EUILayer[\"Prop\"] = \"EUILayer_Prop\";\n  /** 小部件 */\n\n  EUILayer[\"Tip\"] = \"EUILayer_Tip\";\n  /** 暂停 */\n\n  EUILayer[\"Pause\"] = \"EUILayer_Pause\";\n  /** 设置 */\n\n  EUILayer[\"Set\"] = \"EUILayer_Set\";\n  /** 最高 */\n\n  EUILayer[\"Top\"] = \"EUILayer_Top\";\n  /** 加载页面 */\n\n  EUILayer[\"Loading\"] = \"EUILayer_Loading\";\n  /** 原生 */\n\n  EUILayer[\"Native\"] = \"EUILayer_Native\";\n})(EUILayer = exports.EUILayer || (exports.EUILayer = {}));\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/aTGame/UI/FGUI/EUILayer.ts?");
+
+/***/ }),
+
+/***/ "./src/aTGame/UI/FGUI/FGuiData.ts":
+/*!****************************************!*\
+  !*** ./src/aTGame/UI/FGUI/FGuiData.ts ***!
+  \****************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n/**\r\n * FGUI数据类\r\n */\n\nclass FGuiData {\n  constructor() {\n    /** 是否持续更新UI */\n    this.ifUpdate = true;\n    /** 顶部距离 */\n\n    this.top = 0;\n    /** 底部距离 */\n\n    this.bottom = 0;\n    /** 缓动时间 */\n\n    this.tweenTime = 0;\n  }\n\n}\n\nexports.default = FGuiData;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/aTGame/UI/FGUI/FGuiData.ts?");
+
+/***/ }),
+
+/***/ "./src/aTGame/UI/FGUI/FGuiRootManager.ts":
+/*!***********************************************!*\
+  !*** ./src/aTGame/UI/FGUI/FGuiRootManager.ts ***!
+  \***********************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst EUILayer_1 = __webpack_require__(/*! ./EUILayer */ \"./src/aTGame/UI/FGUI/EUILayer.ts\");\n\nconst ConsoleEx_1 = __webpack_require__(/*! ../../Console/ConsoleEx */ \"./src/aTGame/Console/ConsoleEx.ts\");\n\nconst FGuiData_1 = __webpack_require__(/*! ./FGuiData */ \"./src/aTGame/UI/FGUI/FGuiData.ts\");\n/**\r\n * FGUI根管理器\r\n */\n\n\nclass FGuiRootManager {\n  // 获取某一层UI根节点\n  static getLayer(layerType) {\n    //\n    return this.LayerList[layerType];\n  }\n  /**\r\n   * 初始化\r\n   */\n\n\n  static Init() {\n    // 设置包名后缀\n    fgui.UIConfig.packageFileExtension = \"bin\";\n    Laya.stage.addChild(fgui.GRoot.inst.displayObject); //添加FGUI根节点按顺序显示\n\n    this.LayerList = {};\n\n    for (let _i in EUILayer_1.EUILayer) {\n      this.LayerList[EUILayer_1.EUILayer[_i]] = fgui.GRoot.inst.addChild(new fgui.GComponent());\n    } //更新所有UI并添加监听\n\n\n    this.UpdateAllUI();\n    Laya.stage.on(Laya.Event.RESIZE, this, this.UpdateAllUI);\n  }\n  /**\r\n   * 创建一个UI并添加到对应层级\r\n   * @param uiType UI类型，必须包含一个初始化实例的方法\r\n   * @param fguiData fgui数据\r\n   * @param layer 层级类型\r\n   */\n\n\n  static AddUI(uiType, fguiData, layer) {\n    let ui = uiType.createInstance(); //判断是否是单ui如果是就隐藏该层级下的所有UI\n\n    if (layer == EUILayer_1.EUILayer.OneUI) {\n      let oneUIs = FGuiRootManager.oneUIs;\n\n      if (oneUIs.length > 0) {\n        oneUIs.forEach(panel => {\n          panel && panel.Hide();\n        });\n      } //清空\n\n\n      FGuiRootManager.oneUIs = [];\n    } //添加到目标层级\n\n\n    this.getLayer(layer).addChild(ui); //设置数据\n\n    let _key = Symbol('fguiData');\n\n    this._cacheFguiData[_key] = fguiData; //注入数据\n\n    ui[this.m_uiDataKey] = _key;\n    this.setUIData(ui, fguiData); //\n\n    return ui;\n  }\n  /**\r\n   * 设置ui显示在最上层\r\n   * @param _ui 目标ui\r\n   * @param _layer 该ui所属的层级\r\n   */\n\n\n  static setUIToTopShow(_ui, _layer) {\n    let _layerCom = this.getLayer(_layer); //判断该层级是否有该ui\n\n\n    let _index = _layerCom.getChildIndex(_ui);\n\n    if (_index == -1) {\n      console.warn(...ConsoleEx_1.default.packWarn('设置ui到最顶层失败，因为该层级里面没有该UI！'));\n      return;\n    } //先从顶层删除\n\n\n    _ui.removeFromParent(); //再次添加\n\n\n    _layerCom.addChild(_ui);\n  }\n  /**\r\n   * 更新所有UI\r\n   */\n\n\n  static UpdateAllUI() {\n    let setWidth = Laya.stage.width;\n    let setHeight = Laya.stage.height;\n    fgui.GRoot.inst.setSize(setWidth, setHeight);\n    let ui;\n\n    let _ui;\n\n    for (let i = 0, length = fgui.GRoot.inst.numChildren; i < length; ++i) {\n      ui = fgui.GRoot.inst.getChildAt(i);\n      ui.setSize(setWidth, setHeight);\n      ui.y = 0;\n\n      for (let _i = 0, _length = ui.numChildren; _i < _length; _i++) {\n        _ui = ui.getChildAt(_i); //获取键入的数据\n\n        let getData = this._cacheFguiData[_ui[this.m_uiDataKey]]; //判断是否更新数据\n\n        if (getData.ifUpdate) {\n          //设置数据\n          this.setUIData(_ui, getData);\n        }\n      }\n    }\n  }\n  /**\r\n   * 设置UI数据\r\n   * @param _ui UI\r\n   * @param _uiData UI数据\r\n   */\n\n\n  static setUIData(_ui, _uiData = new FGuiData_1.default()) {\n    _ui.setSize(fgui.GRoot.inst.width, fgui.GRoot.inst.height - _uiData.top - _uiData.bottom);\n\n    _ui.y = _uiData.top;\n  }\n  /**\r\n   * 判断某个点是否在某个UI内部\r\n   * @param ui\r\n   * @param x\r\n   * @param y\r\n   */\n\n\n  static CheckIn(ui, x, y) {\n    if (x > ui.x && x < ui.x + ui.width && y > ui.y && y < ui.y + ui.height) {\n      return true;\n    }\n\n    return false;\n  }\n\n}\n\nexports.default = FGuiRootManager; //\n\nFGuiRootManager.m_uiDataKey = Symbol('$UIData'); //缓存fgui数据，通过它找fgui数据\n\nFGuiRootManager._cacheFguiData = {}; //单UI列表\n\nFGuiRootManager.oneUIs = [];\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/aTGame/UI/FGUI/FGuiRootManager.ts?");
+
+/***/ }),
+
+/***/ "./src/aTGame/UI/FGUI/LoadUIPack.ts":
+/*!******************************************!*\
+  !*** ./src/aTGame/UI/FGUI/LoadUIPack.ts ***!
+  \******************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\nexports.LoadUIPack = void 0;\n/**\r\n * 加载UI包类\r\n */\n\nclass LoadUIPack {\n  /**\r\n   * 加载包\r\n   * @param packPath 包路径\r\n   * @param atliasCount 图集数量\r\n   * @param _extraURL 额外的资源\r\n   */\n  constructor(packPath, atliasCount = -1, _extraURL) {\n    this.packPath = packPath;\n    this.atliasCount = atliasCount;\n    this.m_extraURL = _extraURL;\n  }\n  /**\r\n   * 获取所有路径\r\n   * @param urls 输出数组\r\n   */\n\n\n  PushUrl(urls) {\n    //加入包名\n    urls.push({\n      url: this.packPath + \".bin\",\n      type: Laya.Loader.BUFFER\n    }); //加入其它资源\n\n    if (this.m_extraURL && this.m_extraURL.length > 0) {\n      urls.push(...this.m_extraURL);\n    } //加载纹理集\n\n\n    if (this.atliasCount >= 0) {\n      urls.push({\n        url: this.packPath + \"_atlas0.png\",\n        type: Laya.Loader.IMAGE\n      }); //\n\n      for (let i = 1; i <= this.atliasCount; i++) {\n        urls.push({\n          url: this.packPath + \"_atlas0_\" + i + \".png\",\n          type: Laya.Loader.IMAGE\n        });\n      }\n    }\n  }\n  /**\r\n   * 添加包\r\n   */\n\n\n  AddPackage() {\n    fgui.UIPackage.addPackage(this.packPath);\n  }\n\n}\n\nexports.LoadUIPack = LoadUIPack;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/aTGame/UI/FGUI/LoadUIPack.ts?");
+
+/***/ }),
+
+/***/ "./src/aTGame/UI/FGUI/RootUIStateManagerProxy.ts":
+/*!*******************************************************!*\
+  !*** ./src/aTGame/UI/FGUI/RootUIStateManagerProxy.ts ***!
+  \*******************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst RootClassProxy_1 = __webpack_require__(/*! ../../Root/RootClassProxy */ \"./src/aTGame/Root/RootClassProxy.ts\");\n\nconst ArrayUtils_1 = __webpack_require__(/*! ../../Utils/ArrayUtils */ \"./src/aTGame/Utils/ArrayUtils.ts\");\n\nconst ConsoleEx_1 = __webpack_require__(/*! ../../Console/ConsoleEx */ \"./src/aTGame/Console/ConsoleEx.ts\");\n/**\r\n * UI状态代理管理器基类\r\n * 直接Show显示的ui不受管理\r\n * 只能管理单页面UI\r\n * 注意！每次修改UI状态时都会改节点\r\n */\n\n\nclass RootUIStateManagerProxy extends RootClassProxy_1.default {\n  constructor() {\n    super(...arguments); //UI调度者列表\n\n    this.m_UIMediator = {}; //当前显示的UI类型索引列表\n\n    this.m_onShowUI = []; //是否设置过ui管理列表\n\n    this.m_ifSetMediatroList = false;\n  }\n  /**\r\n   * 设置代理调度者列表\r\n   * @param _UIMediator 代理调度者列表\r\n   */\n\n\n  setProxyMediatroList(_UIMediator) {\n    this.m_UIMediator = _UIMediator;\n    this.m_onShowUI = [];\n    this.m_ifSetMediatroList = true; //\n\n    this.Init();\n  }\n  /**\r\n   * 设置代理完成，初始化\r\n   */\n\n\n  Init() {}\n  /** 是否初始化过代理 */\n\n\n  get ifSetMediatroList() {\n    return this.m_ifSetMediatroList;\n  }\n  /** 获取当前显示的UI列表 */\n\n\n  get onShowUIs() {\n    return this.m_onShowUI;\n  }\n  /**\r\n   * 通过索引获取某个UI调度者\r\n   * @param _eui UI调度者索引枚举\r\n   */\n\n\n  getUIMeiatro(_eui) {\n    return this.m_UIMediator[_eui];\n  }\n  /**\r\n   * 关闭一个UI,不影响其他UI\r\n   * @param _uiMeiatro 该UI的调度者\r\n   */\n\n\n  closeUI(_uiMeiatro) {\n    this.setUIState([{\n      typeIndex: _uiMeiatro.keyId,\n      state: false\n    }], false);\n  }\n  /**\r\n   * 设置UI状态\r\n   * UI会在当前本来的UI层级根据状态列表显示\r\n   * @param _uiStates 状态列表\r\n   * @param _ifUnify 是否统一处理其他UI状态 默认为 true\r\n   * @param _unifyState 统一处理其他UI的状态 默认为 {state: false, dispose: true}\r\n   *\r\n   */\n\n\n  setUIState(_uiStates, _ifUnify = true, _unifyState = {\n    state: false,\n    dispose: true\n  }, _showAffectLayer, _hideAffectLayer) {\n    //判断是否设置过ui代理列表\n    if (!this.m_ifSetMediatroList) {\n      console.error(...ConsoleEx_1.default.packError('还没有为UI代理类设置代理UI调度者列表！'));\n      return;\n    } //自动设置ui状态列表\n\n\n    for (let _o of _uiStates) {\n      //设置显示状态默认为true\n      if (typeof _o.state == 'undefined') {\n        _o.state = true;\n      } //设置默认删除\n\n\n      if (typeof _o.dispose == 'undefined') {\n        _o.dispose = true;\n      }\n    } //自动设置统一处理ui状态\n\n\n    if (typeof _unifyState.dispose == 'undefined') {\n      _unifyState.dispose = true;\n    } //\n\n\n    let _showUI = []; //需要显示的UI\n\n    let _hideUI = []; //需要隐藏的UI\n    //数组去重\n\n    _uiStates = ArrayUtils_1.default.ObjUnique(_uiStates, item => {\n      return item.typeIndex;\n    }); //过滤不存在的状态\n\n    _uiStates = this.statesFilter(_uiStates); //取出需要显示和需要隐藏的UI\n\n    let _i;\n\n    for (let _o of _uiStates) {\n      if (_o.state) {\n        _i = this.m_onShowUI.findIndex(item => {\n          return item.typeIndex == _o.typeIndex;\n        });\n\n        if (_i != -1) {\n          this.m_onShowUI.splice(_i, 1);\n        }\n\n        _showUI.push(_o);\n      } else {\n        _i = this.m_onShowUI.findIndex(item => {\n          return item.typeIndex == _o.typeIndex;\n        });\n\n        if (_i != -1) {\n          this.m_onShowUI.splice(_i, 1);\n\n          _hideUI.push(_o);\n        }\n      }\n    } //判断是否统一处理其他ui\n\n\n    if (_ifUnify) {\n      //找到没有出现在显示和隐藏列表中的ui\n      let _differS = [];\n\n      for (let _index in this.m_UIMediator) {\n        if (_showUI.findIndex(item => {\n          return item.typeIndex == _index;\n        }) == -1 && _hideUI.findIndex(item => {\n          return item.typeIndex == _index;\n        }) == -1) {\n          _differS.push({\n            typeIndex: _index,\n            state: _unifyState.state,\n            dispose: _unifyState.dispose\n          });\n        }\n      } //全部显示\n\n\n      if (_unifyState.state) {\n        //添加到需要显示的ui下面\n        _showUI.unshift(..._differS);\n      } //全部隐藏\n      else {\n          //添加到需要隐藏的ui下面\n          _hideUI.push(..._differS);\n        }\n    } else {\n      //融合本来就显示的ui列表到显示列表中\n      _showUI.unshift(...this.m_onShowUI);\n    } // console.log('设置层级前', _showUI, _hideUI);\n    //检测是否在受影响列表中\n\n\n    if (typeof _showAffectLayer != 'undefined') {\n      //先去重\n      _showAffectLayer = ArrayUtils_1.default.Unique(_showAffectLayer); // console.log('层级', _affectLayer);\n      //过滤需要显示的列表，去掉受影响层级之外的元素\n\n      _showUI = _showUI.filter(item => {\n        return _showAffectLayer.findIndex(layer => {\n          return layer == this.m_UIMediator[item.typeIndex].layer;\n        }) != -1;\n      });\n    }\n\n    if (typeof _hideAffectLayer != 'undefined') {\n      //先去重\n      _hideAffectLayer = ArrayUtils_1.default.Unique(_hideAffectLayer); //过滤需要显示的列表，去掉受影响层级之外的元素\n\n      _hideUI = _hideUI.filter(item => {\n        return _hideAffectLayer.findIndex(layer => {\n          return layer == this.m_UIMediator[item.typeIndex].layer;\n        }) != -1;\n      });\n    } // console.log('设置层级后', _showUI, _hideUI);\n    //隐藏上一批需要隐藏的列表\n\n\n    for (let _o of _hideUI) {\n      if (this.m_UIMediator[_o.typeIndex].ifBelongUIMediator) {\n        console.warn(...ConsoleEx_1.default.packWarn('有一个附属UI的UI调度者试图被隐藏，KEY为', this.m_UIMediator[_o.typeIndex].keyId));\n        continue;\n      } //递归隐藏该UI和它的所有附属\n\n\n      this.hideUIMediator(this.m_UIMediator[_o.typeIndex], _o.dispose);\n    } //显示在显示列表里面的全部UI\n\n\n    for (let _o of _showUI) {\n      if (this.m_UIMediator[_o.typeIndex].ifBelongUIMediator) {\n        console.warn(...ConsoleEx_1.default.packWarn('有一个附属UI的UI调度者试图被显示，KEY为', this.m_UIMediator[_o.typeIndex].keyId));\n        continue;\n      } //递归显示该UI和它的所有附属\n\n\n      this.showUIMediator(this.m_UIMediator[_o.typeIndex]);\n    } //保存当前显示的ui列表\n\n\n    this.m_onShowUI = _showUI;\n  }\n  /**\r\n   * 是否存在的调度者ui过滤器\r\n   * @param _o\r\n   */\n\n\n  statesFilter(_states) {\n    return _states.filter(_o => {\n      return typeof this.m_UIMediator[_o.typeIndex] != 'undefined';\n    });\n  } //隐藏一个UI\n\n\n  hideUIMediator(_UIMed, _dispose, _ifR = false) {\n    if (_UIMed.belongUpUIMediator.length > 0) {\n      _UIMed.belongUpUIMediator.forEach(item => {\n        this.hideUIMediator(item, _dispose, true);\n      });\n    } //\n\n\n    if (!_ifR || _UIMed.ifBelongUIMediator) {\n      _UIMed.Hide(_dispose);\n    } else {\n      console.warn(...ConsoleEx_1.default.packWarn('有一个不是附属UI的UI调度者试图被隐藏，KEY为', _UIMed.keyId));\n    } //\n\n\n    if (_UIMed.belongDownUIMediator.length > 0) {\n      _UIMed.belongDownUIMediator.forEach(item => {\n        this.hideUIMediator(item, _dispose, true);\n      });\n    }\n  } //显示一个UI\n\n\n  showUIMediator(_UIMed, _ifR = false) {\n    if (_UIMed.belongDownUIMediator.length > 0) {\n      _UIMed.belongDownUIMediator.forEach(item => {\n        this.showUIMediator(item, true);\n      });\n    } //\n\n\n    if (!_ifR || _UIMed.ifBelongUIMediator) {\n      _UIMed.Show();\n    } else {\n      console.warn(...ConsoleEx_1.default.packWarn('有一个不是附属UI的UI调度者试图被显示，KEY为', _UIMed.keyId));\n    } //\n\n\n    if (_UIMed.belongUpUIMediator.length > 0) {\n      _UIMed.belongUpUIMediator.forEach(item => {\n        this.showUIMediator(item, true);\n      });\n    }\n  }\n\n}\n\nexports.default = RootUIStateManagerProxy;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/aTGame/UI/FGUI/RootUIStateManagerProxy.ts?");
+
+/***/ }),
+
+/***/ "./src/aTGame/Utils/ArrayUtils.ts":
+/*!****************************************!*\
+  !*** ./src/aTGame/Utils/ArrayUtils.ts ***!
+  \****************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n/**\r\n * 数组工具\r\n */\n\nclass ArrayUtils {\n  /**\r\n   * 数组去重保留靠前的内容\r\n   * @param arr 源数组\r\n   */\n  static Unique(arr) {\n    return Array.from(new Set(arr));\n  }\n  /**\r\n   * 数组去重保留靠后的内容\r\n   * @param arr 源数组\r\n   */\n\n\n  static ReverseReserveUnique(arr) {\n    return Array.from(new Set(arr.reverse())).reverse();\n  }\n  /**\r\n   * 对象数组去重\r\n   * @param arr 源数组\r\n   * @param _F 获取对比键值函数\r\n   */\n\n\n  static ObjUnique(arr, _F) {\n    for (let i = 0, len = arr.length; i < len; i++) {\n      for (let j = i + 1, len = arr.length; j < len; j++) {\n        if (_F(arr[i]) === _F(arr[j])) {\n          arr.splice(j, 1);\n          j--; // 每删除一个数j的值就减1\n\n          len--; // j值减小时len也要相应减1（减少循环次数，节省性能）   \n        }\n      }\n    }\n\n    return arr;\n  }\n  /**\r\n   * 替换数组的某个元素\r\n   * @param arr 源数组\r\n   * @param oldObj 被替换的元素\r\n   * @param newObj 替换元素\r\n   */\n\n\n  static Replace(arr, oldObj, newObj) {\n    let index = arr.indexOf(oldObj);\n    if (index < 0) return false;\n    arr.splice(index, 1, newObj);\n    return true;\n  }\n  /**\r\n   * 删除一个元素并返回结果\r\n   * @param arr 源数组\r\n   * @param obj 删除目标对象\r\n   */\n\n\n  static RemoveItem(arr, obj) {\n    let index = arr.indexOf(obj);\n    if (index < 0) return false;\n    arr.splice(index, 1);\n    return true;\n  }\n  /**\r\n   * 根据索引删除一个数据\r\n   * @param arr 源数组\r\n   * @param index 索引\r\n   */\n\n\n  static RemoveAt(arr, index) {\n    if (arr.length <= index) return false;\n    arr.splice(index, 1);\n    return true;\n  }\n  /**\r\n   * 数组是否包含某个数据\r\n   * @param arr\r\n   * @param obj\r\n   */\n\n\n  static Contains(arr, obj) {\n    let index = arr.indexOf(obj);\n    return index >= 0;\n  }\n  /**\r\n   * 复制一个数组\r\n   * @param arr 源数组\r\n   */\n\n\n  static Copy(arr) {\n    let result = [];\n\n    for (let i = 0; i < arr.length; ++i) {\n      result.push(arr[i]);\n    }\n\n    return result;\n  }\n  /**\r\n   * 随机打乱数组\r\n   * @param _array 目标数组\r\n   */\n\n\n  static upsetArray(_array) {\n    //乱序\n    _array.sort(() => {\n      return Math.random() - 0.5;\n    });\n  }\n  /**\r\n   * 随机获取数组中的随机值，可指定长度\r\n   * @param _array 原数组\r\n   * @param _n 随机个数\r\n   * @param _weight 权重列表\r\n   */\n\n\n  static RandomGet(_array, _n = 1, _weight = _array.map(item => {\n    return 1;\n  })) {\n    if (_array.length <= 0) {\n      return;\n    }\n\n    let _rootArray = [];\n    let _newArray = []; //权重索引列表\n\n    let _indexArray = []; //找到最小的权重\n\n    let _minWeight = _weight[0];\n\n    _weight.forEach(item => {\n      _minWeight = Math.min(_minWeight, item);\n    });\n\n    _weight = _weight.map(item => {\n      return Math.floor(item * (1 / _minWeight));\n    });\n\n    _array.forEach((item, index) => {\n      _rootArray.push(item); //\n\n\n      for (let _i = 0; _i < _weight[index]; _i++) {\n        _indexArray.push(index);\n      }\n    });\n\n    let _index;\n\n    for (let _i = 0; _i < _n; _i++) {\n      if (_rootArray.length <= 0) {\n        break;\n      }\n\n      _index = Math.floor(Math.random() * _indexArray.length);\n      _indexArray = _indexArray.filter(item => {\n        return item != _index;\n      });\n\n      _newArray.push(_rootArray.splice(_indexArray[_index], 1)[0]);\n    } //\n\n\n    return _newArray;\n  }\n\n}\n\nexports.default = ArrayUtils;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/aTGame/Utils/ArrayUtils.ts?");
+
+/***/ }),
+
+/***/ "./src/aTGame/Utils/ColorUtils.ts":
+/*!****************************************!*\
+  !*** ./src/aTGame/Utils/ColorUtils.ts ***!
+  \****************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n/**\r\n * 颜色操作类\r\n */\n\nclass ColorUtils {\n  /**\r\n   * rgb数据转字符串\r\n   * @param r -\r\n   * @param g -\r\n   * @param b -\r\n   */\n  static RgbToHex(r, g, b) {\n    var color = r << 16 | g << 8 | b;\n    var str = color.toString(16);\n\n    while (str.length < 6) str = \"0\" + str;\n\n    return \"#\" + str;\n  }\n  /**\r\n   * laya.Color类转字符串\r\n   * @param color Laya.Color\r\n   */\n\n\n  static ColorToHex(color) {\n    return this.RgbToHex(color.r * 255, color.g * 255, color.b * 255);\n  }\n  /**\r\n   * 字符串转laya.Color\r\n   * @param colorHex 颜色字符串\r\n   * @param alpha 透明度\r\n   */\n\n\n  static HexToColor(colorHex, alpha = null) {\n    if (colorHex.startsWith(\"#\")) {\n      colorHex = colorHex.substring(1);\n    }\n\n    let cr = colorHex.substring(0, 2);\n    let cg = colorHex.substring(2, 4);\n    let cb = colorHex.substring(4, 6);\n    let ca = colorHex.substring(6, 8);\n    let nr = parseInt(cr, 16);\n    let ng = parseInt(cg, 16);\n    let nb = parseInt(cb, 16);\n    let na = alpha ? alpha : parseInt(ca, 16);\n    return new Laya.Color(nr / 255, ng / 255, nb / 255, na);\n  }\n  /**\r\n   * Laya.Color转v3\r\n   * @param color Laya.Color\r\n   */\n\n\n  static ToV3(color) {\n    return new Laya.Vector3(color.r, color.g, color.b);\n  }\n  /**\r\n   * Laya.Color转v4\r\n   * @param color Laya.Color\r\n   */\n\n\n  static ToV4(color) {\n    return new Laya.Vector4(color.r, color.g, color.b, color.a);\n  }\n  /**\r\n   * 字符串颜色转v3\r\n   * @param colorHex -\r\n   */\n\n\n  static HexToV3(colorHex) {\n    if (colorHex.startsWith(\"#\")) {\n      colorHex = colorHex.substring(1);\n    }\n\n    let cr = colorHex.substring(0, 2);\n    let cg = colorHex.substring(2, 4);\n    let cb = colorHex.substring(4, 6);\n    let nr = parseInt(cr, 16);\n    let ng = parseInt(cg, 16);\n    let nb = parseInt(cb, 16);\n    return new Laya.Vector3(nr / 255, ng / 255, nb / 255);\n  }\n  /**\r\n   * 字符串颜色转v4\r\n   * @param colorHex -\r\n   * @param alpha 透明度\r\n   */\n\n\n  static HexToV4(colorHex, alpha = null) {\n    if (colorHex.startsWith(\"#\")) {\n      colorHex = colorHex.substring(1);\n    }\n\n    let cr = colorHex.substring(0, 2);\n    let cg = colorHex.substring(2, 4);\n    let cb = colorHex.substring(4, 6);\n    let ca = colorHex.substring(6, 8);\n    let nr = parseInt(cr, 16);\n    let ng = parseInt(cg, 16);\n    let nb = parseInt(cb, 16);\n    let na = alpha ? alpha : parseInt(ca, 16);\n    return new Laya.Vector4(nr / 255, ng / 255, nb / 255, na);\n  }\n\n}\n\nexports.default = ColorUtils;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/aTGame/Utils/ColorUtils.ts?");
+
+/***/ }),
+
+/***/ "./src/aTGame/Utils/Dictionary.ts":
+/*!****************************************!*\
+  !*** ./src/aTGame/Utils/Dictionary.ts ***!
+  \****************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n/**\r\n * 通用字典类\r\n */\n\nclass Dictionary {\n  constructor() {\n    this.items = {};\n  }\n\n  set(key, value) {\n    this.items[key] = value;\n    return true;\n  }\n\n  has(key) {\n    return this.items.hasOwnProperty(key);\n  }\n\n  remove(key) {\n    if (!this.has(key)) return false;\n    delete this.items[key];\n    return true;\n  }\n\n  get(key) {\n    return this.has(key) ? this.items[key] : undefined;\n  }\n\n  keys() {\n    return Object.keys(this.items);\n  } // values() {\n  // }\n\n\n  get length() {\n    return this.keys().length;\n  }\n\n  clear() {\n    this.items = {};\n  }\n\n}\n\nexports.default = Dictionary;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/aTGame/Utils/Dictionary.ts?");
+
+/***/ }),
+
+/***/ "./src/aTGame/Utils/MathUtils.ts":
+/*!***************************************!*\
+  !*** ./src/aTGame/Utils/MathUtils.ts ***!
+  \***************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst ArrayUtils_1 = __webpack_require__(/*! ./ArrayUtils */ \"./src/aTGame/Utils/ArrayUtils.ts\");\n/**\r\n * 数学函数扩展\r\n */\n\n\nclass MathUtils {\n  static ToHex(num) {\n    return num.toString(16);\n  }\n\n  static RandomFromArrayUtilscept(numArr, except) {\n    let fakeRandomList = [];\n\n    for (let i = 0; i < numArr.length; ++i) {\n      if (except == numArr[i]) continue;\n      fakeRandomList.push(numArr[i]);\n    }\n\n    return this.RandomFromArray(fakeRandomList);\n  }\n\n  static RandomFromArray(numArr) {\n    let randomIndex = MathUtils.RandomInt(0, numArr.length);\n    return numArr[randomIndex];\n  }\n\n  static RandomArrayFromArray(arr, count) {\n    let result = [];\n    let indexList = [];\n\n    for (let i = 0; i < arr.length; ++i) {\n      indexList.push(i);\n    }\n\n    for (let i = 0; i < count; ++i) {\n      let randomIndex = MathUtils.RandomInt(0, indexList.length);\n      let getIndex = indexList[randomIndex];\n      ArrayUtils_1.default.RemoveAt(indexList, randomIndex);\n      result.push(arr[getIndex]);\n    }\n\n    return result;\n  }\n\n  static RandomFromWithWeight(numArr, weightArr) {\n    if (numArr == null || numArr.length == 0) {\n      return null;\n    }\n\n    var totalWeight = 0;\n\n    for (var weight of weightArr) {\n      totalWeight += weight;\n    }\n\n    var randomWeight = MathUtils.Random(0, totalWeight);\n    var currentWeight = 0;\n\n    for (var i = 0; i < numArr.length; ++i) {\n      currentWeight += weightArr[i];\n\n      if (randomWeight < currentWeight) {\n        return numArr[i];\n      }\n    }\n\n    return numArr[numArr.length - 1];\n  } // max  = max + 1\n\n\n  static RandomInt(min, maxAddOne) {\n    return Math.floor(this.Random(min, maxAddOne));\n  } // max  = max + 1\n\n\n  static Random(min, maxAddOne) {\n    return (maxAddOne - min) * Math.random() + min;\n  }\n  /**\r\n   * 获取一个范围内随机整数\r\n   * @param min 最小值\r\n   * @param max 最大值\r\n   */\n\n\n  static randomRangeInt(min, max) {\n    return Math.floor(Math.random() * (max - min) + min);\n  }\n  /**\r\n   * 判定概率命中\r\n   * @param ratio 概率，百分数\r\n   */\n\n\n  static RandomRatio(ratio) {\n    let v = MathUtils.RandomInt(0, 10000) * 0.01;\n\n    if (ratio > v) {\n      return true;\n    }\n\n    return false;\n  }\n\n  static Clamp(value, min, max) {\n    if (value < min) return min;\n    if (value > max) return max;\n    return value;\n  }\n\n  static Clamp01(value) {\n    return this.Clamp(value, 0, 1);\n  }\n\n  static Sign(value) {\n    if (value == 0) return 1;\n    return value > 0 ? 1 : -1;\n  }\n\n  static GetNumCount(num) {\n    var numberCount = 0;\n    var newNumber = num;\n\n    while (newNumber / 10 > 0) {\n      newNumber = Math.floor(newNumber / 10);\n      numberCount++;\n    }\n\n    return numberCount;\n  }\n\n  static Lerp(from, to, progress) {\n    return from + (to - from) * MathUtils.Clamp01(progress);\n  }\n\n  static MoveTowardsAngle(current, target, maxDelta) {\n    var num = MathUtils.DeltaAngle(current, target);\n\n    if (0 - maxDelta < num && num < maxDelta) {\n      return target;\n    }\n\n    target = current + num;\n    return MathUtils.MoveTowards(current, target, maxDelta);\n  }\n\n  static MoveTowards(current, target, maxDelta) {\n    if (Math.abs(target - current) <= maxDelta) {\n      return target;\n    }\n\n    return current + Math.sign(target - current) * maxDelta;\n  }\n\n  static DeltaAngle(current, target) {\n    var num = MathUtils.Repeat(target - current, 360);\n\n    if (num > 180) {\n      num -= 360;\n    }\n\n    return num;\n  }\n\n  static Repeat(t, length) {\n    return MathUtils.Clamp(t - Math.floor(t / length) * length, 0, length);\n  }\n\n  static IsSimilar(n1, n2) {\n    return n1 == n2;\n  }\n\n}\n\nexports.default = MathUtils;\nMathUtils.Deg2Rad = 0.0175;\nMathUtils.Rad2Deg = 57.2958;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/aTGame/Utils/MathUtils.ts?");
+
+/***/ }),
+
+/***/ "./src/aTGame/Utils/StringUtils.ts":
+/*!*****************************************!*\
+  !*** ./src/aTGame/Utils/StringUtils.ts ***!
+  \*****************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n/**\r\n * 字符串处理工具\r\n */\n\nclass StringUtils {\n  /**\r\n   * 分割成整型数组\r\n   * @param str 字符串\r\n   * @param splitStr 分割字符串\r\n   */\n  static SplitToIntArray(str, splitStr) {\n    var splits = str.split(splitStr);\n    var result = [];\n\n    for (var i = 0; i < splits.length; ++i) {\n      var parseNum = parseInt(splits[i]);\n\n      if (isNaN(parseNum)) {\n        parseNum = 0;\n      }\n\n      result.push(parseNum);\n    }\n\n    return result;\n  }\n  /**\r\n   * int数组到字符串\r\n   * @param arr 数组\r\n   */\n\n\n  static IntArrToStr(arr) {\n    var str = \"\";\n\n    for (var i = 0; i < arr.length; ++i) {\n      str += arr[i].toFixed(0);\n\n      if (i < arr.length - 1) {\n        str += \",\";\n      }\n    }\n\n    return str;\n  }\n  /**\r\n   * 检测字符串是否为空\r\n   * @param str 被检测的字符串\r\n   */\n\n\n  static IsNullOrEmpty(str) {\n    if (str == null) return true;\n    if (str == \"\") return true;\n    return false;\n  }\n\n}\n\nexports.default = StringUtils;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/aTGame/Utils/StringUtils.ts?");
+
+/***/ }),
+
+/***/ "./src/aTGame/Utils/V3Utils.ts":
+/*!*************************************!*\
+  !*** ./src/aTGame/Utils/V3Utils.ts ***!
+  \*************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n/**\r\n * 关于v3向量的工具\r\n */\n\nclass V3Utils {\n  /**\r\n   * 通过一个字符串构建v3向量\r\n   * @param str\r\n   */\n  static parseVector3(str) {\n    var strs = str.split(',');\n    return new Laya.Vector3(Number(strs[0]), Number(strs[1]), Number(strs[2]));\n  }\n  /**\r\n   * 设置V3向量长度\r\n   * @param _v3 目标向量\r\n   * @param _l 目标长度\r\n   */\n\n\n  static setV3Length(_v3, _l) {\n    let _length = Laya.Vector3.scalarLength(_v3);\n\n    if (_length != 0) {\n      let _a = _l / _length;\n\n      _v3.x = _v3.x * _a;\n      _v3.y = _v3.y * _a;\n      _v3.z = _v3.z * _a;\n    }\n  }\n  /**\r\n   * 一个点插值移动到另一个点\r\n   * @param _pos 当前点\r\n   * @param _tragetPot 目标点\r\n   * @param _lerp 插值移动比例\r\n   * @param _outV3 输出向量\r\n   * @param _initialLength 初始长度\r\n   */\n\n\n  static PotLerpMove(_pos, _tragetPot, _lerp, _outV3, _initialLength) {\n    if (!_outV3) {\n      console.error('必须有一个输出的向量！');\n      return;\n    } //\n\n\n    let _distance = Laya.Vector3.distance(_pos, _tragetPot); //\n\n\n    Laya.Vector3.lerp(_pos, _tragetPot, _lerp, _outV3); //返回进度\n\n    return 1 - _distance / _initialLength;\n  }\n  /**\r\n   * 一个点匀速移动到另一个点\r\n   * @param _pos 当前点\r\n   * @param _tragetPot 目标点\r\n   * @param _speed 速度\r\n   * @param _outV3 输出向量\r\n   */\n\n\n  static PotConstantSpeedMove(_pos, _tragetPot, _speed, _outV3) {\n    if (!_outV3) {\n      console.error('必须有一个输出的向量！');\n      return;\n    } //\n\n\n    let _ifEnd;\n\n    let _differV3 = new Laya.Vector3(); //\n\n\n    Laya.Vector3.subtract(_tragetPot, _pos, _differV3);\n\n    let _distance = Laya.Vector3.scalarLength(_differV3);\n\n    if (_distance > _speed) {\n      this.setV3Length(_differV3, _speed);\n      _ifEnd = false;\n    } else {\n      _ifEnd = true;\n    } //相加\n\n\n    Laya.Vector3.add(_pos, _differV3, _outV3); //\n\n    return _ifEnd;\n  }\n\n}\n\nexports.default = V3Utils;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/aTGame/Utils/V3Utils.ts?");
+
+/***/ }),
+
+/***/ "./src/bTGameConfig/MainConfig.ts":
+/*!****************************************!*\
+  !*** ./src/bTGameConfig/MainConfig.ts ***!
+  \****************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n/**\r\n * 项目最高层不需要配表的配置\r\n */\n\nclass MainConfig {}\n\nexports.default = MainConfig;\n/** 游戏所属团队 */\n\nMainConfig.GameWhatTeam = '小小游戏';\n/** 游戏名字，尽量不要出现中文和特殊字符*/\n\nMainConfig.GameName = 'LayaMiniGame';\n/** 中文名字 */\n\nMainConfig.GameName_ = 'LayaBox小游戏';\n/** 游戏说明 */\n\nMainConfig.GameExplain = 'LayaBox小游戏';\n/** 数据版本 可以带字母但是尽量不要出现中文和特殊字符*/\n\nMainConfig.versions = '0.0.0';\n/** 是否上线为false则是开发环境 */\n\nMainConfig.OnLine = false;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/bTGameConfig/MainConfig.ts?");
+
+/***/ }),
+
+/***/ "./src/bTGameConfig/MainGameConfig.ts":
+/*!********************************************!*\
+  !*** ./src/bTGameConfig/MainGameConfig.ts ***!
+  \********************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst MainConfig_1 = __webpack_require__(/*! ./MainConfig */ \"./src/bTGameConfig/MainConfig.ts\");\n/**\r\n * 游戏最高层不需要配表的配置\r\n */\n\n\nclass MainGameConfig {}\n\nexports.default = MainGameConfig;\n/** 支持2D */\n\nMainGameConfig.support2D = false;\n/** 支持3D */\n\nMainGameConfig.support3D = true;\n/** 是否开启oimo物理 */\n\nMainGameConfig.ifAddOimoSystem = false;\n/** 是否开启游戏测试 */\n\nMainGameConfig.ifGameTest = !MainConfig_1.default.OnLine && false;\n/** 是否开启测试类 */\n\nMainGameConfig.ifTest = !MainConfig_1.default.OnLine && false;\n/** 是否开启调试类 */\n\nMainGameConfig.ifDebug = !MainConfig_1.default.OnLine && true;\n/** 是否打开一个新窗口调试 */\n\nMainGameConfig.ifOpenWindowDebug = !MainConfig_1.default.OnLine && false;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/bTGameConfig/MainGameConfig.ts?");
+
+/***/ }),
+
+/***/ "./src/cFrameBridge/Config/ELevelSceneName.ts":
+/*!****************************************************!*\
+  !*** ./src/cFrameBridge/Config/ELevelSceneName.ts ***!
+  \****************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\nexports.AllScenePrefabsNames = exports.ELevelSceneName = void 0;\n\nconst _AllScenePrefabsNames_1 = __webpack_require__(/*! ../../dMyGame/_prefabsName/_AllScenePrefabsNames */ \"./src/dMyGame/_prefabsName/_AllScenePrefabsNames.ts\");\n/**\r\n * 关卡场景名字枚举列表，必须共用一套预制体\r\n */\n\n\nvar ELevelSceneName;\n\n(function (ELevelSceneName) {\n  /** 默认导出关卡场景 */\n  ELevelSceneName[\"Export\"] = \"export\";\n})(ELevelSceneName = exports.ELevelSceneName || (exports.ELevelSceneName = {}));\n/**\r\n * 所有场景预制体名字集合\r\n */\n\n\nclass AllScenePrefabsNames extends _AllScenePrefabsNames_1.default {}\n\nexports.AllScenePrefabsNames = AllScenePrefabsNames;\n/**\r\n * 关卡场景配置类\r\n */\n\nclass LevelSceneNameConst {\n  /** 默认关卡场景名字 */\n  static get defaultLevelSceneName() {\n    return ELevelSceneName.Export;\n  }\n\n}\n\nexports.default = LevelSceneNameConst;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/cFrameBridge/Config/ELevelSceneName.ts?");
+
+/***/ }),
+
+/***/ "./src/cFrameBridge/Config/FrameLevelConfig.ts":
+/*!*****************************************************!*\
+  !*** ./src/cFrameBridge/Config/FrameLevelConfig.ts ***!
+  \*****************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst LevelConfigProxy_1 = __webpack_require__(/*! ../../dMyGame/ConfigProxy/LevelConfigProxy */ \"./src/dMyGame/ConfigProxy/LevelConfigProxy.ts\");\n\nconst OtherLevelConfigProxy_1 = __webpack_require__(/*! ../../dMyGame/ConfigProxy/OtherLevelConfigProxy */ \"./src/dMyGame/ConfigProxy/OtherLevelConfigProxy.ts\");\n/**\r\n * 框架依赖的关卡配置文件\r\n */\n\n\nclass FrameLevelConfig {\n  /**\r\n   * 根据关卡id获取关卡数据\r\n   * @param _id 关卡id\r\n   */\n  static byLevelIdGetLevelData(_id) {\n    let _levelConfigData = LevelConfigProxy_1.default.instance.byIdGetData(_id);\n\n    return this.getLevelData('ID', _levelConfigData.id, _levelConfigData.sceneName, _levelConfigData.sceneOtherRes, _levelConfigData.rootScene);\n  }\n  /**\r\n   * 通过其他关卡名字获取关卡数据\r\n   * @param _name 关卡名字\r\n   */\n\n\n  static byLevelNameGetOtherLevelData(_name) {\n    let _levelConfigData = OtherLevelConfigProxy_1.default.instance.byNameGetData(_name);\n\n    return this.getLevelData('Name', _levelConfigData.id, _levelConfigData.sceneName, _levelConfigData.sceneOtherRes, _levelConfigData.rootScene);\n  } //获取关卡数据\n\n\n  static getLevelData(_key, _id, _sceneName, _sceneOtherRes, _rootScene) {\n    //格式化，去空格和首尾逗号\n    _sceneName.replace(/\\s+/g, '').replace(/^,+/, '').replace(/,+$/, '').replace(/,+/g, ',');\n\n    _sceneOtherRes.replace(/\\s+/g, '').replace(/^,+/, '').replace(/,+$/, '').replace(/,+/g, ',');\n\n    return {\n      key: '$' + _rootScene + ':' + _key + '-' + _id + '-' + _sceneName,\n      rootScene: _rootScene,\n      sceneName: _sceneName.split(','),\n      sceneOtherRes: _sceneOtherRes.split(',')\n    };\n  }\n\n}\n\nexports.default = FrameLevelConfig;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/cFrameBridge/Config/FrameLevelConfig.ts?");
+
+/***/ }),
+
+/***/ "./src/cFrameBridge/Config/FrameLevelConst.ts":
+/*!****************************************************!*\
+  !*** ./src/cFrameBridge/Config/FrameLevelConst.ts ***!
+  \****************************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n/**\r\n * 关卡相关常量类\r\n */\n\nclass FrameLevelConst {}\n\nexports.default = FrameLevelConst;\n/** 预加载关卡名字列表,游戏最开始时加载的 */\n\nFrameLevelConst.PrestrainLeveId = ['prestrain'];\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/cFrameBridge/Config/FrameLevelConst.ts?");
+
+/***/ }),
+
+/***/ "./src/cFrameBridge/FrameCDNURL.ts":
+/*!*****************************************!*\
+  !*** ./src/cFrameBridge/FrameCDNURL.ts ***!
+  \*****************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n/**\r\n * 框架依赖cdn路径\r\n */\n\nclass FrameCDNURL {}\n\nexports.default = FrameCDNURL;\n/** cdn路径列表， */\n\nFrameCDNURL.CDNURLs = [//\n];\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/cFrameBridge/FrameCDNURL.ts?");
+
+/***/ }),
+
+/***/ "./src/cFrameBridge/FrameSubpackages.ts":
+/*!**********************************************!*\
+  !*** ./src/cFrameBridge/FrameSubpackages.ts ***!
+  \**********************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n/**\r\n * 框架依赖的分包数据\r\n */\n\nclass FrameSubpackages {}\n\nexports.default = FrameSubpackages;\n/** 分包列表,必须和分包配置文件中的列表一致 */\n\nFrameSubpackages.subpackages = [//\n];\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/cFrameBridge/FrameSubpackages.ts?");
+
+/***/ }),
+
+/***/ "./src/cFrameBridge/Physics/OimoConst.ts":
+/*!***********************************************!*\
+  !*** ./src/cFrameBridge/Physics/OimoConst.ts ***!
+  \***********************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n/**\r\n * Oimo物理常量\r\n */\n\nclass OimoConst {}\n\nexports.default = OimoConst;\n/** 时间步长 */\n\nOimoConst.timestep = 1 / 60;\n/** 迭代次数 */\n\nOimoConst.iterations = 24;\n/** 1 brute force, 2 sweep and prune, 3 volume tree */\n\nOimoConst.broadphase = 2;\n/** scale full world  */\n\nOimoConst.worldscale = 1;\n/** randomize sample */\n\nOimoConst.random = true;\n/** calculate statistic or not */\n\nOimoConst.info = false;\n/** 重力 */\n\nOimoConst.gravity = [0, -9.8, 0];\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/cFrameBridge/Physics/OimoConst.ts?");
+
+/***/ }),
+
+/***/ "./src/cFrameBridge/Platform/Data/BDData.ts":
+/*!**************************************************!*\
+  !*** ./src/cFrameBridge/Platform/Data/BDData.ts ***!
+  \**************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst PlatformData_1 = __webpack_require__(/*! ../../../aTGame/Platform/Data/PlatformData */ \"./src/aTGame/Platform/Data/PlatformData.ts\");\n/**\r\n * 百度小游戏数据\r\n */\n\n\nclass BDData extends PlatformData_1.default {\n  constructor() {\n    super(...arguments);\n    /** 应用ID */\n\n    this.appId = '';\n    this.appKey = '';\n    /** 广告id */\n\n    this.bannerId = '';\n    this.rewardVideoId = '';\n    this.interstitialId = '';\n    this.nativeId = ''; //\n\n    this.nativeBannerIds = [];\n    this.nativeIconIds = [];\n    this.nativeinterstitialIds = [];\n    this.nativeinpageIds = []; //\n\n    this.shareId = '';\n  }\n\n}\n\nexports.default = BDData;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/cFrameBridge/Platform/Data/BDData.ts?");
+
+/***/ }),
+
+/***/ "./src/cFrameBridge/Platform/Data/OPPOData.ts":
+/*!****************************************************!*\
+  !*** ./src/cFrameBridge/Platform/Data/OPPOData.ts ***!
+  \****************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst PlatformData_1 = __webpack_require__(/*! ../../../aTGame/Platform/Data/PlatformData */ \"./src/aTGame/Platform/Data/PlatformData.ts\");\n/**\r\n * OPPO小游戏数据\r\n */\n\n\nclass OPPOData extends PlatformData_1.default {\n  constructor() {\n    super(...arguments);\n    /** 应用ID */\n\n    this.appId = '';\n    this.appKey = '';\n    /** 广告id */\n\n    this.bannerId = '';\n    this.rewardVideoId = '';\n    this.interstitialId = '';\n    this.nativeId = ''; //\n\n    this.nativeBannerIds = [];\n    this.nativeIconIds = [];\n    this.nativeinterstitialIds = [];\n    this.nativeinpageIds = []; //\n\n    this.shareId = '';\n  }\n\n}\n\nexports.default = OPPOData;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/cFrameBridge/Platform/Data/OPPOData.ts?");
+
+/***/ }),
+
+/***/ "./src/cFrameBridge/Platform/Data/QQData.ts":
+/*!**************************************************!*\
+  !*** ./src/cFrameBridge/Platform/Data/QQData.ts ***!
+  \**************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst PlatformData_1 = __webpack_require__(/*! ../../../aTGame/Platform/Data/PlatformData */ \"./src/aTGame/Platform/Data/PlatformData.ts\");\n/**\r\n * QQ小游戏数据\r\n */\n\n\nclass QQData extends PlatformData_1.default {\n  constructor() {\n    super(...arguments);\n    /** 应用ID */\n\n    this.appId = '';\n    this.appKey = '';\n    /** 广告id */\n\n    this.bannerId = '';\n    this.rewardVideoId = '';\n    this.interstitialId = '';\n    this.nativeId = ''; //\n\n    this.nativeBannerIds = [];\n    this.nativeIconIds = [];\n    this.nativeinterstitialIds = [];\n    this.nativeinpageIds = []; //\n\n    this.shareId = '';\n  }\n\n}\n\nexports.default = QQData;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/cFrameBridge/Platform/Data/QQData.ts?");
+
+/***/ }),
+
+/***/ "./src/cFrameBridge/Platform/Data/QTTData.ts":
+/*!***************************************************!*\
+  !*** ./src/cFrameBridge/Platform/Data/QTTData.ts ***!
+  \***************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst PlatformData_1 = __webpack_require__(/*! ../../../aTGame/Platform/Data/PlatformData */ \"./src/aTGame/Platform/Data/PlatformData.ts\");\n/**\r\n * 趣头条小游戏数据\r\n */\n\n\nclass QTTData extends PlatformData_1.default {\n  constructor() {\n    super(...arguments);\n    /** 应用ID */\n\n    this.appId = '';\n    this.appKey = '';\n    /** 广告id */\n\n    this.bannerId = '';\n    this.rewardVideoId = '';\n    this.interstitialId = '';\n    this.nativeId = ''; //\n\n    this.nativeBannerIds = [];\n    this.nativeIconIds = [];\n    this.nativeinterstitialIds = [];\n    this.nativeinpageIds = []; //\n\n    this.shareId = '';\n  }\n\n}\n\nexports.default = QTTData;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/cFrameBridge/Platform/Data/QTTData.ts?");
+
+/***/ }),
+
+/***/ "./src/cFrameBridge/Platform/Data/TTData.ts":
+/*!**************************************************!*\
+  !*** ./src/cFrameBridge/Platform/Data/TTData.ts ***!
+  \**************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst PlatformData_1 = __webpack_require__(/*! ../../../aTGame/Platform/Data/PlatformData */ \"./src/aTGame/Platform/Data/PlatformData.ts\");\n/**\r\n * 头条小游戏数据\r\n */\n\n\nclass TTData extends PlatformData_1.default {\n  constructor() {\n    super(...arguments);\n    /** 应用ID */\n\n    this.appId = '';\n    this.appKey = '';\n    /** 广告id */\n\n    this.bannerId = '';\n    this.rewardVideoId = '';\n    this.interstitialId = '';\n    this.nativeId = ''; //\n\n    this.nativeBannerIds = [];\n    this.nativeIconIds = [];\n    this.nativeinterstitialIds = [];\n    this.nativeinpageIds = []; //\n\n    this.shareId = '';\n  }\n\n}\n\nexports.default = TTData;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/cFrameBridge/Platform/Data/TTData.ts?");
+
+/***/ }),
+
+/***/ "./src/cFrameBridge/Platform/Data/WXData.ts":
+/*!**************************************************!*\
+  !*** ./src/cFrameBridge/Platform/Data/WXData.ts ***!
+  \**************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst PlatformData_1 = __webpack_require__(/*! ../../../aTGame/Platform/Data/PlatformData */ \"./src/aTGame/Platform/Data/PlatformData.ts\");\n/**\r\n * WX小游戏数据\r\n */\n\n\nclass WXData extends PlatformData_1.default {\n  constructor() {\n    super(...arguments);\n    /** 应用ID */\n\n    this.appId = '';\n    this.appKey = '';\n    /** 广告id */\n\n    this.bannerId = '';\n    this.rewardVideoId = '';\n    this.interstitialId = '';\n    this.nativeId = ''; //\n\n    this.nativeBannerIds = [];\n    this.nativeIconIds = [];\n    this.nativeinterstitialIds = [];\n    this.nativeinpageIds = []; //\n\n    this.shareId = '';\n  }\n\n}\n\nexports.default = WXData;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/cFrameBridge/Platform/Data/WXData.ts?");
+
+/***/ }),
+
+/***/ "./src/dMyGame/Common/Const.ts":
+/*!*************************************!*\
+  !*** ./src/dMyGame/Common/Const.ts ***!
+  \*************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\nexports.Const = void 0;\n/**\r\n * 项目配置\r\n */\n\nclass Const {}\n\nexports.Const = Const;\n/** 重力 */\n\nConst.gravity = -10;\n/** 是否预加载关卡 */\n\nConst.ifPreloadCustoms = false;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/dMyGame/Common/Const.ts?");
+
+/***/ }),
+
+/***/ "./src/dMyGame/ConfigProxy/EnvironmentConfigProxy.ts":
+/*!***********************************************************!*\
+  !*** ./src/dMyGame/ConfigProxy/EnvironmentConfigProxy.ts ***!
+  \***********************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst EnvironmentConfig_1 = __webpack_require__(/*! ../_config/EnvironmentConfig */ \"./src/dMyGame/_config/EnvironmentConfig.ts\");\n\nconst RootDataProxy_1 = __webpack_require__(/*! ../../aTGame/Config/RootDataProxy */ \"./src/aTGame/Config/RootDataProxy.ts\");\n/**\r\n * 环境数据处理类\r\n */\n\n\nclass EnvironmentConfigProxy extends RootDataProxy_1.default {\n  //\n  constructor() {\n    super();\n  }\n  /** 单例 */\n\n\n  static get instance() {\n    if (this._instance == null) {\n      this._instance = new EnvironmentConfigProxy();\n    }\n\n    return this._instance;\n  } //初始化\n\n\n  initData() {\n    this.m_dataList = EnvironmentConfig_1.EnvironmentConfig.dataList;\n  }\n  /**\r\n   * 通过关卡id获取环境数据\r\n   * @param _id id\r\n   */\n\n\n  byLevelIdGetData(_id) {\n    return this.m_dataList.find(item => {\n      return item.id == _id;\n    });\n  }\n\n}\n\nexports.default = EnvironmentConfigProxy;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/dMyGame/ConfigProxy/EnvironmentConfigProxy.ts?");
+
+/***/ }),
+
+/***/ "./src/dMyGame/ConfigProxy/LevelConfigProxy.ts":
+/*!*****************************************************!*\
+  !*** ./src/dMyGame/ConfigProxy/LevelConfigProxy.ts ***!
+  \*****************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst LevelConfig_1 = __webpack_require__(/*! ../_config/LevelConfig */ \"./src/dMyGame/_config/LevelConfig.ts\");\n\nconst RootDataProxy_1 = __webpack_require__(/*! ../../aTGame/Config/RootDataProxy */ \"./src/aTGame/Config/RootDataProxy.ts\");\n/**\r\n * 关卡数据处理类\r\n */\n\n\nclass LevelConfigProxy extends RootDataProxy_1.default {\n  //\n  constructor() {\n    super();\n  }\n  /** 单例 */\n\n\n  static get instance() {\n    if (this._instance == null) {\n      this._instance = new LevelConfigProxy();\n    }\n\n    return this._instance;\n  } // 初始化\n\n\n  initData() {\n    //\n    this.m_dataList = LevelConfig_1.LevelConfig.dataList;\n  }\n  /**\r\n   * 获取关卡数量\r\n   */\n\n\n  getLevelNumber() {\n    let _number = 0;\n    this.m_dataList.forEach(item => {\n      if (item.id > 0) {\n        _number++;\n      }\n    }); //\n\n    return _number;\n  }\n  /**\r\n   * 通过关卡id获取关卡数据\r\n   * @param _id id\r\n   */\n\n\n  byIdGetData(_id) {\n    return this.m_dataList.find(item => {\n      return item.id == _id;\n    });\n  }\n\n}\n\nexports.default = LevelConfigProxy;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/dMyGame/ConfigProxy/LevelConfigProxy.ts?");
+
+/***/ }),
+
+/***/ "./src/dMyGame/ConfigProxy/OtherEnvironmentProxy.ts":
+/*!**********************************************************!*\
+  !*** ./src/dMyGame/ConfigProxy/OtherEnvironmentProxy.ts ***!
+  \**********************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst RootDataProxy_1 = __webpack_require__(/*! ../../aTGame/Config/RootDataProxy */ \"./src/aTGame/Config/RootDataProxy.ts\");\n\nconst OtherEnvironmentConfig_1 = __webpack_require__(/*! ../_config/OtherEnvironmentConfig */ \"./src/dMyGame/_config/OtherEnvironmentConfig.ts\");\n/**\r\n * 其他关卡环境数据处理类\r\n */\n\n\nclass OtherEnvironmentConfigProxy extends RootDataProxy_1.default {\n  //\n  constructor() {\n    super();\n  }\n  /** 单例 */\n\n\n  static get instance() {\n    if (this._instance == null) {\n      this._instance = new OtherEnvironmentConfigProxy();\n    }\n\n    return this._instance;\n  } //初始化\n\n\n  initData() {\n    this.m_dataList = OtherEnvironmentConfig_1.OtherEnvironmentConfig.dataList;\n  }\n  /**\r\n   * 通过关卡id获取环境数据\r\n   * @param _id id\r\n   */\n\n\n  byLevelIdGetData(_id) {\n    return this.m_dataList.find(item => {\n      return item.id == _id;\n    });\n  }\n  /**\r\n   * 关卡名字获取数据\r\n   * @param _name 关卡名字\r\n   */\n\n\n  byLevelNameGetData(_name) {\n    return this.m_dataList.find(item => {\n      return item.name == _name;\n    });\n  }\n\n}\n\nexports.default = OtherEnvironmentConfigProxy;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/dMyGame/ConfigProxy/OtherEnvironmentProxy.ts?");
+
+/***/ }),
+
+/***/ "./src/dMyGame/ConfigProxy/OtherLevelConfigProxy.ts":
+/*!**********************************************************!*\
+  !*** ./src/dMyGame/ConfigProxy/OtherLevelConfigProxy.ts ***!
+  \**********************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst RootDataProxy_1 = __webpack_require__(/*! ../../aTGame/Config/RootDataProxy */ \"./src/aTGame/Config/RootDataProxy.ts\");\n\nconst OtherLevelConfig_1 = __webpack_require__(/*! ../_config/OtherLevelConfig */ \"./src/dMyGame/_config/OtherLevelConfig.ts\");\n/**\r\n * 其他非主关卡数据处理类\r\n */\n\n\nclass OtherLevelConfigProxy extends RootDataProxy_1.default {\n  //\n  constructor() {\n    super();\n  }\n  /** 单例 */\n\n\n  static get instance() {\n    if (this._instance == null) {\n      this._instance = new OtherLevelConfigProxy();\n    }\n\n    return this._instance;\n  } // 初始化\n\n\n  initData() {\n    //\n    this.m_dataList = OtherLevelConfig_1.OtherLevelConfig.dataList;\n  }\n  /**\r\n   * 通过关卡id获取关卡数据\r\n   * @param _id id\r\n   */\n\n\n  byIdGetData(_id) {\n    return this.m_dataList.find(item => {\n      return item.id == _id;\n    });\n  }\n  /**\r\n   * 通过关卡名字获取数据\r\n   * @param _name 关卡名字\r\n   */\n\n\n  byNameGetData(_name) {\n    return this.m_dataList.find(item => {\n      return item.name == _name;\n    });\n  }\n\n}\n\nexports.default = OtherLevelConfigProxy;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/dMyGame/ConfigProxy/OtherLevelConfigProxy.ts?");
+
+/***/ }),
+
+/***/ "./src/dMyGame/ConfigProxy/TestConstProxy.ts":
+/*!***************************************************!*\
+  !*** ./src/dMyGame/ConfigProxy/TestConstProxy.ts ***!
+  \***************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst RootDataProxy_1 = __webpack_require__(/*! ../../aTGame/Config/RootDataProxy */ \"./src/aTGame/Config/RootDataProxy.ts\");\n\nconst MainGameConfig_1 = __webpack_require__(/*! ../../bTGameConfig/MainGameConfig */ \"./src/bTGameConfig/MainGameConfig.ts\");\n\nconst TestConst_1 = __webpack_require__(/*! ../_config/TestConst */ \"./src/dMyGame/_config/TestConst.ts\");\n/**\r\n * 测试配置表数据代理\r\n */\n\n\nclass TestConstProxy extends RootDataProxy_1.BaseConstDataProxy {\n  //\n  constructor() {\n    super();\n  }\n  /** 单例 */\n\n\n  static get instance() {\n    if (this._instance == null) {\n      this._instance = new TestConstProxy();\n    }\n\n    return this._instance;\n  }\n  /** 不能直接访问 */\n\n\n  get data() {\n    return undefined;\n  } //初始化\n\n\n  initData() {\n    this.m_data = TestConst_1.TestConst.data;\n  }\n  /** 是否开启调试 */\n\n\n  get ifDebug() {\n    if (!MainGameConfig_1.default.ifGameTest) return false;\n    return this.m_data.if_debug;\n  }\n  /** 是否开启oimo物理 */\n\n\n  get ifShowOimoMesh() {\n    if (!MainGameConfig_1.default.ifGameTest) return false;\n    return this.m_data.if_show_oimo_mesh;\n  }\n  /** oimo物理网格透明度 */\n\n\n  get oimoMeshDiaphaneity() {\n    return this.m_data.oimo_mesh_diaphaneity;\n  }\n\n}\n\nexports.default = TestConstProxy;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/dMyGame/ConfigProxy/TestConstProxy.ts?");
+
+/***/ }),
+
+/***/ "./src/dMyGame/Control/ConManager.ts":
+/*!*******************************************!*\
+  !*** ./src/dMyGame/Control/ConManager.ts ***!
+  \*******************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n/**\r\n * 控制器管理器\r\n */\n\nclass ConManager {\n  /**\r\n   * 为场景添加所有脚本控制器\r\n   * @param _scene 场景\r\n   */\n  static addScrCon(_scene) {//\n  }\n  /**\r\n   * 为场景添加所有普通控制器\r\n   */\n\n\n  static addCommonCon() {//\n  }\n\n}\n\nexports.default = ConManager;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/dMyGame/Control/ConManager.ts?");
+
+/***/ }),
+
+/***/ "./src/dMyGame/Enum/EUI.ts":
+/*!*********************************!*\
+  !*** ./src/dMyGame/Enum/EUI.ts ***!
+  \*********************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\nexports.EUI = void 0;\n/**\r\n * 所有UI页面\r\n */\n\nvar EUI;\n\n(function (EUI) {\n  /** 游戏加载 */\n  EUI[\"GameLoading\"] = \"EUI_GameLoading\";\n  /** 关卡加载 */\n\n  EUI[\"CustomsLoading\"] = \"EUI_CustomsLoading\"; //\n\n  /** 主测试 */\n\n  EUI[\"TestMain\"] = \"EUI_TestMain\";\n  /** 测试平台 */\n\n  EUI[\"TestPlatform\"] = \"EUI_TestPlatform\"; //\n\n  /** 主页面 */\n\n  EUI[\"Main\"] = \"EUI_Main\";\n  /** 设置页面 */\n\n  EUI[\"Set\"] = \"EUI_Set\";\n  /** 暂停页面 */\n\n  EUI[\"Pause\"] = \"EUI_Pause\";\n  /** 游戏页面 */\n\n  EUI[\"Play\"] = \"EUI_Play\";\n  /** 开始页面 */\n\n  EUI[\"Start\"] = \"EUI_Start\";\n  /** 完成页面 */\n\n  EUI[\"Com\"] = \"EUI_Com\";\n  /** 结束页面 */\n\n  EUI[\"End\"] = \"EUI_End\";\n})(EUI = exports.EUI || (exports.EUI = {}));\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/dMyGame/Enum/EUI.ts?");
+
+/***/ }),
+
+/***/ "./src/dMyGame/EventEnum/EEventAd.ts":
+/*!*******************************************!*\
+  !*** ./src/dMyGame/EventEnum/EEventAd.ts ***!
+  \*******************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\nexports.EEventAd = void 0;\n/**\r\n * 所有的广告事件\r\n */\n\nvar EEventAd;\n\n(function (EEventAd) {\n  /** 看广告 */\n  EEventAd[\"LookAd\"] = \"LookAd\";\n  /** 看完广告 */\n\n  EEventAd[\"UnLookAd\"] = \"UnLookAd\";\n})(EEventAd = exports.EEventAd || (exports.EEventAd = {}));\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/dMyGame/EventEnum/EEventAd.ts?");
+
+/***/ }),
+
+/***/ "./src/dMyGame/EventEnum/EEventAudio.ts":
+/*!**********************************************!*\
+  !*** ./src/dMyGame/EventEnum/EEventAudio.ts ***!
+  \**********************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\nexports.EEventAudio = void 0;\n/**\r\n * 音效事件\r\n */\n\nvar EEventAudio;\n\n(function (EEventAudio) {\n  /** BGM暂停 */\n  EEventAudio[\"BGMSuspend\"] = \"BGMSuspend\";\n  /** BGM继续 */\n\n  EEventAudio[\"BGMGoOn\"] = \"BGMGoOn\";\n  /** 音效暂停 */\n\n  EEventAudio[\"SoundSuspend\"] = \"SoundSuspend\";\n  /** 音效继续 */\n\n  EEventAudio[\"SoundGoOn\"] = \"SoundGoOn\";\n  /** BGM音量改变 */\n\n  EEventAudio[\"BGMVolumeChange\"] = \"BGMVolumeChange\";\n  /** Sound音量改变 */\n\n  EEventAudio[\"SoundVolumeChange\"] = \"BGMVolumeChange\";\n})(EEventAudio = exports.EEventAudio || (exports.EEventAudio = {}));\n/**\r\n    事件定义规则\r\n    只在产生事件时抛出事件\r\n    不要被动抛出事件避免事件循环抛出\r\n */\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/dMyGame/EventEnum/EEventAudio.ts?");
+
+/***/ }),
+
+/***/ "./src/dMyGame/EventEnum/EEventGlobal.ts":
+/*!***********************************************!*\
+  !*** ./src/dMyGame/EventEnum/EEventGlobal.ts ***!
+  \***********************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\nexports.EEventGlobal = void 0;\n/**\r\n * 全局事件\r\n */\n\nvar EEventGlobal;\n\n(function (EEventGlobal) {\n  /** 游戏初始化 */\n  EEventGlobal[\"GameInit\"] = \"GameInit\";\n  /** 游戏初始化完成 */\n\n  EEventGlobal[\"GameOnInit\"] = \"GameOnInit\";\n  /** 游戏加载 */\n\n  EEventGlobal[\"GameLoading\"] = \"GameLoading\";\n  /** 游戏资源加载 */\n\n  EEventGlobal[\"GameResLoading\"] = \"GameResLoading\";\n})(EEventGlobal = exports.EEventGlobal || (exports.EEventGlobal = {}));\n/**\r\n    事件定义规则\r\n    只在产生事件时抛出事件\r\n    不要被动抛出事件避免事件循环抛出\r\n */\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/dMyGame/EventEnum/EEventGlobal.ts?");
+
+/***/ }),
+
+/***/ "./src/dMyGame/EventEnum/EEventScene.ts":
+/*!**********************************************!*\
+  !*** ./src/dMyGame/EventEnum/EEventScene.ts ***!
+  \**********************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\nexports.EEventScene = void 0;\n/**\r\n * 所有的场景事件\r\n */\n\nvar EEventScene;\n\n(function (EEventScene) {\n  /** 游戏关卡构建事件 */\n  EEventScene[\"GameLevelsBuild\"] = \"GameLevelsBuild\";\n  /** 游戏其他关卡构建事件 */\n\n  EEventScene[\"GameOtherLevelsBuild\"] = \"GameOtherLevelsBuild\";\n  /** 游戏关卡构建前事件 */\n\n  EEventScene[\"GameLevelsBuildBefore\"] = \"GameLevelsBuildBefore\";\n  /** 游戏关卡构建完成事件 */\n\n  EEventScene[\"GameLevelsOnBuild\"] = \"GameLevelsOnBuild\";\n  /** 游戏清除关卡事件 */\n\n  EEventScene[\"GameLevelsDelete\"] = \"GameLevelsDelete\";\n  /** 游戏清除其他关卡事件 */\n\n  EEventScene[\"GameOtherLevelsDelete\"] = \"GameOtherLevelsDelete\";\n  /** 游戏清除关卡前 */\n\n  EEventScene[\"GameLevelsDeleteBefore\"] = \"GameLevelsDeleteBefore\";\n  /** 游戏清除完成 */\n\n  EEventScene[\"GameLevelsOnDelete\"] = \"GameLevelsOnDelete\";\n  /** 游戏开始 */\n\n  EEventScene[\"GameStart\"] = \"Start\";\n  /** 游戏暂停 */\n\n  EEventScene[\"GameSuspend\"] = \"GameSuspend\";\n  /** 游戏继续 */\n\n  EEventScene[\"GameGoOn\"] = \"GameGoOn\";\n  /** 游戏重新开始 */\n\n  EEventScene[\"GameRestart\"] = \"GameRestart\";\n  /** 游戏结束 */\n\n  EEventScene[\"GameEnd\"] = \"GameEnd\";\n  /** 游戏完成 */\n\n  EEventScene[\"GameCom\"] = \"GameCom\";\n  /** 游戏失败 */\n\n  EEventScene[\"GameFail\"] = \"gameFail\";\n  /** 角色死亡 */\n\n  EEventScene[\"RoleDie\"] = \"RoleDie\";\n  /** 角色复活 */\n\n  EEventScene[\"RoleRevive\"] = \"Revive\";\n})(EEventScene = exports.EEventScene || (exports.EEventScene = {}));\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/dMyGame/EventEnum/EEventScene.ts?");
+
+/***/ }),
+
+/***/ "./src/dMyGame/EventEnum/EEventUI.ts":
+/*!*******************************************!*\
+  !*** ./src/dMyGame/EventEnum/EEventUI.ts ***!
+  \*******************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\nexports.EEventUI = void 0;\n/**\r\n * 所有的UI事件\r\n */\n\nvar EEventUI;\n\n(function (EEventUI) {\n  /** 关卡改变 */\n  EEventUI[\"CustomsChange\"] = \"CustomsChange\";\n  /** 金币改变 */\n\n  EEventUI[\"GameCoinChange\"] = \"GameCoinChange\";\n  /** 音效状态改变 */\n\n  EEventUI[\"SoundStateChange\"] = \"SoundStateChange\";\n  /** 振动状态改变 */\n\n  EEventUI[\"VibrateStateChange\"] = \"VibrateStateChange\"; //\n\n  /** 关卡构建进度 */\n\n  EEventUI[\"SceneGameCustomsLoading\"] = \"SceneGameCustomsLoading\";\n  /** 3D更新事件 */\n\n  EEventUI[\"Updata3D\"] = \"Updata3D\";\n})(EEventUI = exports.EEventUI || (exports.EEventUI = {}));\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/dMyGame/EventEnum/EEventUI.ts?");
+
+/***/ }),
+
+/***/ "./src/dMyGame/GameData/GameData.ts":
+/*!******************************************!*\
+  !*** ./src/dMyGame/GameData/GameData.ts ***!
+  \******************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst CommonLeveEnum_1 = __webpack_require__(/*! ../../aTGame/Commom/CommonLeveEnum */ \"./src/aTGame/Commom/CommonLeveEnum.ts\");\n\nconst RootLocalStorageData_1 = __webpack_require__(/*! ../../aTGame/Data/RootLocalStorageData */ \"./src/aTGame/Data/RootLocalStorageData.ts\");\n/**\r\n * 游戏需要持久化的主要数据\r\n */\n\n\nclass GameData extends RootLocalStorageData_1.default {\n  constructor() {\n    super(...arguments);\n    /** 最大关卡数量 */\n\n    this.maxCustoms = 0;\n    /** 是否打开背景音乐 */\n\n    this.ifOpenBgm = true;\n    /** 是否打开音效 */\n\n    this.ifOpenSound = true;\n    /** 是否打开振动 */\n\n    this.ifOpenVibrate = true;\n    /** 当前关卡 默认为调试关卡 */\n\n    this.onCustoms = CommonLeveEnum_1.ECommonLeve.DebugLeveId;\n    /** 最大关卡记录 */\n\n    this.maxCustomsRecord = 1;\n  }\n\n}\n\nexports.default = GameData;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/dMyGame/GameData/GameData.ts?");
+
+/***/ }),
+
+/***/ "./src/dMyGame/GameData/GameDataProxy.ts":
+/*!***********************************************!*\
+  !*** ./src/dMyGame/GameData/GameDataProxy.ts ***!
+  \***********************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst RootLocalStorageProxy_1 = __webpack_require__(/*! ../../aTGame/Data/RootLocalStorageProxy */ \"./src/aTGame/Data/RootLocalStorageProxy.ts\");\n\nconst GameData_1 = __webpack_require__(/*! ./GameData */ \"./src/dMyGame/GameData/GameData.ts\");\n/**\r\n * 数据保存类\r\n */\n\n\nclass GameDataProxy extends RootLocalStorageProxy_1.default {\n  /** 不允许外界实例化 */\n  constructor() {\n    super();\n  }\n  /** 单例 */\n\n\n  static get instance() {\n    if (this._instance == null) {\n      this._instance = new GameDataProxy();\n    } //\n\n\n    return this._instance;\n  }\n  /** 获取保存名称 */\n\n\n  get _saveName() {\n    return \"Game\";\n  } //获取一个新的数据\n\n\n  getNewData() {\n    return new GameData_1.default();\n  }\n\n}\n\nexports.default = GameDataProxy;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/dMyGame/GameData/GameDataProxy.ts?");
+
+/***/ }),
+
+/***/ "./src/dMyGame/GameData/GameNewHandData.ts":
+/*!*************************************************!*\
+  !*** ./src/dMyGame/GameData/GameNewHandData.ts ***!
+  \*************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst RootLocalStorageData_1 = __webpack_require__(/*! ../../aTGame/Data/RootLocalStorageData */ \"./src/aTGame/Data/RootLocalStorageData.ts\");\n/**\r\n * 游戏需要持久化的新手引导数据\r\n */\n\n\nclass GameNewHandData extends RootLocalStorageData_1.default {}\n\nexports.default = GameNewHandData;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/dMyGame/GameData/GameNewHandData.ts?");
+
+/***/ }),
+
+/***/ "./src/dMyGame/GameData/GameNewHandDataProxy.ts":
+/*!******************************************************!*\
+  !*** ./src/dMyGame/GameData/GameNewHandDataProxy.ts ***!
+  \******************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst RootLocalStorageProxy_1 = __webpack_require__(/*! ../../aTGame/Data/RootLocalStorageProxy */ \"./src/aTGame/Data/RootLocalStorageProxy.ts\");\n\nconst GameNewHandData_1 = __webpack_require__(/*! ./GameNewHandData */ \"./src/dMyGame/GameData/GameNewHandData.ts\");\n/**\r\n * 新手引导数据保存类\r\n */\n\n\nclass GameNewHandDataProxy extends RootLocalStorageProxy_1.default {\n  /** 不允许外界实例化 */\n  constructor() {\n    super();\n  }\n  /** 单例 */\n\n\n  static get instance() {\n    if (this._instance == null) {\n      this._instance = new GameNewHandDataProxy();\n    } //\n\n\n    return this._instance;\n  }\n  /** 获取保存名称 */\n\n\n  get _saveName() {\n    return \"GameNewHand\";\n  } //获取一个新的数据\n\n\n  getNewData() {\n    return new GameNewHandData_1.default();\n  }\n\n}\n\nexports.default = GameNewHandDataProxy;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/dMyGame/GameData/GameNewHandDataProxy.ts?");
+
+/***/ }),
+
+/***/ "./src/dMyGame/GameData/GamePropData.ts":
+/*!**********************************************!*\
+  !*** ./src/dMyGame/GameData/GamePropData.ts ***!
+  \**********************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst RootLocalStorageData_1 = __webpack_require__(/*! ../../aTGame/Data/RootLocalStorageData */ \"./src/aTGame/Data/RootLocalStorageData.ts\");\n/**\r\n * 游戏需要持久化的道具数据\r\n */\n\n\nclass GamePropData extends RootLocalStorageData_1.default {\n  constructor() {\n    super(...arguments);\n    /** 金币数量 */\n\n    this.coinCount = 0;\n  }\n\n}\n\nexports.default = GamePropData;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/dMyGame/GameData/GamePropData.ts?");
+
+/***/ }),
+
+/***/ "./src/dMyGame/GameData/GamePropDataProxy.ts":
+/*!***************************************************!*\
+  !*** ./src/dMyGame/GameData/GamePropDataProxy.ts ***!
+  \***************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst RootLocalStorageProxy_1 = __webpack_require__(/*! ../../aTGame/Data/RootLocalStorageProxy */ \"./src/aTGame/Data/RootLocalStorageProxy.ts\");\n\nconst GamePropData_1 = __webpack_require__(/*! ./GamePropData */ \"./src/dMyGame/GameData/GamePropData.ts\");\n/**\r\n * 道具数据保存类\r\n */\n\n\nclass GamePropDataProxy extends RootLocalStorageProxy_1.default {\n  /** 不允许外界实例化 */\n  constructor() {\n    super();\n  }\n  /** 单例 */\n\n\n  static get instance() {\n    if (this._instance == null) {\n      this._instance = new GamePropDataProxy();\n    } //\n\n\n    return this._instance;\n  }\n  /** 获取保存名称 */\n\n\n  get _saveName() {\n    return \"GameProp\";\n  } //获取一个新的数据\n\n\n  getNewData() {\n    return new GamePropData_1.default();\n  }\n\n}\n\nexports.default = GamePropDataProxy;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/dMyGame/GameData/GamePropDataProxy.ts?");
+
+/***/ }),
+
+/***/ "./src/dMyGame/GameData/GameShortData.ts":
+/*!***********************************************!*\
+  !*** ./src/dMyGame/GameData/GameShortData.ts ***!
+  \***********************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst RootGameData_1 = __webpack_require__(/*! ../../aTGame/Data/RootGameData */ \"./src/aTGame/Data/RootGameData.ts\");\n\nconst GameOnCustomData_1 = __webpack_require__(/*! ./shortData/GameOnCustomData */ \"./src/dMyGame/GameData/shortData/GameOnCustomData.ts\");\n/**\r\n * 游戏临时数据类\r\n */\n\n\nclass GameShortData extends RootGameData_1.default {\n  constructor() {\n    super(...arguments);\n    /** 当前关卡的数据 */\n\n    this.onCustomsData = new GameOnCustomData_1.default(); //\n  }\n\n}\n\nexports.default = GameShortData;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/dMyGame/GameData/GameShortData.ts?");
+
+/***/ }),
+
+/***/ "./src/dMyGame/GameData/GameShortDataProxy.ts":
+/*!****************************************************!*\
+  !*** ./src/dMyGame/GameData/GameShortDataProxy.ts ***!
+  \****************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst RootShortProxy_1 = __webpack_require__(/*! ../../aTGame/Data/RootShortProxy */ \"./src/aTGame/Data/RootShortProxy.ts\");\n\nconst GameShortData_1 = __webpack_require__(/*! ./GameShortData */ \"./src/dMyGame/GameData/GameShortData.ts\");\n/**\r\n * 临时数据保存类\r\n */\n\n\nclass GameShortDataProxy extends RootShortProxy_1.default {\n  /** 不允许外界实例化 */\n  constructor() {\n    super();\n  }\n  /** 单例 */\n\n\n  static get instance() {\n    if (this._instance == null) {\n      this._instance = new GameShortDataProxy();\n    } //\n\n\n    return this._instance;\n  } // 初始化\n\n\n  InitData() {\n    this._shortData = new GameShortData_1.default();\n  }\n  /** 临时数据 */\n\n\n  get shortData() {\n    return this._shortData;\n  } // ** -------------------------------------------------------------------------------------- ** //\n\n  /**\r\n   * 清空临时数据\r\n   */\n\n\n  static emptyGameOnCustomData() {\n    this._instance._shortData = new GameShortData_1.default();\n  }\n\n}\n\nexports.default = GameShortDataProxy;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/dMyGame/GameData/GameShortDataProxy.ts?");
+
+/***/ }),
+
+/***/ "./src/dMyGame/GameData/GameSignData.ts":
+/*!**********************************************!*\
+  !*** ./src/dMyGame/GameData/GameSignData.ts ***!
+  \**********************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst RootLocalStorageData_1 = __webpack_require__(/*! ../../aTGame/Data/RootLocalStorageData */ \"./src/aTGame/Data/RootLocalStorageData.ts\");\n/**\r\n * 游戏需要持久化的签到数据\r\n */\n\n\nclass GameSignData extends RootLocalStorageData_1.default {\n  constructor() {\n    super(...arguments);\n    /** 是否签到 */\n\n    this.ifSignIn = false;\n    /** 是否是第一天 */\n\n    this.ifOneDay = false;\n  }\n\n}\n\nexports.default = GameSignData;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/dMyGame/GameData/GameSignData.ts?");
+
+/***/ }),
+
+/***/ "./src/dMyGame/GameData/GameSignDataProxy.ts":
+/*!***************************************************!*\
+  !*** ./src/dMyGame/GameData/GameSignDataProxy.ts ***!
+  \***************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst RootLocalStorageProxy_1 = __webpack_require__(/*! ../../aTGame/Data/RootLocalStorageProxy */ \"./src/aTGame/Data/RootLocalStorageProxy.ts\");\n\nconst GameSignData_1 = __webpack_require__(/*! ./GameSignData */ \"./src/dMyGame/GameData/GameSignData.ts\");\n/**\r\n * 签到数据保存类\r\n */\n\n\nclass GameSignDataProxy extends RootLocalStorageProxy_1.default {\n  /** 不允许外界实例化 */\n  constructor() {\n    super();\n  }\n  /** 单例 */\n\n\n  static get instance() {\n    if (this._instance == null) {\n      this._instance = new GameSignDataProxy();\n    } //\n\n\n    return this._instance;\n  }\n  /** 获取保存名称 */\n\n\n  get _saveName() {\n    return \"GameSign\";\n  } //获取一个新的数据\n\n\n  getNewData() {\n    return new GameSignData_1.default();\n  }\n\n}\n\nexports.default = GameSignDataProxy;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/dMyGame/GameData/GameSignDataProxy.ts?");
+
+/***/ }),
+
+/***/ "./src/dMyGame/GameData/GameSkinData.ts":
+/*!**********************************************!*\
+  !*** ./src/dMyGame/GameData/GameSkinData.ts ***!
+  \**********************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst RootLocalStorageData_1 = __webpack_require__(/*! ../../aTGame/Data/RootLocalStorageData */ \"./src/aTGame/Data/RootLocalStorageData.ts\");\n/**\r\n * 游戏需要持久化的皮肤数据\r\n */\n\n\nclass GameSkinData extends RootLocalStorageData_1.default {}\n\nexports.default = GameSkinData;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/dMyGame/GameData/GameSkinData.ts?");
+
+/***/ }),
+
+/***/ "./src/dMyGame/GameData/GameSkinDataProxy.ts":
+/*!***************************************************!*\
+  !*** ./src/dMyGame/GameData/GameSkinDataProxy.ts ***!
+  \***************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst RootLocalStorageProxy_1 = __webpack_require__(/*! ../../aTGame/Data/RootLocalStorageProxy */ \"./src/aTGame/Data/RootLocalStorageProxy.ts\");\n\nconst GameSkinData_1 = __webpack_require__(/*! ./GameSkinData */ \"./src/dMyGame/GameData/GameSkinData.ts\");\n/**\r\n * 皮肤数据保存类\r\n */\n\n\nclass GameSkinDataProxy extends RootLocalStorageProxy_1.default {\n  /** 不允许外界实例化 */\n  constructor() {\n    super();\n  }\n  /** 单例 */\n\n\n  static get instance() {\n    if (this._instance == null) {\n      this._instance = new GameSkinDataProxy();\n    } //\n\n\n    return this._instance;\n  }\n  /** 获取保存名称 */\n\n\n  get _saveName() {\n    return \"GameSkin\";\n  } //获取一个新的数据\n\n\n  getNewData() {\n    return new GameSkinData_1.default();\n  }\n\n}\n\nexports.default = GameSkinDataProxy;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/dMyGame/GameData/GameSkinDataProxy.ts?");
+
+/***/ }),
+
+/***/ "./src/dMyGame/GameData/GameTestData.ts":
+/*!**********************************************!*\
+  !*** ./src/dMyGame/GameData/GameTestData.ts ***!
+  \**********************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst RootLocalStorageData_1 = __webpack_require__(/*! ../../aTGame/Data/RootLocalStorageData */ \"./src/aTGame/Data/RootLocalStorageData.ts\");\n/**\r\n * 游戏需要持久化的测试数据\r\n */\n\n\nclass GameTestData extends RootLocalStorageData_1.default {\n  constructor() {\n    super(...arguments);\n    /** 测试数值 */\n\n    this.testNumber = 0;\n    /** 测试布尔值 */\n\n    this.testBoolean = false;\n    /** 测试数组 */\n\n    this.testArray = [];\n    /** 测试对象 */\n\n    this.testObject = {\n      a: 0,\n      b: 0,\n      c: 0\n    };\n  }\n\n}\n\nexports.default = GameTestData;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/dMyGame/GameData/GameTestData.ts?");
+
+/***/ }),
+
+/***/ "./src/dMyGame/GameData/GameTestDataProxy.ts":
+/*!***************************************************!*\
+  !*** ./src/dMyGame/GameData/GameTestDataProxy.ts ***!
+  \***************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst RootLocalStorageProxy_1 = __webpack_require__(/*! ../../aTGame/Data/RootLocalStorageProxy */ \"./src/aTGame/Data/RootLocalStorageProxy.ts\");\n\nconst GameTestData_1 = __webpack_require__(/*! ./GameTestData */ \"./src/dMyGame/GameData/GameTestData.ts\");\n/**\r\n * 测试数据保存类\r\n */\n\n\nclass GameTestDataProxy extends RootLocalStorageProxy_1.default {\n  /** 不允许外界实例化 */\n  constructor() {\n    super();\n  }\n  /** 单例 */\n\n\n  static get instance() {\n    if (this._instance == null) {\n      this._instance = new GameTestDataProxy();\n    } //\n\n\n    return this._instance;\n  }\n  /** 获取保存名称 */\n\n\n  get _saveName() {\n    return \"GameTest\";\n  } //获取一个新的数据\n\n\n  getNewData() {\n    return new GameTestData_1.default();\n  }\n\n}\n\nexports.default = GameTestDataProxy;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/dMyGame/GameData/GameTestDataProxy.ts?");
+
+/***/ }),
+
+/***/ "./src/dMyGame/GameData/shortData/GameOnCustomData.ts":
+/*!************************************************************!*\
+  !*** ./src/dMyGame/GameData/shortData/GameOnCustomData.ts ***!
+  \************************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst RootGameData_1 = __webpack_require__(/*! ../../../aTGame/Data/RootGameData */ \"./src/aTGame/Data/RootGameData.ts\");\n/**\r\n * 当前关卡数据\r\n */\n\n\nclass GameOnCustomData extends RootGameData_1.default {\n  /** 返回一个副本 */\n  clone() {\n    return JSON.parse(JSON.stringify(this));\n  }\n\n}\n\nexports.default = GameOnCustomData;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/dMyGame/GameData/shortData/GameOnCustomData.ts?");
+
+/***/ }),
+
+/***/ "./src/dMyGame/MainStart.ts":
+/*!**********************************!*\
+  !*** ./src/dMyGame/MainStart.ts ***!
+  \**********************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst Game3D_1 = __webpack_require__(/*! ./Main/Game/Game3D */ \"./src/dMyGame/Main/Game/Game3D.ts\");\n\nconst GameLoad_1 = __webpack_require__(/*! ./Main/GameLoad */ \"./src/dMyGame/Main/GameLoad.ts\");\n\nconst Game2D_1 = __webpack_require__(/*! ./Main/Game/Game2D */ \"./src/dMyGame/Main/Game/Game2D.ts\");\n\nconst MainTest_1 = __webpack_require__(/*! ../aTGame/Test/MainTest */ \"./src/aTGame/Test/MainTest.ts\");\n\nconst MainGameConfig_1 = __webpack_require__(/*! ../bTGameConfig/MainGameConfig */ \"./src/bTGameConfig/MainGameConfig.ts\");\n\nconst ConsoleEx_1 = __webpack_require__(/*! ../aTGame/Console/ConsoleEx */ \"./src/aTGame/Console/ConsoleEx.ts\");\n\nconst MyMainTest_1 = __webpack_require__(/*! ../eTest/MyMainTest */ \"./src/eTest/MyMainTest.ts\");\n\nconst MainDebug_1 = __webpack_require__(/*! ../aTGame/Debug/MainDebug */ \"./src/aTGame/Debug/MainDebug.ts\");\n\nconst MyMainDebug_1 = __webpack_require__(/*! ../fDebug/MyMainDebug */ \"./src/fDebug/MyMainDebug.ts\");\n\nconst RootDebug_1 = __webpack_require__(/*! ../aTGame/Debug/RootDebug */ \"./src/aTGame/Debug/RootDebug.ts\");\n\nconst FrameSubpackages_1 = __webpack_require__(/*! ../cFrameBridge/FrameSubpackages */ \"./src/cFrameBridge/FrameSubpackages.ts\");\n\nconst PlatformManager_1 = __webpack_require__(/*! ../aTGame/Platform/PlatformManager */ \"./src/aTGame/Platform/PlatformManager.ts\");\n/**\r\n * 游戏开始类\r\n */\n\n\nclass MainStart {\n  //游戏开始创建\n  constructor() {\n    //初始化\n    this.init().then(() => {\n      //\n      this.upGameLoad(); //\n\n      this.gameLoad();\n    });\n  } //初始化之前执行\n\n\n  init() {\n    return new Promise(r => {\n      //初始化平台管理器\n      PlatformManager_1.default.instance.init();\n      PlatformManager_1.default.instance.initPlatform(); //加载分包资源\n\n      this.loadSubpackage().then(() => {\n        r();\n      });\n    });\n  } //加载分包资源\n\n\n  loadSubpackage() {\n    //\n    return new Promise(r => {\n      //分包列表\n      if (FrameSubpackages_1.default.subpackages.length > 0) {\n        //加载所有分包\n        let _promiseList = [];\n\n        for (let _o of FrameSubpackages_1.default.subpackages) {\n          //\n          if (_o.name) {\n            _promiseList.push(new Promise(r => {\n              PlatformManager_1.default.PlatformInstance.LoadSubpackage(_o.name, Laya.Handler.create(this, () => {\n                r();\n              }), Laya.Handler.create(this, () => {\n                r();\n              }), undefined);\n            }));\n          }\n        } //\n\n\n        Promise.all(_promiseList).then(() => {\n          r();\n        });\n      } else {\n        r();\n      }\n    });\n  }\n  /** 游戏加载之前 */\n\n\n  upGameLoad() {\n    //判断是否开启测试\n    if (MainGameConfig_1.default.ifTest) {\n      //激活测试类\n      new MainTest_1.default().startTest(); //主测试\n\n      new MyMainTest_1.default().startTest(); //项目测试\n    } //判断是否开启调试\n\n\n    if (MainGameConfig_1.default.ifDebug) {\n      //激活调试类\n      new MainDebug_1.default().startDebug(); //主调试\n\n      new MyMainDebug_1.default().startDebug(); //项目调试\n      //判断是否打开新窗口调试\n\n      if (MainGameConfig_1.default.ifOpenWindowDebug) {\n        //打开新窗口进行调试\n        RootDebug_1.default.openWindowDebug();\n      }\n    }\n  }\n  /** 加载游戏 */\n\n\n  gameLoad() {\n    let _gameLoad = new GameLoad_1.default(); //\n\n\n    console.log(...ConsoleEx_1.default.comLog('开始加载游戏')); //开始加载处理\n\n    _gameLoad.Enter(this, undefined, this.OnGameLoad);\n  }\n  /** 游戏进入之前的操作之前之后 */\n\n\n  OnGameLoad() {\n    return new Promise(_r => {\n      _r(); //\n\n\n      console.log(...ConsoleEx_1.default.comLog('游戏加载完成')); //判断游戏类型\n\n      if (MainGameConfig_1.default.support3D) {\n        //进入3D游戏\n        Game3D_1.default.instance.enterGame();\n      }\n\n      if (MainGameConfig_1.default.support2D) {\n        //进入2D游戏\n        Game2D_1.default.instance.enterGame();\n      } //\n\n\n      this.OnGameEnter();\n    });\n  }\n  /** 进入游戏之后 */\n\n\n  OnGameEnter() {}\n\n}\n\nexports.default = MainStart;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/dMyGame/MainStart.ts?");
+
+/***/ }),
+
+/***/ "./src/dMyGame/Main/GameLoad.ts":
+/*!**************************************!*\
+  !*** ./src/dMyGame/Main/GameLoad.ts ***!
+  \**************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst ConfigManager_1 = __webpack_require__(/*! ../../aTGame/Config/ConfigManager */ \"./src/aTGame/Config/ConfigManager.ts\");\n\nconst GameConst_1 = __webpack_require__(/*! ../_config/GameConst */ \"./src/dMyGame/_config/GameConst.ts\");\n\nconst LevelConfig_1 = __webpack_require__(/*! ../_config/LevelConfig */ \"./src/dMyGame/_config/LevelConfig.ts\");\n\nconst EnvironmentConfig_1 = __webpack_require__(/*! ../_config/EnvironmentConfig */ \"./src/dMyGame/_config/EnvironmentConfig.ts\");\n\nconst LoadUIPack_1 = __webpack_require__(/*! ../../aTGame/UI/FGUI/LoadUIPack */ \"./src/aTGame/UI/FGUI/LoadUIPack.ts\");\n\nconst MainConfig_1 = __webpack_require__(/*! ../../bTGameConfig/MainConfig */ \"./src/bTGameConfig/MainConfig.ts\");\n\nconst RootGameLoad_1 = __webpack_require__(/*! ../../aTGame/Main/RootGameLoad */ \"./src/aTGame/Main/RootGameLoad.ts\");\n\nconst EUILayer_1 = __webpack_require__(/*! ../../aTGame/UI/FGUI/EUILayer */ \"./src/aTGame/UI/FGUI/EUILayer.ts\");\n\nconst FGuiRootManager_1 = __webpack_require__(/*! ../../aTGame/UI/FGUI/FGuiRootManager */ \"./src/aTGame/UI/FGUI/FGuiRootManager.ts\");\n\nconst GlobalStateManager_1 = __webpack_require__(/*! ../Manager/GlobalStateManager */ \"./src/dMyGame/Manager/GlobalStateManager.ts\");\n\nconst SkinConfig_1 = __webpack_require__(/*! ../_config/SkinConfig */ \"./src/dMyGame/_config/SkinConfig.ts\");\n\nconst EssentialResUrls_1 = __webpack_require__(/*! ../../aTGame/Res/EssentialResUrls */ \"./src/aTGame/Res/EssentialResUrls.ts\");\n\nconst FGUI_splash_1 = __webpack_require__(/*! ../../FGUI/InitLoad/FGUI_splash */ \"./src/FGUI/InitLoad/FGUI_splash.ts\");\n\nconst GameStateConst_1 = __webpack_require__(/*! ../_config/GameStateConst */ \"./src/dMyGame/_config/GameStateConst.ts\");\n\nconst ResUrl_1 = __webpack_require__(/*! ../../aTGame/Res/ResUrl */ \"./src/aTGame/Res/ResUrl.ts\");\n\nconst GameCommonBinder_1 = __webpack_require__(/*! ../../FGUI/GameCommon/GameCommonBinder */ \"./src/FGUI/GameCommon/GameCommonBinder.ts\");\n\nconst GameMainBinder_1 = __webpack_require__(/*! ../../FGUI/GameMain/GameMainBinder */ \"./src/FGUI/GameMain/GameMainBinder.ts\");\n\nconst InitEmptyScreenBinder_1 = __webpack_require__(/*! ../../FGUI/InitEmptyScreen/InitEmptyScreenBinder */ \"./src/FGUI/InitEmptyScreen/InitEmptyScreenBinder.ts\");\n\nconst InitLoadBinder_1 = __webpack_require__(/*! ../../FGUI/InitLoad/InitLoadBinder */ \"./src/FGUI/InitLoad/InitLoadBinder.ts\");\n\nconst FGUI_EmptyScreen_1 = __webpack_require__(/*! ../../FGUI/InitEmptyScreen/FGUI_EmptyScreen */ \"./src/FGUI/InitEmptyScreen/FGUI_EmptyScreen.ts\");\n\nconst ESounds_1 = __webpack_require__(/*! ../ResList/ESounds */ \"./src/dMyGame/ResList/ESounds.ts\");\n\nconst CameraConst_1 = __webpack_require__(/*! ../_config/CameraConst */ \"./src/dMyGame/_config/CameraConst.ts\");\n\nconst LightingConst_1 = __webpack_require__(/*! ../_config/LightingConst */ \"./src/dMyGame/_config/LightingConst.ts\");\n\nconst TestConst_1 = __webpack_require__(/*! ../_config/TestConst */ \"./src/dMyGame/_config/TestConst.ts\");\n\nconst GameDataProxy_1 = __webpack_require__(/*! ../GameData/GameDataProxy */ \"./src/dMyGame/GameData/GameDataProxy.ts\");\n\nconst GamePropDataProxy_1 = __webpack_require__(/*! ../GameData/GamePropDataProxy */ \"./src/dMyGame/GameData/GamePropDataProxy.ts\");\n\nconst GameSkinDataProxy_1 = __webpack_require__(/*! ../GameData/GameSkinDataProxy */ \"./src/dMyGame/GameData/GameSkinDataProxy.ts\");\n\nconst GameSignDataProxy_1 = __webpack_require__(/*! ../GameData/GameSignDataProxy */ \"./src/dMyGame/GameData/GameSignDataProxy.ts\");\n\nconst GameShortDataProxy_1 = __webpack_require__(/*! ../GameData/GameShortDataProxy */ \"./src/dMyGame/GameData/GameShortDataProxy.ts\");\n\nconst LevelPropConfig_1 = __webpack_require__(/*! ../_config/LevelPropConfig */ \"./src/dMyGame/_config/LevelPropConfig.ts\");\n\nconst OtherConst_1 = __webpack_require__(/*! ../_config/OtherConst */ \"./src/dMyGame/_config/OtherConst.ts\");\n\nconst EBGMs_1 = __webpack_require__(/*! ../ResList/EBGMs */ \"./src/dMyGame/ResList/EBGMs.ts\");\n\nconst GameNewHandDataProxy_1 = __webpack_require__(/*! ../GameData/GameNewHandDataProxy */ \"./src/dMyGame/GameData/GameNewHandDataProxy.ts\");\n\nconst OtherLevelConfig_1 = __webpack_require__(/*! ../_config/OtherLevelConfig */ \"./src/dMyGame/_config/OtherLevelConfig.ts\");\n\nconst OtherEnvironmentConfig_1 = __webpack_require__(/*! ../_config/OtherEnvironmentConfig */ \"./src/dMyGame/_config/OtherEnvironmentConfig.ts\");\n\nconst GameTestDataProxy_1 = __webpack_require__(/*! ../GameData/GameTestDataProxy */ \"./src/dMyGame/GameData/GameTestDataProxy.ts\");\n\nconst FGuiData_1 = __webpack_require__(/*! ../../aTGame/UI/FGUI/FGuiData */ \"./src/aTGame/UI/FGUI/FGuiData.ts\");\n/**\r\n * 游戏进入之前的加载操作类\r\n */\n\n\nclass GameLoad extends RootGameLoad_1.default {\n  //初始化之前的操作\n  _Init() {\n    GlobalStateManager_1.GlobalStateManager.instance.GameInit(); //白屏时显示的包\n\n    this._initEmptyScreen = new LoadUIPack_1.LoadUIPack(EssentialResUrls_1.default.FGUIPack('InitEmptyScreen')); //需要初始化加载的ui包。\n\n    this._initUiPack = new LoadUIPack_1.LoadUIPack(EssentialResUrls_1.default.FGUIPack('InitLoad'), 0); //其他需要加载的UI包\n\n    this._needLoadOtherUIPack = [new LoadUIPack_1.LoadUIPack(EssentialResUrls_1.default.FGUIPack('GameCommon')), new LoadUIPack_1.LoadUIPack(EssentialResUrls_1.default.FGUIPack('GameMain'), 0)]; //\n\n    return;\n  } //初始化\n\n\n  _OnInitEmptyScreen() {\n    //打开白屏UI\n    this._emptyScreenShowUI = FGuiRootManager_1.default.AddUI(FGUI_EmptyScreen_1.default, new FGuiData_1.default(), EUILayer_1.EUILayer.Main);\n  } //初始化UI加载完成 (在这里设置进度条)\n\n\n  _OnInitUILoaded() {\n    //隐藏白屏U\n    this._emptyScreenShowUI.dispose(); //添加UI\n\n\n    this._loadShowUI = FGuiRootManager_1.default.AddUI(FGUI_splash_1.default, new FGuiData_1.default(), EUILayer_1.EUILayer.Loading);\n    this._loadShowUI.sortingOrder = Number.MAX_SAFE_INTEGER; //设置所属团队\n\n    this._loadShowUI.m_text_explain.text = MainConfig_1.default.GameWhatTeam; //设置logo\n\n    this._loadShowUI.m_text_logo.text = MainConfig_1.default.GameName_; //设置版本\n\n    this._loadShowUI.m_text_v.text = MainConfig_1.default.versions; //设置说明\n\n    this._loadShowUI.m_text_game_explain.text = MainConfig_1.default.GameExplain; //设置laya版本\n\n    this._loadShowUI.m_text_laya_v.text = Laya.version; //获取加载进度条\n\n    this._loadingProgress = this._loadShowUI.m_progress; //获取进度显示文字\n\n    this._loadingProgressText = this._loadShowUI.m_loading_progress; //设置默认进度\n\n    this._loadingProgress.value = 0;\n  } //捆绑UI\n\n\n  OnBindUI() {\n    InitEmptyScreenBinder_1.default.bindAll();\n    InitLoadBinder_1.default.bindAll();\n    GameCommonBinder_1.default.bindAll();\n    GameMainBinder_1.default.bindAll();\n  } // 注册表格\n\n\n  OnSetLoadConfig() {\n    ConfigManager_1.ConfigManager.AddConfig(CameraConst_1.CameraConst);\n    ConfigManager_1.ConfigManager.AddConfig(EnvironmentConfig_1.EnvironmentConfig);\n    ConfigManager_1.ConfigManager.AddConfig(OtherEnvironmentConfig_1.OtherEnvironmentConfig);\n    ConfigManager_1.ConfigManager.AddConfig(GameConst_1.GameConst);\n    ConfigManager_1.ConfigManager.AddConfig(GameStateConst_1.GameStateConst);\n    ConfigManager_1.ConfigManager.AddConfig(LevelConfig_1.LevelConfig);\n    ConfigManager_1.ConfigManager.AddConfig(OtherLevelConfig_1.OtherLevelConfig);\n    ConfigManager_1.ConfigManager.AddConfig(LevelPropConfig_1.LevelPropConfig);\n    ConfigManager_1.ConfigManager.AddConfig(LightingConst_1.LightingConst);\n    ConfigManager_1.ConfigManager.AddConfig(OtherConst_1.OtherConst);\n    ConfigManager_1.ConfigManager.AddConfig(SkinConfig_1.SkinConfig);\n    ConfigManager_1.ConfigManager.AddConfig(TestConst_1.TestConst);\n  } //注册数据\n\n\n  loginData() {\n    //游戏主要保存数据\n    GameDataProxy_1.default.instance.InitData(); //游戏新手引导数据\n\n    GameNewHandDataProxy_1.default.instance.InitData(); //游戏道具数据\n\n    GamePropDataProxy_1.default.instance.InitData(); //游戏皮肤数据\n\n    GameSkinDataProxy_1.default.instance.InitData(); //游戏签到数据\n\n    GameSignDataProxy_1.default.instance.InitData(); //游戏临时数据\n\n    GameShortDataProxy_1.default.instance.InitData(); //测试数据\n\n    GameTestDataProxy_1.default.instance.InitData();\n  } // 获取其它游戏资源, 可以依赖游戏表格\n\n\n  OnGameResPrepared(urls) {\n    //把所有音效添加进预加载列表\n    let _str; //背景音乐\n\n\n    for (let _i in EBGMs_1.EBGMs) {\n      //\n      _str = EBGMs_1.EBGMs[_i]; //判断是否是空元素\n\n      if (_str == '') continue; //添加进列表\n\n      urls.push(ResUrl_1.default.music_url(_str));\n    } //音效\n\n\n    for (let _i in ESounds_1.ESounds) {\n      //\n      _str = ESounds_1.ESounds[_i]; //判断是否是空元素\n\n      if (_str == '') continue; //添加进列表\n\n      urls.push(ResUrl_1.default.sound_url(_str));\n    }\n  } //游戏加载进度\n\n\n  onLoading(_n) {\n    this._loadingProgress.value = _n; //设置进度条\n\n    this._loadingProgressText.text = Math.floor(_n).toString() + '%'; //设置文字进度\n  } // 完成\n\n\n  OnComplete() {\n    //关闭加载时显示的UI\n    this._loadShowUI.dispose(); //游戏初始化完成\n\n\n    GlobalStateManager_1.GlobalStateManager.instance.GameOnInit();\n  }\n\n}\n\nexports.default = GameLoad;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/dMyGame/Main/GameLoad.ts?");
+
+/***/ }),
+
+/***/ "./src/dMyGame/Main/Game/Game2D.ts":
+/*!*****************************************!*\
+  !*** ./src/dMyGame/Main/Game/Game2D.ts ***!
+  \*****************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n/**\r\n * 2d 游戏 入口\r\n */\n\nclass Game2D {\n  //\n  constructor() {}\n  /** 单例 */\n\n\n  static get instance() {\n    if (this._instance == null) {\n      this._instance = new Game2D();\n    }\n\n    return this._instance;\n  }\n  /**\r\n   * 进入游戏\r\n   */\n\n\n  enterGame() {\n    this.initGame();\n  } //初始化游戏\n\n\n  initGame() {//\n  }\n\n}\n\nexports.default = Game2D;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/dMyGame/Main/Game/Game2D.ts?");
+
+/***/ }),
+
+/***/ "./src/dMyGame/Main/Game/Game3D.ts":
+/*!*****************************************!*\
+  !*** ./src/dMyGame/Main/Game/Game3D.ts ***!
+  \*****************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst CustomsManager_1 = __webpack_require__(/*! ../../Manager/CustomsManager */ \"./src/dMyGame/Manager/CustomsManager.ts\");\n\nconst UIManager_1 = __webpack_require__(/*! ../../Manager/UIManager */ \"./src/dMyGame/Manager/UIManager.ts\");\n\nconst GlobalStateManager_1 = __webpack_require__(/*! ../../Manager/GlobalStateManager */ \"./src/dMyGame/Manager/GlobalStateManager.ts\");\n\nconst GameManager_1 = __webpack_require__(/*! ../../Manager/GameManager */ \"./src/dMyGame/Manager/GameManager.ts\");\n\nconst EnvironmentManager_1 = __webpack_require__(/*! ../../Manager/EnvironmentManager */ \"./src/dMyGame/Manager/EnvironmentManager.ts\");\n\nconst MesManager_1 = __webpack_require__(/*! ../../Manager/MesManager */ \"./src/dMyGame/Manager/MesManager.ts\");\n\nconst TestConstProxy_1 = __webpack_require__(/*! ../../ConfigProxy/TestConstProxy */ \"./src/dMyGame/ConfigProxy/TestConstProxy.ts\");\n\nconst AudioManager_1 = __webpack_require__(/*! ../../Manager/AudioManager */ \"./src/dMyGame/Manager/AudioManager.ts\");\n/**\r\n * 3d 游戏 入口\r\n */\n\n\nclass Game3D {\n  //\n  constructor() {}\n  /** 单例 */\n\n\n  static get instance() {\n    if (this._instance == null) {\n      this._instance = new Game3D();\n    }\n\n    return this._instance;\n  }\n  /**\r\n   * 进入游戏\r\n   */\n\n\n  enterGame() {\n    //初始化游戏\n    this.initGame(); //开始游戏前\n\n    this._startGame(); //开始游戏\n\n\n    this.startGame();\n  } //初始化游戏\n\n\n  initGame() {\n    //初始化全局状态管理器\n    GlobalStateManager_1.GlobalStateManager.instance.init(); //简易消息管理器\n\n    MesManager_1.default.instance.init(); //音效管理器\n\n    AudioManager_1.default.instance.init(); //游戏管理器\n\n    GameManager_1.default.instance.init(); //初始化环境管理器\n\n    EnvironmentManager_1.default.instance.init(); //初始化UI\n\n    UIManager_1.default.instance.init(); //初始化场景\n\n    CustomsManager_1.default.instance.init();\n  } //开始游戏之前\n\n\n  _startGame() {\n    //打开debug显示页面\n    if (TestConstProxy_1.default.instance.ifDebug) {\n      Laya.Stat.show();\n    } else {\n      Laya.Stat.hide();\n    } // 关闭多点触控\n    // Laya.MouseManager.multiTouchEnabled = true;\n\n  } //开始游戏\n\n\n  startGame() {\n    //\n    UIManager_1.default.instance.Start(); //\n\n    CustomsManager_1.default.instance.initLevelBuild();\n  }\n\n}\n\nexports.default = Game3D;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/dMyGame/Main/Game/Game3D.ts?");
+
+/***/ }),
+
+/***/ "./src/dMyGame/Manager/AudioManager.ts":
+/*!*********************************************!*\
+  !*** ./src/dMyGame/Manager/AudioManager.ts ***!
+  \*********************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst EEventAudio_1 = __webpack_require__(/*! ../EventEnum/EEventAudio */ \"./src/dMyGame/EventEnum/EEventAudio.ts\");\n\nconst AudioProxy_1 = __webpack_require__(/*! ../Proxy/AudioProxy */ \"./src/dMyGame/Proxy/AudioProxy.ts\");\n\nconst MesManager_1 = __webpack_require__(/*! ./MesManager */ \"./src/dMyGame/Manager/MesManager.ts\");\n/**\r\n * 音效管理类\r\n */\n\n\nclass AudioManager {\n  //\n  constructor() {}\n  /** 单例 */\n\n\n  static get instance() {\n    if (this._instance == null) {\n      this._instance = new AudioManager();\n    }\n\n    return this._instance;\n  } //初始化\n\n\n  init() {\n    MesManager_1.default.instance.onEvent(EEventAudio_1.EEventAudio.BGMSuspend, this, this.BGMsuSpend);\n    MesManager_1.default.instance.onEvent(EEventAudio_1.EEventAudio.BGMGoOn, this, this.BGMGoOn);\n    MesManager_1.default.instance.onEvent(EEventAudio_1.EEventAudio.SoundSuspend, this, this.soundSuspend);\n    MesManager_1.default.instance.onEvent(EEventAudio_1.EEventAudio.SoundGoOn, this, this.soundGoOn);\n    MesManager_1.default.instance.onEvent(EEventAudio_1.EEventAudio.BGMVolumeChange, this, this.bgmVolumeChange);\n    MesManager_1.default.instance.onEvent(EEventAudio_1.EEventAudio.SoundVolumeChange, this, this.soundVolumeChange);\n  } //BGM暂停\n\n\n  BGMsuSpend() {\n    AudioProxy_1.default.instance.stopBGM();\n  } //BGM继续\n\n\n  BGMGoOn() {\n    AudioProxy_1.default.instance.BGMGoOn();\n  } //音效暂停\n\n\n  soundSuspend() {\n    AudioProxy_1.default.instance.soundSuspend();\n  } //音效继续\n\n\n  soundGoOn() {\n    AudioProxy_1.default.instance.soundGoOn();\n  } //BGM音量改变\n\n\n  bgmVolumeChange(_n = 1) {\n    Laya.SoundManager.setMusicVolume(_n);\n  } //音效音量改变\n\n\n  soundVolumeChange(_n = 1) {\n    Laya.SoundManager.setSoundVolume(_n);\n  }\n\n}\n\nexports.default = AudioManager;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/dMyGame/Manager/AudioManager.ts?");
+
+/***/ }),
+
+/***/ "./src/dMyGame/Manager/CustomsManager.ts":
+/*!***********************************************!*\
+  !*** ./src/dMyGame/Manager/CustomsManager.ts ***!
+  \***********************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst ConManager_1 = __webpack_require__(/*! ../Control/ConManager */ \"./src/dMyGame/Control/ConManager.ts\");\n\nconst SceneManager_1 = __webpack_require__(/*! ../../aTGame/3D/SceneManager */ \"./src/aTGame/3D/SceneManager.ts\");\n\nconst Const_1 = __webpack_require__(/*! ../Common/Const */ \"./src/dMyGame/Common/Const.ts\");\n\nconst EnvironmentManager_1 = __webpack_require__(/*! ./EnvironmentManager */ \"./src/dMyGame/Manager/EnvironmentManager.ts\");\n\nconst MesManager_1 = __webpack_require__(/*! ./MesManager */ \"./src/dMyGame/Manager/MesManager.ts\");\n\nconst EEventScene_1 = __webpack_require__(/*! ../EventEnum/EEventScene */ \"./src/dMyGame/EventEnum/EEventScene.ts\");\n\nconst EEventUI_1 = __webpack_require__(/*! ../EventEnum/EEventUI */ \"./src/dMyGame/EventEnum/EEventUI.ts\");\n\nconst LevelConfigProxy_1 = __webpack_require__(/*! ../ConfigProxy/LevelConfigProxy */ \"./src/dMyGame/ConfigProxy/LevelConfigProxy.ts\");\n\nconst GameDataProxyShell_1 = __webpack_require__(/*! ../Proxy/data/GameDataProxyShell */ \"./src/dMyGame/Proxy/data/GameDataProxyShell.ts\");\n/**\r\n * 关卡管理器\r\n * 3D游戏实际从这里开始，沟通外界创建和销毁场景\r\n */\n\n\nclass CustomsManager {\n  //\n  constructor() {\n    //是否初始化\n    this.m_ifInit = false; //其他场景缓存\n\n    this.m_otherScene = {};\n  }\n  /** 单例 */\n\n\n  static get instance() {\n    if (!this.m_instance) {\n      this.m_instance = new CustomsManager();\n    }\n\n    return this.m_instance;\n  }\n  /** 场景是否在加载 */\n\n\n  get ifSceneBuild() {\n    return this.m_ifSceneBuild;\n  }\n  /**\r\n   * 初始化,场景的一切都从这里开始\r\n   */\n\n\n  init() {\n    //\n    this.m_ifSceneBuild = false; //初始化关卡数据\n\n    GameDataProxyShell_1.default.instance.initCustoms(LevelConfigProxy_1.default.instance.getLevelNumber()); //监听事件\n\n    MesManager_1.default.instance.onEvent(EEventScene_1.EEventScene.GameLevelsBuild, this, this.gameLevelsBuild);\n    MesManager_1.default.instance.onEvent(EEventScene_1.EEventScene.GameLevelsDelete, this, this.gameLevelsDelete);\n    MesManager_1.default.instance.onEvent(EEventScene_1.EEventScene.GameOtherLevelsBuild, this, this.gameOtherLevelsBuild);\n    MesManager_1.default.instance.onEvent(EEventScene_1.EEventScene.GameOtherLevelsDelete, this, this.gameOtherLevelsDelete);\n  }\n  /**\r\n   * 初始场景构建\r\n   */\n\n\n  initLevelBuild() {\n    //直接构建关卡\n    this.gameLevelsBuild();\n  }\n  /**\r\n   * 游戏主场景构建\r\n   */\n\n\n  gameLevelsBuild(_handler) {\n    //判断是否有场景在构建\n    if (this.m_ifSceneBuild) {\n      console.warn('有场景正在构建！');\n      return;\n    } //\n\n\n    let lvId; //判断游戏是否已经初始化\n\n    if (this.m_ifInit) {\n      lvId = GameDataProxyShell_1.default.instance.gameData.onCustoms;\n    } else {\n      this.m_ifInit = true; // 获取默认关卡\n\n      lvId = GameDataProxyShell_1.default.instance.getDefaultCustoms();\n    } //\n\n\n    let scene = SceneManager_1.default.instance.getSceneByLv(lvId);\n    this.m_scene = scene; //构建场景\n\n    this.m_ifSceneBuild = true; //开始加载\n    //显示loading页面\n\n    MesManager_1.default.instance.sendEvent(EEventScene_1.EEventScene.GameLevelsBuildBefore);\n    MesManager_1.default.instance.sendEvent(EEventUI_1.EEventUI.SceneGameCustomsLoading, [-1]);\n    scene.buildScene(Laya.Handler.create(this, this.customsProgress, null, false)).then(_sceneSpr => {\n      //\n      this.m_ifSceneBuild = false; //加载结束\n      //设置环境管理器\n\n      EnvironmentManager_1.default.instance.setEnvironment(this.m_scene.scene); //添加控制器\n\n      ConManager_1.default.addScrCon(scene.scene); //依赖脚本的控制器\n\n      ConManager_1.default.addCommonCon(); //没有任何依赖的控制器\n      //预加载场景\n\n      if (Const_1.Const.ifPreloadCustoms) {\n        let _preloadCustoms = GameDataProxyShell_1.default.instance.getPreloadCustoms();\n\n        SceneManager_1.default.instance.preloadSceneRes(_preloadCustoms);\n      }\n\n      this.onCustomsInit(lvId); //判断是否有构建完成回调\n\n      if (_handler) {\n        _handler.run();\n      } //抛出事件场景初始化完成\n\n\n      MesManager_1.default.instance.sendEvent(EEventScene_1.EEventScene.GameLevelsOnBuild);\n    });\n  } //关卡加载完成执行\n\n\n  onCustomsInit(_lvId) {//\n  }\n  /**\r\n   * 关卡加载进度\r\n   * @param _number 进度值，在0~1之间\r\n   */\n\n\n  customsProgress(_number) {\n    //判断是否在加载\n    if (!this.m_ifSceneBuild) return;\n\n    if (typeof _number == 'undefined') {\n      _number = 1;\n    } //发送关卡加载事件\n\n\n    MesManager_1.default.instance.sendEvent(EEventUI_1.EEventUI.SceneGameCustomsLoading, [_number * 100]);\n  } //游戏结束销毁关卡\n\n\n  gameLevelsDelete() {\n    //关卡删除前事件\n    MesManager_1.default.instance.sendEvent(EEventScene_1.EEventScene.GameLevelsDeleteBefore); //销毁上一个场景\n\n    if (this.m_scene && this.m_scene.scene) {\n      this.m_scene.clearScene();\n    } //\n\n\n    this.m_scene = null; //抛出事件\n\n    MesManager_1.default.instance.sendEvent(EEventScene_1.EEventScene.GameLevelsOnDelete);\n  }\n  /**\r\n   * 游戏其他场景构建\r\n   */\n\n\n  gameOtherLevelsBuild(_name, _handler) {\n    //判断是否有场景在构建\n    if (this.m_ifSceneBuild) {\n      console.warn('有场景正在构建！');\n      return;\n    }\n\n    let _scene = SceneManager_1.default.instance.getOtherSceneByName(_name);\n\n    this.m_otherScene[_name] = _scene; //构建场景\n\n    this.m_ifSceneBuild = true; //开始加载\n    //显示loading页面\n\n    MesManager_1.default.instance.sendEvent(EEventScene_1.EEventScene.GameLevelsBuildBefore);\n    MesManager_1.default.instance.sendEvent(EEventUI_1.EEventUI.SceneGameCustomsLoading, [-1]);\n\n    _scene.buildScene(Laya.Handler.create(this, this.customsProgress, null, false)).then(_sceneSpr => {\n      //\n      this.m_ifSceneBuild = false; //加载结束\n      //设置环境\n\n      EnvironmentManager_1.default.instance.setOtherEnvironment(_name, _sceneSpr); //判断是否有构建完成回调\n\n      if (_handler) {\n        _handler.run();\n      }\n    });\n  }\n  /**\r\n   * 游戏其他场景销毁\r\n   */\n\n\n  gameOtherLevelsDelete(_name) {\n    let _scene = this.m_otherScene[_name];\n\n    if (_scene) {\n      _scene.clearScene();\n\n      this.m_otherScene[_name] = undefined; //其他操作\n    } else {\n      console.warn('试图清除不存在的场景！');\n    }\n  }\n\n}\n\nexports.default = CustomsManager;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/dMyGame/Manager/CustomsManager.ts?");
+
+/***/ }),
+
+/***/ "./src/dMyGame/Manager/EnvironmentManager.ts":
+/*!***************************************************!*\
+  !*** ./src/dMyGame/Manager/EnvironmentManager.ts ***!
+  \***************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst ColorUtils_1 = __webpack_require__(/*! ../../aTGame/Utils/ColorUtils */ \"./src/aTGame/Utils/ColorUtils.ts\");\n\nconst Global3D_1 = __webpack_require__(/*! ../../aTGame/3D/Global3D */ \"./src/aTGame/3D/Global3D.ts\");\n\nconst EEventScene_1 = __webpack_require__(/*! ../EventEnum/EEventScene */ \"./src/dMyGame/EventEnum/EEventScene.ts\");\n\nconst MesManager_1 = __webpack_require__(/*! ./MesManager */ \"./src/dMyGame/Manager/MesManager.ts\");\n\nconst EnvironmentConfigProxy_1 = __webpack_require__(/*! ../ConfigProxy/EnvironmentConfigProxy */ \"./src/dMyGame/ConfigProxy/EnvironmentConfigProxy.ts\");\n\nconst OtherEnvironmentProxy_1 = __webpack_require__(/*! ../ConfigProxy/OtherEnvironmentProxy */ \"./src/dMyGame/ConfigProxy/OtherEnvironmentProxy.ts\");\n\nconst MainGameConfig_1 = __webpack_require__(/*! ../../bTGameConfig/MainGameConfig */ \"./src/bTGameConfig/MainGameConfig.ts\");\n\nconst RootDebug_1 = __webpack_require__(/*! ../../aTGame/Debug/RootDebug */ \"./src/aTGame/Debug/RootDebug.ts\");\n\nconst EDebugWindowEvent_1 = __webpack_require__(/*! ../../aTGame/Debug/mes/EDebugWindowEvent */ \"./src/aTGame/Debug/mes/EDebugWindowEvent.ts\");\n\nconst GameDataProxyShell_1 = __webpack_require__(/*! ../Proxy/data/GameDataProxyShell */ \"./src/dMyGame/Proxy/data/GameDataProxyShell.ts\");\n/**\r\n * 环境管理器，负责场景的环境管理\r\n */\n\n\nclass EnvironmentManager {\n  //\n  constructor() {}\n  /** 单例 */\n\n\n  static get instance() {\n    if (!this.m_instance) {\n      this.m_instance = new EnvironmentManager();\n    }\n\n    return this.m_instance;\n  }\n  /** 初始化 */\n\n\n  init() {\n    this.m_s3d = Global3D_1.default.s3d;\n    this.m_camera = Global3D_1.default.camera;\n    this.m_light = Global3D_1.default.light;\n  }\n  /**\r\n   * 设置环境\r\n   * @param _scene 当前场景\r\n   */\n\n\n  setEnvironment(_scene) {\n    this.m_scene = _scene;\n    let _lv = GameDataProxyShell_1.default.instance.gameData.onCustoms;\n    this.m_enviromentConfig = EnvironmentConfigProxy_1.default.instance.byLevelIdGetData(_lv);\n    console.log('关卡环境配置参数->' + _lv + '->', this.m_enviromentConfig); //根据配置数据设置相关状态\n\n    this.setS3D(this.m_s3d);\n    this.setCamera(this.m_camera, this.m_enviromentConfig.clear_color);\n    this.setLight(this.light, this.m_enviromentConfig.light_color, this.m_enviromentConfig.light_intensity);\n    this.addAmbient(this.s3d, this.m_enviromentConfig.ambient_color); //监听事件\n\n    MesManager_1.default.instance.onEvent(EEventScene_1.EEventScene.GameLevelsDelete, this, this.gameLevelsDelete); //\n\n    if (MainGameConfig_1.default.ifDebug && MainGameConfig_1.default.ifOpenWindowDebug) {\n      //发送环境改变事件\n      RootDebug_1.default.fendDebugWindow(EDebugWindowEvent_1.EDebugWindowEvent.SetEnvironment);\n    }\n  }\n  /**\r\n   * 设置其他场景环境\r\n   * @param _name 场景名字\r\n   * @param _scene 场景精灵\r\n   * @param _camera 摄像机\r\n   * @param _light 灯光\r\n   */\n\n\n  setOtherEnvironment(_name, _scene, _s3d = this.m_s3d, _camera = this.m_camera, _light = this.m_light) {\n    let _enviromentConfig = OtherEnvironmentProxy_1.default.instance.byLevelNameGetData(_name);\n\n    console.log('关卡环境配置参数->' + _name + '->', _enviromentConfig);\n    this.setCamera(_camera, _enviromentConfig.clear_color);\n    this.setLight(_light, _enviromentConfig.light_color, _enviromentConfig.light_intensity);\n    this.addAmbient(_s3d, _enviromentConfig.ambient_color);\n  }\n  /** 3d根节点 */\n\n\n  get s3d() {\n    return this.m_s3d;\n  }\n  /** 摄像机 */\n\n\n  get camera() {\n    return this.m_camera;\n  }\n  /** 当前场景 */\n\n\n  get scene() {\n    return this.m_scene;\n  }\n  /** 灯光 */\n\n\n  get light() {\n    return this.m_light;\n  } //设置场景\n\n\n  setS3D(_s3d) {\n    if (this.m_ifSetS3D) return;\n    this.m_ifSetS3D = true; //\n  } //设置摄像机\n\n\n  setCamera(_camera, _clear_color) {\n    //设置清除颜色\n    _camera.clearColor = ColorUtils_1.default.HexToV4(_clear_color);\n  } //设置灯光\n\n\n  setLight(_light, _color, _instensity) {\n    //\n    _light.color = ColorUtils_1.default.HexToV3(_color);\n    _light.intensity = _instensity; //灯光开启阴影\n\n    _light.shadowMode = Laya.ShadowMode.SoftLow;\n    _light.shadowResolution = 2500;\n    _light.shadowNormalBias = 0.5;\n  } //加环境光\n\n\n  addAmbient(_s3d, _color) {\n    //设置环境光\n    _s3d.ambientMode = Laya.AmbientMode.SolidColor;\n    _s3d.ambientColor = ColorUtils_1.default.HexToV3(_color);\n  } //加雾化\n\n\n  addFog(_scene, _color, _fogRange, _fogStart) {\n    //\n    _scene.enableFog = true;\n    _scene.fogColor = ColorUtils_1.default.HexToV3(_color);\n    _scene.fogRange = _fogRange;\n    _scene.fogStart = _fogStart;\n  } //删除场景\n\n\n  gameLevelsDelete() {//\n  }\n\n}\n\nexports.default = EnvironmentManager;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/dMyGame/Manager/EnvironmentManager.ts?");
+
+/***/ }),
+
+/***/ "./src/dMyGame/Manager/GameManager.ts":
+/*!********************************************!*\
+  !*** ./src/dMyGame/Manager/GameManager.ts ***!
+  \********************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst EEventScene_1 = __webpack_require__(/*! ../EventEnum/EEventScene */ \"./src/dMyGame/EventEnum/EEventScene.ts\");\n\nconst GameShortDataProxy_1 = __webpack_require__(/*! ../GameData/GameShortDataProxy */ \"./src/dMyGame/GameData/GameShortDataProxy.ts\");\n\nconst MesManager_1 = __webpack_require__(/*! ./MesManager */ \"./src/dMyGame/Manager/MesManager.ts\");\n/**\r\n * 游戏管理器\r\n */\n\n\nclass GameManager {\n  //\n  constructor() {}\n  /** 单例 */\n\n\n  static get instance() {\n    if (!this.m_instance) {\n      this.m_instance = new GameManager();\n    }\n\n    return this.m_instance;\n  }\n  /**\r\n   * 初始化\r\n   */\n\n\n  init() {\n    MesManager_1.default.instance.onEvent(EEventScene_1.EEventScene.GameLevelsBuildBefore, this, this.gameLevelsBuildBefore);\n    MesManager_1.default.instance.onEvent(EEventScene_1.EEventScene.GameLevelsOnBuild, this, this.gameLevelsOnBuild);\n    MesManager_1.default.instance.onEvent(EEventScene_1.EEventScene.GameLevelsDelete, this, this.gameLevelsDelete);\n    MesManager_1.default.instance.onEvent(EEventScene_1.EEventScene.GameStart, this, this.gameStart);\n  } //游戏关卡构建之前调用\n\n\n  gameLevelsBuildBefore() {\n    //清空临时数据\n    GameShortDataProxy_1.default.emptyGameOnCustomData();\n  } //游戏关卡构建完成调用\n\n\n  gameLevelsOnBuild() {//\n  } //关卡清除时调用\n\n\n  gameLevelsDelete() {//\n  } //游戏开始\n\n\n  gameStart() {//\n  }\n\n}\n\nexports.default = GameManager;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/dMyGame/Manager/GameManager.ts?");
+
+/***/ }),
+
+/***/ "./src/dMyGame/Manager/GlobalStateManager.ts":
+/*!***************************************************!*\
+  !*** ./src/dMyGame/Manager/GlobalStateManager.ts ***!
+  \***************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\nexports.GlobalStateManager = void 0;\n\nconst EEventGlobal_1 = __webpack_require__(/*! ../EventEnum/EEventGlobal */ \"./src/dMyGame/EventEnum/EEventGlobal.ts\");\n\nconst MesManager_1 = __webpack_require__(/*! ./MesManager */ \"./src/dMyGame/Manager/MesManager.ts\");\n/**\r\n * 游戏全局状态管理器\r\n * 可以监听和触发全局事件\r\n */\n\n\nclass GlobalStateManager {\n  constructor() {\n    /** 游戏是否初始化 */\n    this.m_GameIfInit = false;\n  }\n  /** 单例 */\n\n\n  static get instance() {\n    if (!this.m_instance) {\n      this.m_instance = new GlobalStateManager();\n    }\n\n    return this.m_instance;\n  }\n  /**\r\n   * 初始化\r\n   */\n\n\n  init() {}\n  /** 游戏是否初始化 */\n\n\n  get gameIfInit() {\n    return this.m_GameIfInit;\n  }\n  /**\r\n   * 游戏初始化\r\n   */\n\n\n  GameInit() {\n    this.m_GameIfInit = false;\n    MesManager_1.default.instance.sendEvent(EEventGlobal_1.EEventGlobal.GameInit);\n  }\n  /**\r\n   * 游戏初始化完成\r\n   */\n\n\n  GameOnInit() {\n    this.m_GameIfInit = true;\n    MesManager_1.default.instance.sendEvent(EEventGlobal_1.EEventGlobal.GameOnInit);\n  }\n\n}\n\nexports.GlobalStateManager = GlobalStateManager;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/dMyGame/Manager/GlobalStateManager.ts?");
+
+/***/ }),
+
+/***/ "./src/dMyGame/Manager/MesManager.ts":
+/*!*******************************************!*\
+  !*** ./src/dMyGame/Manager/MesManager.ts ***!
+  \*******************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst EEventAd_1 = __webpack_require__(/*! ../EventEnum/EEventAd */ \"./src/dMyGame/EventEnum/EEventAd.ts\");\n\nconst EEventAudio_1 = __webpack_require__(/*! ../EventEnum/EEventAudio */ \"./src/dMyGame/EventEnum/EEventAudio.ts\");\n\nconst EEventGlobal_1 = __webpack_require__(/*! ../EventEnum/EEventGlobal */ \"./src/dMyGame/EventEnum/EEventGlobal.ts\");\n\nconst EEventScene_1 = __webpack_require__(/*! ../EventEnum/EEventScene */ \"./src/dMyGame/EventEnum/EEventScene.ts\");\n\nconst EEventUI_1 = __webpack_require__(/*! ../EventEnum/EEventUI */ \"./src/dMyGame/EventEnum/EEventUI.ts\");\n/**\r\n * 简易信息处理类\r\n */\n\n\nclass MesManager extends Laya.EventDispatcher {\n  //\n  constructor() {\n    super(); //\n\n    this.enumerationEegistrationMes();\n  }\n\n  static get onlyKey() {\n    MesManager._onlyKey++;\n    return '$key' + MesManager._onlyKey;\n  }\n  /** 单例 */\n\n\n  static get instance() {\n    if (this._instance == null) {\n      this._instance = new MesManager();\n    }\n\n    return this._instance;\n  } //初始化\n\n\n  init() {} //注册消息枚举\n\n\n  enumerationEegistrationMes() {\n    //注册消息类型，没注册的话就不能用本消息类发送该类型消息\n    this.enumerationEegistrationMes_(EEventAd_1.EEventAd); //广告事件\n\n    this.enumerationEegistrationMes_(EEventGlobal_1.EEventGlobal); //全局事件\n\n    this.enumerationEegistrationMes_(EEventUI_1.EEventUI); //UI事件\n\n    this.enumerationEegistrationMes_(EEventScene_1.EEventScene); //场景事件\n\n    this.enumerationEegistrationMes_(EEventAudio_1.EEventAudio); //音效事件\n  } //配合注册消息枚举\n\n\n  enumerationEegistrationMes_(_mes) {\n    for (let _i in _mes) {\n      _mes[_i] = {\n        value: _mes[_i],\n        [MesManager._mesKey]: MesManager.onlyKey\n      };\n    } // console.log(_mes);\n\n  }\n  /**\r\n   * 发送事件\r\n   * @param event 事件枚举\r\n   * @param data 数据\r\n   */\n\n\n  sendEvent(event, data) {\n    if (typeof event[MesManager._mesKey] == 'undefined') {\n      console.log('事件', event, '没有被注册。');\n      return;\n    } // console.log('Global ' + event);\n\n\n    MesManager.instance.event(event[MesManager._mesKey], data);\n  }\n  /**\r\n   * 监听事件\r\n   * @param type Global事件枚举\r\n   * @param caller 执行域\r\n   * @param listener 事件\r\n   * @param args 携带的数据\r\n   */\n\n\n  onEvent(type, caller, listener, args) {\n    if (typeof type[MesManager._mesKey] == 'undefined') {\n      console.log('事件', type, '没有被注册。');\n      return;\n    }\n\n    MesManager.instance.on(type[MesManager._mesKey], caller, listener, args);\n  }\n  /**\r\n   * 删除事件侦听器\r\n   * @param type 事件枚举\r\n   * @param caller 执行域\r\n   * @param listener 回调函数\r\n   */\n\n\n  offEnent(type, caller, listener) {\n    if (typeof type[MesManager._mesKey] == 'undefined') {\n      console.log('事件', type, '没有被注册。');\n      return;\n    }\n\n    MesManager.instance.off(type[MesManager._mesKey], caller, listener);\n  }\n\n}\n\nexports.default = MesManager; //消息键值\n\nMesManager._mesKey = Symbol('$MesKey'); //消息唯一标识符\n\nMesManager._onlyKey = 0;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/dMyGame/Manager/MesManager.ts?");
+
+/***/ }),
+
+/***/ "./src/dMyGame/Manager/Proxy/UIManagerProxy.ts":
+/*!*****************************************************!*\
+  !*** ./src/dMyGame/Manager/Proxy/UIManagerProxy.ts ***!
+  \*****************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst RootUIStateManagerProxy_1 = __webpack_require__(/*! ../../../aTGame/UI/FGUI/RootUIStateManagerProxy */ \"./src/aTGame/UI/FGUI/RootUIStateManagerProxy.ts\");\n\nconst EEventGlobal_1 = __webpack_require__(/*! ../../EventEnum/EEventGlobal */ \"./src/dMyGame/EventEnum/EEventGlobal.ts\");\n\nconst EUI_1 = __webpack_require__(/*! ../../Enum/EUI */ \"./src/dMyGame/Enum/EUI.ts\");\n\nconst MesManager_1 = __webpack_require__(/*! ../MesManager */ \"./src/dMyGame/Manager/MesManager.ts\");\n\nconst EEventUI_1 = __webpack_require__(/*! ../../EventEnum/EEventUI */ \"./src/dMyGame/EventEnum/EEventUI.ts\");\n/**\r\n * UIManager类调度者代理\r\n */\n\n\nclass UIManagerProxy extends RootUIStateManagerProxy_1.default {\n  //\n  constructor() {\n    super();\n  }\n  /** 单例 */\n\n\n  static get instance() {\n    if (!this.m_instance) {\n      this.m_instance = new UIManagerProxy();\n    }\n\n    return this.m_instance;\n  }\n  /** 获取主页面调度者单例 */\n\n\n  get gameMainMediator() {\n    return this.getUIMeiatro(EUI_1.EUI.Main);\n  } //初始化\n\n\n  Init() {\n    //监听全局事件\n    MesManager_1.default.instance.onEvent(EEventGlobal_1.EEventGlobal.GameLoading, this, this.gameLoading); //游戏加载\n\n    MesManager_1.default.instance.onEvent(EEventGlobal_1.EEventGlobal.GameResLoading, this, this.gameResLoading); //游戏资源加载\n    //监听UI事件\n\n    MesManager_1.default.instance.onEvent(EEventUI_1.EEventUI.SceneGameCustomsLoading, this, this.gameCustomsLoading); //关卡加载\n  }\n  /**\r\n   * 开始\r\n   */\n\n\n  Start() {\n    //设置初始UI\n    this.setUIState([{\n      typeIndex: EUI_1.EUI.Main\n    }, {\n      typeIndex: EUI_1.EUI.Start\n    }, {\n      typeIndex: EUI_1.EUI.TestMain\n    }]);\n  }\n  /** 游戏加载 */\n\n\n  gameLoading() {}\n  /** 游戏资源加载 */\n\n\n  gameResLoading() {} //游戏初始化\n\n\n  gameCustomsLoading(_n) {\n    if (_n == -1) {\n      //显示关卡加载页面\n      this.setUIState([{\n        typeIndex: EUI_1.EUI.CustomsLoading\n      }], false);\n    }\n  }\n\n}\n\nexports.default = UIManagerProxy;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/dMyGame/Manager/Proxy/UIManagerProxy.ts?");
+
+/***/ }),
+
+/***/ "./src/dMyGame/Manager/UIManager.ts":
+/*!******************************************!*\
+  !*** ./src/dMyGame/Manager/UIManager.ts ***!
+  \******************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst PGameLoadingMediator_1 = __webpack_require__(/*! ../UIMediator/PGameLoadingMediator */ \"./src/dMyGame/UIMediator/PGameLoadingMediator.ts\");\n\nconst PGameMainMediator_1 = __webpack_require__(/*! ../UIMediator/PGameMainMediator */ \"./src/dMyGame/UIMediator/PGameMainMediator.ts\");\n\nconst PGamePlayMediator_1 = __webpack_require__(/*! ../UIMediator/PGamePlayMediator */ \"./src/dMyGame/UIMediator/PGamePlayMediator.ts\");\n\nconst PGameStartMediator_1 = __webpack_require__(/*! ../UIMediator/PGameStartMediator */ \"./src/dMyGame/UIMediator/PGameStartMediator.ts\");\n\nconst EUI_1 = __webpack_require__(/*! ../Enum/EUI */ \"./src/dMyGame/Enum/EUI.ts\");\n\nconst UIManagerProxy_1 = __webpack_require__(/*! ./Proxy/UIManagerProxy */ \"./src/dMyGame/Manager/Proxy/UIManagerProxy.ts\");\n\nconst PGameCustomsLoadingMediator_1 = __webpack_require__(/*! ../UIMediator/PGameCustomsLoadingMediator */ \"./src/dMyGame/UIMediator/PGameCustomsLoadingMediator.ts\");\n\nconst PGamePauseMediator_1 = __webpack_require__(/*! ../UIMediator/PGamePauseMediator */ \"./src/dMyGame/UIMediator/PGamePauseMediator.ts\");\n\nconst PGameSetMediator_1 = __webpack_require__(/*! ../UIMediator/PGameSetMediator */ \"./src/dMyGame/UIMediator/PGameSetMediator.ts\");\n\nconst PGameComMediator_1 = __webpack_require__(/*! ../UIMediator/PGameComMediator */ \"./src/dMyGame/UIMediator/PGameComMediator.ts\");\n\nconst PGameEndMediator_1 = __webpack_require__(/*! ../UIMediator/PGameEndMediator */ \"./src/dMyGame/UIMediator/PGameEndMediator.ts\");\n\nconst PGameTestMainMediator_1 = __webpack_require__(/*! ../UIMediator/_test/PGameTestMainMediator */ \"./src/dMyGame/UIMediator/_test/PGameTestMainMediator.ts\");\n\nconst PGameTestPlatformMediator_1 = __webpack_require__(/*! ../UIMediator/_test/PGameTestPlatformMediator */ \"./src/dMyGame/UIMediator/_test/PGameTestPlatformMediator.ts\");\n\nconst BaseUIManager_1 = __webpack_require__(/*! ../../aTGame/UI/FGUI/BaseUIManager */ \"./src/aTGame/UI/FGUI/BaseUIManager.ts\");\n/**\r\n * UI管理器\r\n * UI从这里开始，注册所有UI调度者，再分配给UI状态管理器管理,不能再UI调度者中直接调用\r\n * 沟通外界，处理一些不能在UI中产生和处理的事件，通过这里中转\r\n */\n\n\nclass UIManager extends BaseUIManager_1.default {\n  //\n  constructor() {\n    super();\n  }\n  /** 单例 */\n\n\n  static get instance() {\n    if (!this.m_instance) {\n      this.m_instance = new UIManager();\n    }\n\n    return this.m_instance;\n  }\n  /** 初始化UI调度者列表和代理类 */\n\n\n  initUIMediator() {\n    //初始化ui状态管理器\n    this.m_UIMediator = {\n      [EUI_1.EUI.GameLoading]: PGameLoadingMediator_1.default.instance,\n      [EUI_1.EUI.CustomsLoading]: PGameCustomsLoadingMediator_1.default.instance,\n      //\n      [EUI_1.EUI.TestMain]: PGameTestMainMediator_1.default.instance,\n      [EUI_1.EUI.TestPlatform]: PGameTestPlatformMediator_1.default.instance,\n      //\n      [EUI_1.EUI.Main]: PGameMainMediator_1.default.instance,\n      [EUI_1.EUI.Set]: PGameSetMediator_1.default.instance,\n      [EUI_1.EUI.Play]: PGamePlayMediator_1.default.instance,\n      [EUI_1.EUI.Start]: PGameStartMediator_1.default.instance,\n      [EUI_1.EUI.Pause]: PGamePauseMediator_1.default.instance,\n      [EUI_1.EUI.Com]: PGameComMediator_1.default.instance,\n      [EUI_1.EUI.End]: PGameEndMediator_1.default.instance\n    }; //注册代理类\n\n    this.m_UIProxy = UIManagerProxy_1.default.instance;\n  }\n  /**\r\n   * 初始化,UI的一切都从这里开始\r\n   */\n\n\n  init() {//\n  }\n  /**\r\n   * 开始\r\n   */\n\n\n  Start() {\n    this.m_UIProxy.Start();\n  }\n\n}\n\nexports.default = UIManager;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/dMyGame/Manager/UIManager.ts?");
+
+/***/ }),
+
+/***/ "./src/dMyGame/Proxy/AudioProxy.ts":
+/*!*****************************************!*\
+  !*** ./src/dMyGame/Proxy/AudioProxy.ts ***!
+  \*****************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst AudioUtils_1 = __webpack_require__(/*! ../../aTGame/Audio/AudioUtils */ \"./src/aTGame/Audio/AudioUtils.ts\");\n\nconst GameDataProxyShell_1 = __webpack_require__(/*! ./data/GameDataProxyShell */ \"./src/dMyGame/Proxy/data/GameDataProxyShell.ts\");\n/**\r\n * 音效代理类\r\n */\n\n\nclass AudioProxy {\n  /**\r\n   * 初始化\r\n   */\n  constructor() {\n    this.m_stop = false;\n    this.m_onLoopSoundList = new Set();\n  }\n  /** 单例 */\n\n\n  static get instance() {\n    if (!this.m_instance) {\n      this.m_instance = new AudioProxy();\n    }\n\n    return this.m_instance;\n  }\n  /**\r\n   * 停止背景音乐\r\n   */\n\n\n  stopBGM() {\n    AudioUtils_1.default.instance.pauseBGM();\n  }\n  /**\r\n   * 继续播放背景音乐\r\n   */\n\n\n  BGMGoOn() {\n    this.playBGM(this.m_onBGM);\n  } //音效暂停\n\n\n  soundSuspend() {\n    this.m_stop = true; //暂停所有循环播放音效\n\n    for (let _o of this.m_onLoopSoundList) {\n      AudioUtils_1.default.instance.stopSound(_o);\n    }\n  } //音效继续\n\n\n  soundGoOn() {\n    this.m_stop = false; //继续播放暂停前的循环播放音效\n\n    for (let _o of this.m_onLoopSoundList) {\n      AudioUtils_1.default.instance.playSound(_o, 0);\n    }\n  }\n  /**\r\n   * 播放背景音乐\r\n   * @param _name 背景音乐名字\r\n   */\n\n\n  playBGM(_name, loops, complete, startTime) {\n    if (!GameDataProxyShell_1.default.instance.gameData.ifOpenBgm || this.m_stop) return;\n    AudioUtils_1.default.instance.playBGM(_name, loops, complete, startTime); //记录\n\n    this.m_onBGM = _name;\n  }\n  /**\r\n   * 播放音效\r\n   * @param url 声音文件地址。\r\n   * @param loops 循环次数,0表示无限循环。\r\n   * @param complete 声音播放完成回调  Handler对象。\r\n   * @param soundClass 使用哪个声音类进行播放，null表示自动选择。\r\n   * @param startTime 声音播放起始时间。\r\n  */\n\n\n  playSound(_eSoundName, loops, complete, soundClass, startTime) {\n    if (!GameDataProxyShell_1.default.instance.gameData.ifOpenSound || this.m_stop) return; //判断是不是循环播放的音效，如果是的话就保存起来\n\n    if (loops == 0) {\n      this.m_onLoopSoundList.add(_eSoundName);\n    } //正式播放音效\n\n\n    AudioUtils_1.default.instance.playSound(_eSoundName, loops, complete, soundClass, startTime);\n  }\n  /**\r\n   * 停止音效\r\n   * @param _eSoundName 音效名字\r\n   */\n\n\n  stopSound(_eSoundName) {\n    AudioUtils_1.default.instance.stopSound(_eSoundName); //判断是否在当前循环播放列表中\n\n    if (this.m_onLoopSoundList.has(_eSoundName)) {\n      this.m_onLoopSoundList.delete(_eSoundName);\n    }\n  }\n\n}\n\nexports.default = AudioProxy;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/dMyGame/Proxy/AudioProxy.ts?");
+
+/***/ }),
+
+/***/ "./src/dMyGame/Proxy/data/GameDataProxyShell.ts":
+/*!******************************************************!*\
+  !*** ./src/dMyGame/Proxy/data/GameDataProxyShell.ts ***!
+  \******************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst CommonLeveEnum_1 = __webpack_require__(/*! ../../../aTGame/Commom/CommonLeveEnum */ \"./src/aTGame/Commom/CommonLeveEnum.ts\");\n\nconst RootDataProxyShell_1 = __webpack_require__(/*! ../../../aTGame/Data/RootDataProxyShell */ \"./src/aTGame/Data/RootDataProxyShell.ts\");\n\nconst EEventUI_1 = __webpack_require__(/*! ../../EventEnum/EEventUI */ \"./src/dMyGame/EventEnum/EEventUI.ts\");\n\nconst GameDataProxy_1 = __webpack_require__(/*! ../../GameData/GameDataProxy */ \"./src/dMyGame/GameData/GameDataProxy.ts\");\n\nconst MesManager_1 = __webpack_require__(/*! ../../Manager/MesManager */ \"./src/dMyGame/Manager/MesManager.ts\");\n/**\r\n * 游戏数据代理处理类，用这个类处理数据会有事件传递出去\r\n */\n\n\nclass GameDataProxyShell extends RootDataProxyShell_1.default {\n  //\n  constructor() {\n    super();\n  }\n  /** 单例 */\n\n\n  static get instance() {\n    if (!this.m_instance) {\n      this.m_instance = new GameDataProxyShell();\n    }\n\n    return this.m_instance;\n  }\n  /** 游戏主数据 */\n\n\n  get gameData() {\n    return this.m_gameData;\n  } //初始化数据\n\n\n  initData() {\n    this.m_gameData = GameDataProxy_1.default.instance.saveData; //\n  }\n  /**\r\n   * 初始化关卡数据\r\n   * @param _maxCustoms 最大关卡数量\r\n   */\n\n\n  initCustoms(_maxCustoms) {\n    //化整\n    _maxCustoms = Math.floor(_maxCustoms); //\n\n    if (this.m_gameData.maxCustoms == _maxCustoms) {\n      return;\n    } //判断其他关卡数据是否超出了界限\n\n\n    this.m_gameData.maxCustoms = _maxCustoms;\n\n    if (this.m_gameData.maxCustomsRecord > _maxCustoms) {\n      this.m_gameData.maxCustomsRecord = _maxCustoms;\n    }\n\n    if (this.m_gameData.onCustoms > _maxCustoms) {\n      this.m_gameData.onCustoms = CommonLeveEnum_1.ECommonLeve.DefaultLeveId;\n    }\n  }\n  /**\r\n   * 判断是否是新手关卡\r\n   */\n\n\n  ifNewHandCustoms() {\n    return this.m_gameData.onCustoms == CommonLeveEnum_1.ECommonLeve.NewHandLeveId && this.m_gameData.maxCustomsRecord <= CommonLeveEnum_1.ECommonLeve.NewHandLeveId;\n  }\n  /**\r\n   * 设置是否打开背景音乐\r\n   * @param _b 状态\r\n   */\n\n\n  setIfOpenBGM(_b) {\n    this.m_gameData.ifOpenBgm = _b;\n  }\n  /**\r\n   * 设置是否打开音效\r\n   * @param _b 状态\r\n   */\n\n\n  setIfOpenSound(_b) {\n    this.m_gameData.ifOpenSound = _b;\n  }\n  /**\r\n   * 设置是否打开振动\r\n   * @param _b 状态\r\n   */\n\n\n  setIfOpenVibrate(_b) {\n    this.m_gameData.ifOpenVibrate = _b;\n  }\n  /**\r\n   * 设置关卡\r\n   * @param _number 增加关卡数量\r\n   * @return 是否增加成功\r\n   */\n\n\n  setCustoms(_number = 1) {\n    //化整\n    _number = Math.floor(_number); //设置当前关卡\n\n    let _sum = this.m_gameData.onCustoms + _number;\n\n    let _win = false;\n\n    if (_sum <= this.m_gameData.maxCustoms) {\n      this.m_gameData.onCustoms = _sum;\n\n      if (_sum > this.m_gameData.maxCustomsRecord) {\n        this.m_gameData.maxCustomsRecord = _sum;\n      }\n\n      _win = true;\n    } else {\n      this.m_gameData.onCustoms = CommonLeveEnum_1.ECommonLeve.DefaultLeveId;\n      _win = true;\n    } //传出事件\n\n\n    MesManager_1.default.instance.sendEvent(EEventUI_1.EEventUI.CustomsChange); //\n\n    return _win;\n  }\n  /**\r\n   * 返回默认的关卡\r\n   */\n\n\n  getDefaultCustoms() {\n    if (this.m_gameData.onCustoms > this.m_gameData.maxCustoms) {\n      this.m_gameData.onCustoms = CommonLeveEnum_1.ECommonLeve.DefaultLeveId; //保存数据\n    }\n\n    return this.m_gameData.onCustoms;\n  }\n  /**\r\n   * 返回需要预加载的关卡id\r\n   */\n\n\n  getPreloadCustoms() {\n    return this.getNextCustoms();\n  }\n  /**\r\n   * 获取下一个关卡\r\n   */\n\n\n  getNextCustoms() {\n    let _customs = this.m_gameData.onCustoms + 1;\n\n    if (_customs > this.m_gameData.maxCustoms) {\n      _customs = CommonLeveEnum_1.ECommonLeve.DefaultLeveId;\n    } //\n\n\n    return _customs;\n  }\n\n}\n\nexports.default = GameDataProxyShell;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/dMyGame/Proxy/data/GameDataProxyShell.ts?");
+
+/***/ }),
+
+/***/ "./src/dMyGame/ResList/EBGMs.ts":
+/*!**************************************!*\
+  !*** ./src/dMyGame/ResList/EBGMs.ts ***!
+  \**************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\nexports.EBGMs = void 0;\n/**\r\n * 所有背景音乐(会预加载)\r\n */\n\nvar EBGMs;\n\n(function (EBGMs) {\n  EBGMs[\"null\"] = \"\"; //\n})(EBGMs = exports.EBGMs || (exports.EBGMs = {}));\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/dMyGame/ResList/EBGMs.ts?");
+
+/***/ }),
+
+/***/ "./src/dMyGame/ResList/ESounds.ts":
+/*!****************************************!*\
+  !*** ./src/dMyGame/ResList/ESounds.ts ***!
+  \****************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\nexports.ESounds = void 0;\n/**\r\n * 所有音效(会预加载)\r\n */\n\nvar ESounds;\n\n(function (ESounds) {\n  ESounds[\"null\"] = \"\"; //音效\n})(ESounds = exports.ESounds || (exports.ESounds = {}));\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/dMyGame/ResList/ESounds.ts?");
+
+/***/ }),
+
+/***/ "./src/dMyGame/UIMediator/PGameComMediator.ts":
+/*!****************************************************!*\
+  !*** ./src/dMyGame/UIMediator/PGameComMediator.ts ***!
+  \****************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst BaseUIMediator_1 = __webpack_require__(/*! ../../aTGame/UI/FGUI/BaseUIMediator */ \"./src/aTGame/UI/FGUI/BaseUIMediator.ts\");\n\nconst FGUI_PGameCom_1 = __webpack_require__(/*! ../../FGUI/GameMain/FGUI_PGameCom */ \"./src/FGUI/GameMain/FGUI_PGameCom.ts\");\n/**\r\n * 游戏完成页面调度者\r\n */\n\n\nclass PGameComMediator extends BaseUIMediator_1.default {\n  //\n  constructor() {\n    super();\n  }\n  /** 单例 */\n\n\n  static get instance() {\n    if (!this.m_instance) {\n      this.m_instance = new PGameComMediator();\n      this.m_instance._classDefine = FGUI_PGameCom_1.default;\n    } //\n\n\n    return this.m_instance;\n  } //显示时的生命周期函数\n\n\n  _OnShow() {//\n  } //隐藏时的生命周期函数\n\n\n  _OnHide() {}\n\n}\n\nexports.default = PGameComMediator;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/dMyGame/UIMediator/PGameComMediator.ts?");
+
+/***/ }),
+
+/***/ "./src/dMyGame/UIMediator/PGameCustomsLoadingMediator.ts":
+/*!***************************************************************!*\
+  !*** ./src/dMyGame/UIMediator/PGameCustomsLoadingMediator.ts ***!
+  \***************************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst BaseUIMediator_1 = __webpack_require__(/*! ../../aTGame/UI/FGUI/BaseUIMediator */ \"./src/aTGame/UI/FGUI/BaseUIMediator.ts\");\n\nconst EUILayer_1 = __webpack_require__(/*! ../../aTGame/UI/FGUI/EUILayer */ \"./src/aTGame/UI/FGUI/EUILayer.ts\");\n\nconst UIManagerProxy_1 = __webpack_require__(/*! ../Manager/Proxy/UIManagerProxy */ \"./src/dMyGame/Manager/Proxy/UIManagerProxy.ts\");\n\nconst EUI_1 = __webpack_require__(/*! ../Enum/EUI */ \"./src/dMyGame/Enum/EUI.ts\");\n\nconst FGUI_PGameCustomsLoading_1 = __webpack_require__(/*! ../../FGUI/GameMain/FGUI_PGameCustomsLoading */ \"./src/FGUI/GameMain/FGUI_PGameCustomsLoading.ts\");\n\nconst EEventUI_1 = __webpack_require__(/*! ../EventEnum/EEventUI */ \"./src/dMyGame/EventEnum/EEventUI.ts\");\n\nconst MesManager_1 = __webpack_require__(/*! ../Manager/MesManager */ \"./src/dMyGame/Manager/MesManager.ts\");\n/**\r\n * 游戏关卡加载中页面调度者\r\n */\n\n\nclass PGameCustomsLoadingMediator extends BaseUIMediator_1.default {\n  //\n  constructor() {\n    super(); //层级\n\n    this._layer = EUILayer_1.EUILayer.Loading; //加载层\n  }\n  /** 单例 */\n\n\n  static get instance() {\n    if (!this.m_instance) {\n      this.m_instance = new PGameCustomsLoadingMediator();\n      this.m_instance._classDefine = FGUI_PGameCustomsLoading_1.default;\n    } //\n\n\n    return this.m_instance;\n  } //显示时的生命周期函数\n\n\n  _OnShow() {\n    //关卡加载中\n    MesManager_1.default.instance.onEvent(EEventUI_1.EEventUI.SceneGameCustomsLoading, this, this.CustomsLoading);\n  }\n  /**\r\n   * 关卡加载中事件\r\n   * @param _number 加载进度\r\n   */\n\n\n  CustomsLoading(_number) {\n    //设置进度条进度\n    this.ui.m_progress.value = _number; //加载完成时\n\n    if (_number == 100) {\n      UIManagerProxy_1.default.instance.setUIState([{\n        typeIndex: EUI_1.EUI.CustomsLoading,\n        state: false\n      }], false);\n    }\n  } //隐藏时的生命周期函数\n\n\n  _OnHide() {\n    //取消监听\n    MesManager_1.default.instance.offEnent(EEventUI_1.EEventUI.SceneGameCustomsLoading, this, this.CustomsLoading);\n  }\n\n}\n\nexports.default = PGameCustomsLoadingMediator;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/dMyGame/UIMediator/PGameCustomsLoadingMediator.ts?");
+
+/***/ }),
+
+/***/ "./src/dMyGame/UIMediator/PGameEndMediator.ts":
+/*!****************************************************!*\
+  !*** ./src/dMyGame/UIMediator/PGameEndMediator.ts ***!
+  \****************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst BaseUIMediator_1 = __webpack_require__(/*! ../../aTGame/UI/FGUI/BaseUIMediator */ \"./src/aTGame/UI/FGUI/BaseUIMediator.ts\");\n\nconst FGUI_PGameEnd_1 = __webpack_require__(/*! ../../FGUI/GameMain/FGUI_PGameEnd */ \"./src/FGUI/GameMain/FGUI_PGameEnd.ts\");\n/**\r\n * 游戏暂停页面调度者\r\n */\n\n\nclass PGameEndMediator extends BaseUIMediator_1.default {\n  //\n  constructor() {\n    super();\n  }\n  /** 单例 */\n\n\n  static get instance() {\n    if (!this.m_instance) {\n      this.m_instance = new PGameEndMediator();\n      this.m_instance._classDefine = FGUI_PGameEnd_1.default;\n    } //\n\n\n    return this.m_instance;\n  } //显示时的生命周期函数\n\n\n  _OnShow() {//\n  } //隐藏时的生命周期函数\n\n\n  _OnHide() {}\n\n}\n\nexports.default = PGameEndMediator;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/dMyGame/UIMediator/PGameEndMediator.ts?");
+
+/***/ }),
+
+/***/ "./src/dMyGame/UIMediator/PGameLoadingMediator.ts":
+/*!********************************************************!*\
+  !*** ./src/dMyGame/UIMediator/PGameLoadingMediator.ts ***!
+  \********************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst BaseUIMediator_1 = __webpack_require__(/*! ../../aTGame/UI/FGUI/BaseUIMediator */ \"./src/aTGame/UI/FGUI/BaseUIMediator.ts\");\n\nconst EUILayer_1 = __webpack_require__(/*! ../../aTGame/UI/FGUI/EUILayer */ \"./src/aTGame/UI/FGUI/EUILayer.ts\");\n\nconst EEventGlobal_1 = __webpack_require__(/*! ../EventEnum/EEventGlobal */ \"./src/dMyGame/EventEnum/EEventGlobal.ts\");\n\nconst FGUI_PGameLoading_1 = __webpack_require__(/*! ../../FGUI/GameMain/FGUI_PGameLoading */ \"./src/FGUI/GameMain/FGUI_PGameLoading.ts\");\n\nconst MesManager_1 = __webpack_require__(/*! ../Manager/MesManager */ \"./src/dMyGame/Manager/MesManager.ts\");\n/**\r\n * 游戏加载中页面调度者\r\n */\n\n\nclass PGameLoadingMediator extends BaseUIMediator_1.default {\n  //\n  constructor() {\n    super(); //层级\n\n    this._layer = EUILayer_1.EUILayer.Loading; //加载层\n  }\n  /** 单例 */\n\n\n  static get instance() {\n    if (!this.m_instance) {\n      this.m_instance = new PGameLoadingMediator();\n      this.m_instance._classDefine = FGUI_PGameLoading_1.default;\n    } //\n\n\n    return this.m_instance;\n  } //显示时的生命周期函数\n\n\n  _OnShow() {\n    MesManager_1.default.instance.onEvent(EEventGlobal_1.EEventGlobal.GameLoading, this, this.gameLoading); //游戏加载中\n  }\n  /**\r\n   * 关卡加载中事件\r\n   * @param _number 加载进度\r\n   */\n\n\n  gameLoading(_number) {\n    //设置进度条进度\n    this.ui.m_progress.value = _number;\n  } //隐藏时的生命周期函数\n\n\n  _OnHide() {\n    //取消监听\n    MesManager_1.default.instance.offEnent(EEventGlobal_1.EEventGlobal.GameLoading, this, this.gameLoading);\n  }\n\n}\n\nexports.default = PGameLoadingMediator;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/dMyGame/UIMediator/PGameLoadingMediator.ts?");
+
+/***/ }),
+
+/***/ "./src/dMyGame/UIMediator/PGameMainMediator.ts":
+/*!*****************************************************!*\
+  !*** ./src/dMyGame/UIMediator/PGameMainMediator.ts ***!
+  \*****************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst BaseUIMediator_1 = __webpack_require__(/*! ../../aTGame/UI/FGUI/BaseUIMediator */ \"./src/aTGame/UI/FGUI/BaseUIMediator.ts\");\n\nconst EUILayer_1 = __webpack_require__(/*! ../../aTGame/UI/FGUI/EUILayer */ \"./src/aTGame/UI/FGUI/EUILayer.ts\");\n\nconst FGUI_PGameMain_1 = __webpack_require__(/*! ../../FGUI/GameMain/FGUI_PGameMain */ \"./src/FGUI/GameMain/FGUI_PGameMain.ts\");\n/**\r\n * 游戏主页面调度者\r\n */\n\n\nclass PGameMainMediator extends BaseUIMediator_1.default {\n  //\n  constructor() {\n    super(); //层级\n\n    this._layer = EUILayer_1.EUILayer.Main;\n  }\n  /** 单例 */\n\n\n  static get instance() {\n    if (!this.m_instance) {\n      this.m_instance = new PGameMainMediator();\n      this.m_instance._classDefine = FGUI_PGameMain_1.default;\n    } //\n\n\n    return this.m_instance;\n  } //显示时的生命周期函数\n\n\n  _OnShow() {} //隐藏时的生命周期函数\n\n\n  _OnHide() {}\n\n}\n\nexports.default = PGameMainMediator;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/dMyGame/UIMediator/PGameMainMediator.ts?");
+
+/***/ }),
+
+/***/ "./src/dMyGame/UIMediator/PGamePauseMediator.ts":
+/*!******************************************************!*\
+  !*** ./src/dMyGame/UIMediator/PGamePauseMediator.ts ***!
+  \******************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst BaseUIMediator_1 = __webpack_require__(/*! ../../aTGame/UI/FGUI/BaseUIMediator */ \"./src/aTGame/UI/FGUI/BaseUIMediator.ts\");\n\nconst EUILayer_1 = __webpack_require__(/*! ../../aTGame/UI/FGUI/EUILayer */ \"./src/aTGame/UI/FGUI/EUILayer.ts\");\n\nconst FGUI_PGamePause_1 = __webpack_require__(/*! ../../FGUI/GameMain/FGUI_PGamePause */ \"./src/FGUI/GameMain/FGUI_PGamePause.ts\");\n/**\r\n * 游戏暂停页面调度者\r\n */\n\n\nclass PGamePauseMediator extends BaseUIMediator_1.default {\n  //\n  constructor() {\n    super(); //层级\n\n    this._layer = EUILayer_1.EUILayer.Pause; //暂停层\n  }\n  /** 单例 */\n\n\n  static get instance() {\n    if (!this.m_instance) {\n      this.m_instance = new PGamePauseMediator();\n      this.m_instance._classDefine = FGUI_PGamePause_1.default;\n    } //\n\n\n    return this.m_instance;\n  } //显示时的生命周期函数\n\n\n  _OnShow() {//\n  } //隐藏时的生命周期函数\n\n\n  _OnHide() {}\n\n}\n\nexports.default = PGamePauseMediator;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/dMyGame/UIMediator/PGamePauseMediator.ts?");
+
+/***/ }),
+
+/***/ "./src/dMyGame/UIMediator/PGamePlayMediator.ts":
+/*!*****************************************************!*\
+  !*** ./src/dMyGame/UIMediator/PGamePlayMediator.ts ***!
+  \*****************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst BaseUIMediator_1 = __webpack_require__(/*! ../../aTGame/UI/FGUI/BaseUIMediator */ \"./src/aTGame/UI/FGUI/BaseUIMediator.ts\");\n\nconst FGUI_PGamePlay_1 = __webpack_require__(/*! ../../FGUI/GameMain/FGUI_PGamePlay */ \"./src/FGUI/GameMain/FGUI_PGamePlay.ts\");\n/**\r\n * 游戏玩耍页面调度者\r\n */\n\n\nclass PGamePlayMediator extends BaseUIMediator_1.default {\n  //\n  constructor() {\n    super();\n  }\n  /** 单例 */\n\n\n  static get instance() {\n    if (!this.m_instance) {\n      this.m_instance = new PGamePlayMediator();\n      this.m_instance._classDefine = FGUI_PGamePlay_1.default;\n    } //\n\n\n    return this.m_instance;\n  } //显示时的生命周期函数\n\n\n  _OnShow() {//\n  } //隐藏时的生命周期函数\n\n\n  _OnHide() {}\n\n}\n\nexports.default = PGamePlayMediator;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/dMyGame/UIMediator/PGamePlayMediator.ts?");
+
+/***/ }),
+
+/***/ "./src/dMyGame/UIMediator/PGameSetMediator.ts":
+/*!****************************************************!*\
+  !*** ./src/dMyGame/UIMediator/PGameSetMediator.ts ***!
+  \****************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst BaseUIMediator_1 = __webpack_require__(/*! ../../aTGame/UI/FGUI/BaseUIMediator */ \"./src/aTGame/UI/FGUI/BaseUIMediator.ts\");\n\nconst EUILayer_1 = __webpack_require__(/*! ../../aTGame/UI/FGUI/EUILayer */ \"./src/aTGame/UI/FGUI/EUILayer.ts\");\n\nconst FGUI_PGameSet_1 = __webpack_require__(/*! ../../FGUI/GameMain/FGUI_PGameSet */ \"./src/FGUI/GameMain/FGUI_PGameSet.ts\");\n/**\r\n * 游戏设置页面调度者\r\n */\n\n\nclass PGameSetMediator extends BaseUIMediator_1.default {\n  //\n  constructor() {\n    super(); //设置层级\n\n    this._layer = EUILayer_1.EUILayer.Set; //设置层\n  }\n  /** 单例 */\n\n\n  static get instance() {\n    if (!this.m_instance) {\n      this.m_instance = new PGameSetMediator();\n      this.m_instance._classDefine = FGUI_PGameSet_1.default;\n    } //\n\n\n    return this.m_instance;\n  } //显示时的生命周期函数\n\n\n  _OnShow() {//\n  } //隐藏时的生命周期函数\n\n\n  _OnHide() {}\n\n}\n\nexports.default = PGameSetMediator;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/dMyGame/UIMediator/PGameSetMediator.ts?");
+
+/***/ }),
+
+/***/ "./src/dMyGame/UIMediator/PGameStartMediator.ts":
+/*!******************************************************!*\
+  !*** ./src/dMyGame/UIMediator/PGameStartMediator.ts ***!
+  \******************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst BaseUIMediator_1 = __webpack_require__(/*! ../../aTGame/UI/FGUI/BaseUIMediator */ \"./src/aTGame/UI/FGUI/BaseUIMediator.ts\");\n\nconst FGUI_PGameStart_1 = __webpack_require__(/*! ../../FGUI/GameMain/FGUI_PGameStart */ \"./src/FGUI/GameMain/FGUI_PGameStart.ts\");\n/**\r\n * 游戏开始页面调度者\r\n */\n\n\nclass PGameStartMediator extends BaseUIMediator_1.default {\n  //\n  constructor() {\n    super();\n  }\n  /** 单例 */\n\n\n  static get instance() {\n    if (!this.m_instance) {\n      this.m_instance = new PGameStartMediator();\n      this.m_instance._classDefine = FGUI_PGameStart_1.default;\n    } //\n\n\n    return this.m_instance;\n  } //显示时的生命周期函数\n\n\n  _OnShow() {//\n  } //隐藏时的生命周期函数\n\n\n  _OnHide() {}\n\n}\n\nexports.default = PGameStartMediator;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/dMyGame/UIMediator/PGameStartMediator.ts?");
+
+/***/ }),
+
+/***/ "./src/dMyGame/UIMediator/_test/PGameTestMainMediator.ts":
+/*!***************************************************************!*\
+  !*** ./src/dMyGame/UIMediator/_test/PGameTestMainMediator.ts ***!
+  \***************************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst BaseUIMediator_1 = __webpack_require__(/*! ../../../aTGame/UI/FGUI/BaseUIMediator */ \"./src/aTGame/UI/FGUI/BaseUIMediator.ts\");\n\nconst FGUI_PGameTestMain_1 = __webpack_require__(/*! ../../../FGUI/GameMain/FGUI_PGameTestMain */ \"./src/FGUI/GameMain/FGUI_PGameTestMain.ts\");\n\nconst EUI_1 = __webpack_require__(/*! ../../Enum/EUI */ \"./src/dMyGame/Enum/EUI.ts\");\n\nconst UIManagerProxy_1 = __webpack_require__(/*! ../../Manager/Proxy/UIManagerProxy */ \"./src/dMyGame/Manager/Proxy/UIManagerProxy.ts\");\n\nconst PGameUITestMediator_1 = __webpack_require__(/*! ./PGameUITestMediator */ \"./src/dMyGame/UIMediator/_test/PGameUITestMediator.ts\");\n/**\r\n * 游戏开始页面调度者\r\n */\n\n\nclass PGameTestMainMediator extends BaseUIMediator_1.default {\n  //\n  constructor() {\n    super();\n  }\n  /** 单例 */\n\n\n  static get instance() {\n    if (!this.m_instance) {\n      this.m_instance = new PGameTestMainMediator();\n      this.m_instance._classDefine = FGUI_PGameTestMain_1.default;\n    } //\n\n\n    return this.m_instance;\n  } //显示时的生命周期函数\n\n\n  _OnShow() {\n    //\n    this.ui.m_test.onClick(this, this.Test);\n    this.ui.m_UIButton.onClick(this, this.UITest);\n  } //打开测试页面\n\n\n  Test() {\n    UIManagerProxy_1.default.instance.setUIState([{\n      typeIndex: EUI_1.EUI.TestPlatform\n    }], false); //\n  } //打开测试页面\n\n\n  UITest() {\n    PGameUITestMediator_1.default.instance.Show();\n  } //隐藏时的生命周期函数\n\n\n  _OnHide() {}\n\n}\n\nexports.default = PGameTestMainMediator;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/dMyGame/UIMediator/_test/PGameTestMainMediator.ts?");
+
+/***/ }),
+
+/***/ "./src/dMyGame/UIMediator/_test/PGameTestPlatformMediator.ts":
+/*!*******************************************************************!*\
+  !*** ./src/dMyGame/UIMediator/_test/PGameTestPlatformMediator.ts ***!
+  \*******************************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst PlatformManager_1 = __webpack_require__(/*! ../../../aTGame/Platform/PlatformManager */ \"./src/aTGame/Platform/PlatformManager.ts\");\n\nconst BaseUIMediator_1 = __webpack_require__(/*! ../../../aTGame/UI/FGUI/BaseUIMediator */ \"./src/aTGame/UI/FGUI/BaseUIMediator.ts\");\n\nconst FGUI_PGameTestPlatform_1 = __webpack_require__(/*! ../../../FGUI/GameMain/FGUI_PGameTestPlatform */ \"./src/FGUI/GameMain/FGUI_PGameTestPlatform.ts\");\n\nconst EUI_1 = __webpack_require__(/*! ../../Enum/EUI */ \"./src/dMyGame/Enum/EUI.ts\");\n\nconst UIManagerProxy_1 = __webpack_require__(/*! ../../Manager/Proxy/UIManagerProxy */ \"./src/dMyGame/Manager/Proxy/UIManagerProxy.ts\");\n/**\r\n * 游戏测试页面调度者\r\n */\n\n\nclass PGameTestPlatformMediator extends BaseUIMediator_1.default {\n  //\n  constructor() {\n    super();\n  }\n  /** 单例 */\n\n\n  static get instance() {\n    if (!this.m_instance) {\n      this.m_instance = new PGameTestPlatformMediator();\n      this.m_instance._classDefine = FGUI_PGameTestPlatform_1.default;\n    } //\n\n\n    return this.m_instance;\n  } //显示时的生命周期函数\n\n\n  _OnShow() {\n    this.ui.m_bg.onClick(this, this.close);\n    this.ui.m_lookVAd.onClick(this, this.lookVAd);\n    this.ui.m_showToast.onClick(this, this.showToast);\n    this.ui.m_share.onClick(this, this.share);\n  } //看广告\n\n\n  lookVAd() {\n    console.log('看广告测试'); //广告测试\n\n    PlatformManager_1.default.PlatformInstance.ShowRewardVideoAdAsync().then(ifLook => {\n      console.log('看广告完成测试', ifLook);\n    });\n  } //显示消息\n\n\n  showToast() {\n    console.log('显示消息测试'); //显示消息测试\n\n    PlatformManager_1.default.PlatformInstance.ShowToast('显示消息测试');\n  } //分享\n\n\n  share() {\n    console.log('分享测试'); //分享测试\n\n    PlatformManager_1.default.PlatformInstance.ShareAppMessage({\n      shareId: undefined,\n      shareImg: undefined,\n      sharePath: undefined,\n      shareTitle: '分享消息'\n    }, Laya.Handler.create(this, () => {\n      console.log('分享成功');\n    }), Laya.Handler.create(this, () => {\n      console.log('分享失败！');\n    }));\n  } //关闭\n\n\n  close() {\n    UIManagerProxy_1.default.instance.setUIState([{\n      typeIndex: EUI_1.EUI.TestPlatform,\n      state: false\n    }], false);\n  } //隐藏时的生命周期函数\n\n\n  _OnHide() {}\n\n}\n\nexports.default = PGameTestPlatformMediator;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/dMyGame/UIMediator/_test/PGameTestPlatformMediator.ts?");
+
+/***/ }),
+
+/***/ "./src/dMyGame/UIMediator/_test/PGameUITestMediator.ts":
+/*!*************************************************************!*\
+  !*** ./src/dMyGame/UIMediator/_test/PGameUITestMediator.ts ***!
+  \*************************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst BaseUIMediator_1 = __webpack_require__(/*! ../../../aTGame/UI/FGUI/BaseUIMediator */ \"./src/aTGame/UI/FGUI/BaseUIMediator.ts\");\n\nconst FGuiData_1 = __webpack_require__(/*! ../../../aTGame/UI/FGUI/FGuiData */ \"./src/aTGame/UI/FGUI/FGuiData.ts\");\n\nconst FGUI_PGameTestUI_1 = __webpack_require__(/*! ../../../FGUI/GameMain/FGUI_PGameTestUI */ \"./src/FGUI/GameMain/FGUI_PGameTestUI.ts\");\n/**\r\n * 游戏测试UI页面调度者\r\n */\n\n\nclass PGameUITestMediator extends BaseUIMediator_1.default {\n  //\n  constructor() {\n    super();\n  }\n  /** 单例 */\n\n\n  static get instance() {\n    if (!this.m_instance) {\n      this.m_instance = new PGameUITestMediator();\n      this.m_instance._classDefine = FGUI_PGameTestUI_1.default;\n    } //\n\n\n    return this.m_instance;\n  } //\n\n\n  get _fguiData() {\n    let _fguiData = new FGuiData_1.default();\n\n    _fguiData.top = 100;\n    _fguiData.bottom = 50;\n    return _fguiData;\n  } //显示时的生命周期函数\n\n\n  _OnShow() {\n    //\n    this.ui.m_bg.onClick(this, this.close);\n  } //关闭\n\n\n  close() {\n    this.Hide();\n  } //隐藏时的生命周期函数\n\n\n  _OnHide() {}\n\n}\n\nexports.default = PGameUITestMediator;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/dMyGame/UIMediator/_test/PGameUITestMediator.ts?");
+
+/***/ }),
+
+/***/ "./src/dMyGame/_config/CameraConst.ts":
+/*!********************************************!*\
+  !*** ./src/dMyGame/_config/CameraConst.ts ***!
+  \********************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\nexports.CameraConst = void 0;\nvar CameraConst;\n\n(function (CameraConst) {\n  class config {}\n\n  CameraConst.config = config;\n  CameraConst.path = \"res/config/CameraConst.json\";\n})(CameraConst = exports.CameraConst || (exports.CameraConst = {}));\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/dMyGame/_config/CameraConst.ts?");
+
+/***/ }),
+
+/***/ "./src/dMyGame/_config/EnvironmentConfig.ts":
+/*!**************************************************!*\
+  !*** ./src/dMyGame/_config/EnvironmentConfig.ts ***!
+  \**************************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\nexports.EnvironmentConfig = void 0;\nvar EnvironmentConfig;\n\n(function (EnvironmentConfig) {\n  class config {}\n\n  EnvironmentConfig.config = config;\n  EnvironmentConfig.path = \"res/config/EnvironmentConfig.json\";\n})(EnvironmentConfig = exports.EnvironmentConfig || (exports.EnvironmentConfig = {}));\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/dMyGame/_config/EnvironmentConfig.ts?");
+
+/***/ }),
+
+/***/ "./src/dMyGame/_config/GameConst.ts":
+/*!******************************************!*\
+  !*** ./src/dMyGame/_config/GameConst.ts ***!
+  \******************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\nexports.GameConst = void 0;\nvar GameConst;\n\n(function (GameConst) {\n  class config {}\n\n  GameConst.config = config;\n  GameConst.path = \"res/config/GameConst.json\";\n})(GameConst = exports.GameConst || (exports.GameConst = {}));\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/dMyGame/_config/GameConst.ts?");
+
+/***/ }),
+
+/***/ "./src/dMyGame/_config/GameStateConst.ts":
+/*!***********************************************!*\
+  !*** ./src/dMyGame/_config/GameStateConst.ts ***!
+  \***********************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\nexports.GameStateConst = void 0;\nvar GameStateConst;\n\n(function (GameStateConst) {\n  class config {}\n\n  GameStateConst.config = config;\n  GameStateConst.path = \"res/config/GameStateConst.json\";\n})(GameStateConst = exports.GameStateConst || (exports.GameStateConst = {}));\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/dMyGame/_config/GameStateConst.ts?");
+
+/***/ }),
+
+/***/ "./src/dMyGame/_config/LevelConfig.ts":
+/*!********************************************!*\
+  !*** ./src/dMyGame/_config/LevelConfig.ts ***!
+  \********************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\nexports.LevelConfig = void 0;\nvar LevelConfig;\n\n(function (LevelConfig) {\n  class config {}\n\n  LevelConfig.config = config;\n  LevelConfig.path = \"res/config/LevelConfig.json\";\n})(LevelConfig = exports.LevelConfig || (exports.LevelConfig = {}));\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/dMyGame/_config/LevelConfig.ts?");
+
+/***/ }),
+
+/***/ "./src/dMyGame/_config/LevelPropConfig.ts":
+/*!************************************************!*\
+  !*** ./src/dMyGame/_config/LevelPropConfig.ts ***!
+  \************************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\nexports.LevelPropConfig = void 0;\nvar LevelPropConfig;\n\n(function (LevelPropConfig) {\n  class config {}\n\n  LevelPropConfig.config = config;\n  LevelPropConfig.path = \"res/config/LevelPropConfig.json\";\n})(LevelPropConfig = exports.LevelPropConfig || (exports.LevelPropConfig = {}));\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/dMyGame/_config/LevelPropConfig.ts?");
+
+/***/ }),
+
+/***/ "./src/dMyGame/_config/LightingConst.ts":
+/*!**********************************************!*\
+  !*** ./src/dMyGame/_config/LightingConst.ts ***!
+  \**********************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\nexports.LightingConst = void 0;\nvar LightingConst;\n\n(function (LightingConst) {\n  class config {}\n\n  LightingConst.config = config;\n  LightingConst.path = \"res/config/LightingConst.json\";\n})(LightingConst = exports.LightingConst || (exports.LightingConst = {}));\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/dMyGame/_config/LightingConst.ts?");
+
+/***/ }),
+
+/***/ "./src/dMyGame/_config/OtherConst.ts":
+/*!*******************************************!*\
+  !*** ./src/dMyGame/_config/OtherConst.ts ***!
+  \*******************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\nexports.OtherConst = void 0;\nvar OtherConst;\n\n(function (OtherConst) {\n  class config {}\n\n  OtherConst.config = config;\n  OtherConst.path = \"res/config/OtherConst.json\";\n})(OtherConst = exports.OtherConst || (exports.OtherConst = {}));\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/dMyGame/_config/OtherConst.ts?");
+
+/***/ }),
+
+/***/ "./src/dMyGame/_config/OtherEnvironmentConfig.ts":
+/*!*******************************************************!*\
+  !*** ./src/dMyGame/_config/OtherEnvironmentConfig.ts ***!
+  \*******************************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\nexports.OtherEnvironmentConfig = void 0;\nvar OtherEnvironmentConfig;\n\n(function (OtherEnvironmentConfig) {\n  class config {}\n\n  OtherEnvironmentConfig.config = config;\n  OtherEnvironmentConfig.path = \"res/config/OtherEnvironmentConfig.json\";\n})(OtherEnvironmentConfig = exports.OtherEnvironmentConfig || (exports.OtherEnvironmentConfig = {}));\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/dMyGame/_config/OtherEnvironmentConfig.ts?");
+
+/***/ }),
+
+/***/ "./src/dMyGame/_config/OtherLevelConfig.ts":
+/*!*************************************************!*\
+  !*** ./src/dMyGame/_config/OtherLevelConfig.ts ***!
+  \*************************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\nexports.OtherLevelConfig = void 0;\nvar OtherLevelConfig;\n\n(function (OtherLevelConfig) {\n  class config {}\n\n  OtherLevelConfig.config = config;\n  OtherLevelConfig.path = \"res/config/OtherLevelConfig.json\";\n})(OtherLevelConfig = exports.OtherLevelConfig || (exports.OtherLevelConfig = {}));\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/dMyGame/_config/OtherLevelConfig.ts?");
+
+/***/ }),
+
+/***/ "./src/dMyGame/_config/SkinConfig.ts":
+/*!*******************************************!*\
+  !*** ./src/dMyGame/_config/SkinConfig.ts ***!
+  \*******************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\nexports.SkinConfig = void 0;\nvar SkinConfig;\n\n(function (SkinConfig) {\n  class config {}\n\n  SkinConfig.config = config;\n  SkinConfig.path = \"res/config/SkinConfig.json\";\n})(SkinConfig = exports.SkinConfig || (exports.SkinConfig = {}));\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/dMyGame/_config/SkinConfig.ts?");
+
+/***/ }),
+
+/***/ "./src/dMyGame/_config/TestConst.ts":
+/*!******************************************!*\
+  !*** ./src/dMyGame/_config/TestConst.ts ***!
+  \******************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\nexports.TestConst = void 0;\nvar TestConst;\n\n(function (TestConst) {\n  class config {}\n\n  TestConst.config = config;\n  TestConst.path = \"res/config/TestConst.json\";\n})(TestConst = exports.TestConst || (exports.TestConst = {}));\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/dMyGame/_config/TestConst.ts?");
+
+/***/ }),
+
+/***/ "./src/dMyGame/_prefabsName/_AllScenePrefabsNames.ts":
+/*!***********************************************************!*\
+  !*** ./src/dMyGame/_prefabsName/_AllScenePrefabsNames.ts ***!
+  \***********************************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n/**\r\n * 所有预制体名字\r\n */\n\nclass _AllScenePrefabsNames {\n  constructor() {\n    this.Prefabs = '@Camera@@DirectionalLight@';\n    this.Prefabs2 = '@Cube@@Sphere@@Cylinder@';\n  }\n\n}\n\nexports.default = _AllScenePrefabsNames; //\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/dMyGame/_prefabsName/_AllScenePrefabsNames.ts?");
+
+/***/ }),
+
+/***/ "./src/eTest/AsyncTest.ts":
+/*!********************************!*\
+  !*** ./src/eTest/AsyncTest.ts ***!
+  \********************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+eval("\n\nvar __awaiter = this && this.__awaiter || function (thisArg, _arguments, P, generator) {\n  function adopt(value) {\n    return value instanceof P ? value : new P(function (resolve) {\n      resolve(value);\n    });\n  }\n\n  return new (P || (P = Promise))(function (resolve, reject) {\n    function fulfilled(value) {\n      try {\n        step(generator.next(value));\n      } catch (e) {\n        reject(e);\n      }\n    }\n\n    function rejected(value) {\n      try {\n        step(generator[\"throw\"](value));\n      } catch (e) {\n        reject(e);\n      }\n    }\n\n    function step(result) {\n      result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);\n    }\n\n    step((generator = generator.apply(thisArg, _arguments || [])).next());\n  });\n};\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst RootTest_1 = __webpack_require__(/*! ../aTGame/Test/RootTest */ \"./src/aTGame/Test/RootTest.ts\");\n/**\r\n * 异步测试类\r\n */\n\n\nclass AsyncTest extends RootTest_1.default {\n  //开始测试\n  startTest() {\n    //\n    this.asyncTest();\n  } //\n\n\n  asyncTest() {\n    return __awaiter(this, void 0, void 0, function* () {\n      console.log('异步开始。');\n      yield this._asyncTest();\n      console.log('异步结束。');\n    });\n  } //\n\n\n  _asyncTest() {\n    return new Promise(_r => {\n      Laya.timer.once(1000, this, () => {\n        _r();\n      });\n    });\n  }\n\n}\n\nexports.default = AsyncTest;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/eTest/AsyncTest.ts?");
+
+/***/ }),
+
+/***/ "./src/eTest/MyMainTest.ts":
+/*!*********************************!*\
+  !*** ./src/eTest/MyMainTest.ts ***!
+  \*********************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst RootTest_1 = __webpack_require__(/*! ../aTGame/Test/RootTest */ \"./src/aTGame/Test/RootTest.ts\");\n\nconst AsyncTest_1 = __webpack_require__(/*! ./AsyncTest */ \"./src/eTest/AsyncTest.ts\");\n\nconst OIMODebug_1 = __webpack_require__(/*! ./OIMODebug */ \"./src/eTest/OIMODebug.ts\");\n/**\r\n * 我的测试类\r\n */\n\n\nclass MyMainTest extends RootTest_1.default {\n  //开始测试\n  startTest() {\n    //开启测试\n    new AsyncTest_1.default().startTest();\n    new OIMODebug_1.default().startTest();\n  }\n\n}\n\nexports.default = MyMainTest;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/eTest/MyMainTest.ts?");
+
+/***/ }),
+
+/***/ "./src/eTest/OIMODebug.ts":
+/*!********************************!*\
+  !*** ./src/eTest/OIMODebug.ts ***!
+  \********************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst RootTest_1 = __webpack_require__(/*! ../aTGame/Test/RootTest */ \"./src/aTGame/Test/RootTest.ts\");\n/**\r\n * OIMO物理测试\r\n */\n\n\nclass OIMODebug extends RootTest_1.default {\n  /** 单例对象 */\n  static get instance() {\n    if (this._instance) {\n      return this._instance;\n    } else {\n      this._instance = new OIMODebug();\n      return this._instance;\n    }\n  } //\n\n\n  start(_prefabs) {\n    let _spr = [];\n  }\n\n}\n\nexports.default = OIMODebug;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/eTest/OIMODebug.ts?");
+
+/***/ }),
+
+/***/ "./src/fDebug/CustomDebug.ts":
+/*!***********************************!*\
+  !*** ./src/fDebug/CustomDebug.ts ***!
+  \***********************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst RootDebug_1 = __webpack_require__(/*! ../aTGame/Debug/RootDebug */ \"./src/aTGame/Debug/RootDebug.ts\");\n/**\r\n * 自定义调试\r\n */\n\n\nclass CustomDebug extends RootDebug_1.default {\n  //\n  constructor() {\n    super(); //\n\n    this._name = 'Custom';\n  }\n  /** 单例 */\n\n\n  static get instance() {\n    if (!this.m_instance) {\n      this.m_instance = new CustomDebug();\n    } //\n\n\n    return this.m_instance;\n  }\n\n}\n\nexports.default = CustomDebug;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/fDebug/CustomDebug.ts?");
+
+/***/ }),
+
+/***/ "./src/fDebug/MyMainDebug.ts":
+/*!***********************************!*\
+  !*** ./src/fDebug/MyMainDebug.ts ***!
+  \***********************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst RootDebug_1 = __webpack_require__(/*! ../aTGame/Debug/RootDebug */ \"./src/aTGame/Debug/RootDebug.ts\");\n\nconst CustomDebug_1 = __webpack_require__(/*! ./CustomDebug */ \"./src/fDebug/CustomDebug.ts\");\n/**\r\n * 我的调试类\r\n */\n\n\nclass MyMainDebug extends RootDebug_1.default {\n  constructor() {\n    super(...arguments);\n    this._name = 'MyMainDebug';\n  } //开始调试\n\n\n  _startDebug() {\n    //开启自定义调试\n    CustomDebug_1.default.instance.startDebug();\n  }\n\n}\n\nexports.default = MyMainDebug;\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/fDebug/MyMainDebug.ts?");
+
+/***/ }),
+
+/***/ "./src/index.ts":
+/*!**********************!*\
+  !*** ./src/index.ts ***!
+  \**********************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+eval("\n\nObject.defineProperty(exports, \"__esModule\", ({\n  value: true\n}));\n\nconst GameConfig_1 = __webpack_require__(/*! ./GameConfig */ \"./src/GameConfig.ts\");\n\nconst MainStart_1 = __webpack_require__(/*! ./dMyGame/MainStart */ \"./src/dMyGame/MainStart.ts\");\n\nconst LayaMiniGameConfig_1 = __webpack_require__(/*! ./LayaMiniGameConfig */ \"./src/LayaMiniGameConfig.ts\");\n\nconst test_1 = __webpack_require__(/*! ./_a/_b/_c/_d/test */ \"./src/_a/_b/_c/_d/test.ts\");\n\nclass Main {\n  constructor() {\n    //根据IDE设置初始化引擎\t\t\n    if (window[\"Laya3D\"]) Laya3D.init(GameConfig_1.default.width, GameConfig_1.default.height);else Laya.init(GameConfig_1.default.width, GameConfig_1.default.height, Laya[\"WebGL\"]);\n    Laya[\"Physics\"] && Laya[\"Physics\"].enable();\n    Laya[\"DebugPanel\"] && Laya[\"DebugPanel\"].enable();\n    Laya.stage.scaleMode = GameConfig_1.default.scaleMode;\n    Laya.stage.screenMode = GameConfig_1.default.screenMode;\n    Laya.stage.alignV = GameConfig_1.default.alignV;\n    Laya.stage.alignH = GameConfig_1.default.alignH; //兼容微信不支持加载scene后缀场景\n\n    Laya.URL.exportSceneToJson = GameConfig_1.default.exportSceneToJson; //打开调试面板（通过IDE设置调试模式，或者url地址增加debug=true参数，均可打开调试面板）\n\n    if (GameConfig_1.default.debug || Laya.Utils.getQueryString(\"debug\") == \"true\") Laya.enableDebugPanel();\n    if (GameConfig_1.default.physicsDebug && Laya[\"PhysicsDebugDraw\"]) Laya[\"PhysicsDebugDraw\"].enable();\n    if (GameConfig_1.default.stat) Laya.Stat.show();\n    Laya.alertGlobalError(true); //激活资源版本控制，version.json由IDE发布功能自动生成，如果没有也不影响后续流程\n\n    Laya.ResourceVersion.enable(\"version.json\", Laya.Handler.create(this, this.onVersionLoaded), Laya.ResourceVersion.FILENAME_VERSION);\n  }\n\n  onVersionLoaded() {\n    //激活大小图映射，加载小图的时候，如果发现小图在大图合集里面，则优先加载大图合集，而不是小图\n    Laya.AtlasInfoManager.enable(\"fileconfig.json\", Laya.Handler.create(this, this.onConfigLoaded));\n  }\n\n  onConfigLoaded() {\n    //加载IDE指定的场景\n    // GameConfig.startScene && Laya.Scene.open(GameConfig.startScene);\n    //进入游戏\n    new MainStart_1.default();\n  }\n\n} //注入框架信息\n\n\nlet _LayaMiniGameConfig = new LayaMiniGameConfig_1.default();\n\nwindow['$' + _LayaMiniGameConfig.name] = _LayaMiniGameConfig; //激活启动类\n\nnew Main();\nnew test_1.default();\n\n//# sourceURL=webpack://LayaMiniGameFrame/./src/index.ts?");
+
+/***/ })
+
+/******/ 	});
+/************************************************************************/
+/******/ 	// The module cache
+/******/ 	var __webpack_module_cache__ = {};
+/******/ 	
+/******/ 	// The require function
+/******/ 	function __webpack_require__(moduleId) {
+/******/ 		// Check if module is in cache
+/******/ 		if(__webpack_module_cache__[moduleId]) {
+/******/ 			return __webpack_module_cache__[moduleId].exports;
+/******/ 		}
+/******/ 		// Create a new module (and put it into the cache)
+/******/ 		var module = __webpack_module_cache__[moduleId] = {
+/******/ 			// no module.id needed
+/******/ 			// no module.loaded needed
+/******/ 			exports: {}
+/******/ 		};
+/******/ 	
+/******/ 		// Execute the module function
+/******/ 		__webpack_modules__[moduleId].call(module.exports, module, module.exports, __webpack_require__);
+/******/ 	
+/******/ 		// Return the exports of the module
+/******/ 		return module.exports;
+/******/ 	}
+/******/ 	
+/************************************************************************/
+/******/ 	// startup
+/******/ 	// Load entry module
+/******/ 	__webpack_require__("./src/index.ts");
+/******/ 	// This entry module used 'exports' so it can't be inlined
+/******/ })()
+;
