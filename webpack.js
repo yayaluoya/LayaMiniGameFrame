@@ -39,7 +39,7 @@ const webpackConfig = {
         // 必须用在不通知更改的文件系统中
         // 即 nfs shares（译者注：Network FileSystem，最大的功能就是可以透過網路，讓不同的機器、不同的作業系統、可以彼此分享個別的檔案 ( share file )）
         ignored: /node_modules/, //忽略时时监听
-    },
+    }
 };
 
 module.exports = webpackConfig;

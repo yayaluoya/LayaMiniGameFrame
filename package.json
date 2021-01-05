@@ -49,6 +49,7 @@
     "@babel/preset-typescript": "^7.12.7",
     "babel-loader": "^8.2.2",
     "cache-loader": "^4.1.0",
-    "hard-source-webpack-plugin": "^0.13.1"
+    "hard-source-webpack-plugin": "^0.13.1",
+    "webpack-dev-server": "^3.11.1"
   }
 }
