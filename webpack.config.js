@@ -1,5 +1,8 @@
 const path = require('path');
 
+/** ts路径映射插件 */
+const TsconfigPathsPlugin = require('tsconfig-paths-webpack-plugin');
+
 /** webpack参数 */
 const webpackConfig = {
     mode: "development",
@@ -24,6 +27,10 @@ const webpackConfig = {
     },
     resolve: {
         extensions: ['.tsx', '.ts', '.js', 'glsl', 'md', 'txt', 'vs', 'fs'],
+        plugins: [
+            //TODO 这里有个大bug，ts文件结构过深时会使用非相对路径，这个时候就会出错，所以需要这个路径映射插件
+            new TsconfigPathsPlugin()
+        ]
     },
     // cache: true, // boolean
     // // 禁用/启用缓存
