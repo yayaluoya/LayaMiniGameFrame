@@ -15,7 +15,7 @@ const webpackConfig = {
         rules: [
             {
                 test: /\.tsx?$/,
-                use: ['babel-loader', 'ts-loader'],
+                use: ['ts-loader'],
                 exclude: /node_modules/
             },
             {
