@@ -7,9 +7,9 @@
     "layaminigameframe": "game.js"
   },
   "scripts": {
-    "LayaAir编译": "layaair2-cmd compile",
+    "LayaAir编译-慢": "layaair2-cmd compile",
     "webpack增量编译-快": "gulp webpackCompile",
-    "LayaAir增量编译": "gulp compile",
+    "LayaAir增量编译-慢": "gulp compile",
     "Http-服务": "gulp httpServer",
     "打包-Web-Game": "layaair2-cmd publish -c web",
     "打包到-微信-Game": "layaair2-cmd publish -c wxgame",
@@ -39,7 +39,8 @@
     "raw-loader": "^4.0.2",
     "ts-loader": "^8.0.13",
     "tsconfig-paths-webpack-plugin": "^3.3.0",
-    "typescript": "^4.1.3"
+    "typescript": "^4.1.3",
+    "webpack-cli": "^4.3.1"
   },
   "devDependencies": {
     "@babel/cli": "^7.12.10",
@@ -50,7 +51,6 @@
     "cache-loader": "^4.1.0",
     "hard-source-webpack-plugin": "^0.13.1",
     "webpack": "^5.11.1",
-    "webpack-cli": "^4.3.1",
     "webpack-dev-server": "^3.11.1"
   }
 }
