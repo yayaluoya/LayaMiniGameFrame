@@ -31,7 +31,7 @@ const webpackConfig = {
         plugins: [
             //TODO 这里有个大bug，ts文件结构过深时会使用非相对路径，这个时候就会出错，所以需要这个路径映射插件
             new TsconfigPathsPlugin(),
-            new HelloWorldPlugin({ options: true }),
+            new HelloWorldPlugin(),
         ]
     },
     //源代码调试工具
