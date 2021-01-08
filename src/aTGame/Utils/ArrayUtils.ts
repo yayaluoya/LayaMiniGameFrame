@@ -99,9 +99,9 @@ export default class ArrayUtils {
      * 随机打乱数组
      * @param _array 目标数组 
      */
-    public static upsetArray<T>(_array: T[]) {
+    public static upsetArray<T>(_array: T[]): T[] {
         //乱序
-        _array.sort(() => {
+        return _array.sort(() => {
             return Math.random() - 0.5;
         });
     }
