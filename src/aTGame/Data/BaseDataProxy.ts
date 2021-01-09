@@ -15,10 +15,10 @@ export default abstract class BaseDataProxy {
     /**
      * 添加属性设置监听
      * @param _this 执行域
-     * @param _dataSetMonitor 数据设监听
+     * @param _dataSetMonitorF 数据设监听
      * @param _key 受监听的属性
      */
-    public addKeySetMonitor(_this: any, _dataSetMonitor: IDataMonitorF, _key?: string | number | boolean) {
+    public addKeySetMonitor(_this: any, _dataSetMonitorF: IDataMonitorF, _key?: string | number | boolean) {
         //判断是否是对象属性
         if (_key && typeof _key == 'object') {
             _key = _key[SaticBaseDataProxy.$RootDataCruxKey];
@@ -26,7 +26,7 @@ export default abstract class BaseDataProxy {
         //添加到监听列表
         this._dataSetMonitor.push({
             _this: _this,
-            _f: _dataSetMonitor,
+            _f: _dataSetMonitorF,
             _rootData: _key[SaticBaseDataProxy.$RootParentDataKey],
             _key: _key,
         });
@@ -35,11 +35,11 @@ export default abstract class BaseDataProxy {
     /**
      * 添加对象设置监听
      * @param _this 执行域
-     * @param _dataSetMonitor 执行方法
+     * @param _dataSetMonitorF 执行方法
      * @param _rootData 受监听的原始对象，不设置则监听全部内容，只能在this.rootData找属性进行监听
      * @param _key 受监听的对象的属性，可以直接是个字符串
      */
-    public addObjectSetMonitor(_this: any, _dataSetMonitor: IDataMonitorF, _rootData?: object, _key?: string | number | boolean) {
+    public addObjectSetMonitor(_this: any, _dataSetMonitorF: IDataMonitorF, _rootData?: object, _key?: string | number | boolean) {
         //判断是否是对象属性
         if (_key && typeof _key == 'object') {
             //判断对象和键值是否匹配
@@ -51,7 +51,7 @@ export default abstract class BaseDataProxy {
         //添加到监听列表
         this._dataSetMonitor.push({
             _this: _this,
-            _f: _dataSetMonitor,
+            _f: _dataSetMonitorF,
             _rootData: _rootData,
             _key: _key,
         });
@@ -198,7 +198,4 @@ class SaticBaseDataProxy {
 
     /** 根数据父节点 */
     public static $RootParentDataKey: symbol = Symbol('$RootParentDataKey');
-
-    /** 是否在设置监听 */
-    public static $IfSetMointor: boolean = false;
 }

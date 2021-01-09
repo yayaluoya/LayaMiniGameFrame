@@ -46,6 +46,9 @@ export default class PGameTestMainMediator extends BaseUIMediator<FGUI_PGameTest
     //数据测试
     private dataTest() {
         GameTestDataProxyShell.instance.data.testNumber++;
+        GameTestDataProxyShell.instance.data.testBoolean = !GameTestDataProxyShell.instance.data.testBoolean;
+        GameTestDataProxyShell.instance.data.testArray.push('a');
+        GameTestDataProxyShell.instance.data.testObject['a']++;
     }
 
     //隐藏时的生命周期函数

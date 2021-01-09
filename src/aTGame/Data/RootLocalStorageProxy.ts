@@ -77,6 +77,11 @@ export default abstract class RootLocalStorageProxy<T extends RootLocalStorageDa
     /** 初始化完成，继承使用 */
     protected _initData() { }
 
+    /** 数据被设置回调 */
+    protected _proxyDataSet() {
+        this.SaveToDisk(this._saveData);
+    }
+
     /** 保存执行队列 */
     private m_saveToDiskQueue: number = 0;
     /**
