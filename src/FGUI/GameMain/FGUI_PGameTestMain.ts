@@ -11,6 +11,8 @@ export default class FGUI_PGameTestMain extends fairygui.GComponent {
 	public m_UI:fairygui.GTextField;
 	public m_test:fairygui.GButton;
 	public m_testText:fairygui.GTextField;
+	public m_dataTest:fairygui.GButton;
+	public m_dataTestText:fairygui.GTextField;
 	public m__test:fairygui.GGroup;
 
 	public static URL:string = "ui://kk7g5mmmo9js9x";
@@ -28,6 +30,8 @@ export default class FGUI_PGameTestMain extends fairygui.GComponent {
 		this.m_UI = <fairygui.GTextField><any>(this.getChildAt(1));
 		this.m_test = <fairygui.GButton><any>(this.getChildAt(3));
 		this.m_testText = <fairygui.GTextField><any>(this.getChildAt(4));
-		this.m__test = <fairygui.GGroup><any>(this.getChildAt(6));
+		this.m_dataTest = <fairygui.GButton><any>(this.getChildAt(6));
+		this.m_dataTestText = <fairygui.GTextField><any>(this.getChildAt(7));
+		this.m__test = <fairygui.GGroup><any>(this.getChildAt(9));
 	}
 }

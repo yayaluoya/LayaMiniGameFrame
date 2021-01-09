@@ -30,16 +30,52 @@ export default class GameTestDataProxyShell extends RootDataProxyShell {
     protected initData() {
         //获取代理数据，并添加一个设置数据监听
         this.m_data = GameTestDataProxy.instance.saveData;
-        GameTestDataProxy.instance.addDataSetMonitor(this, () => {
-            console.log('根属性testNumber改变');
+        GameTestDataProxy.instance.addKeySetMonitor(this, () => {
+            console.log('根属性testNumber改变，属性监听');
+            // new dataPackageTesting();
+            // new dataPackageTesting();
+        }, GameTestDataProxy.instance.rootData.testNumber);
+        GameTestDataProxy.instance.addObjectSetMonitor(this, () => {
+            console.log('根属性testNumber改变，对象监听');
         }, GameTestDataProxy.instance.rootData, GameTestDataProxy.instance.rootData.testNumber);
         //
-        GameTestDataProxy.instance.addDataSetMonitor(this, () => {
+        GameTestDataProxy.instance.addObjectSetMonitor(this, () => {
             console.log('对象属性a改变');
         }, GameTestDataProxy.instance.rootData.testObject, GameTestDataProxy.instance.rootData.testObject['a']);
         //
-        GameTestDataProxy.instance.addDataSetMonitor(this, () => {
+        GameTestDataProxy.instance.addObjectSetMonitor(this, () => {
             console.log('数组属性改变');
         }, GameTestDataProxy.instance.rootData.testArray);
+    }
+}
+
+/**
+ * 数据包装测试
+ */
+class dataPackageTesting {
+    private static m_ifSetMon: boolean = false;
+    private data: any;
+    public constructor() {
+        this.data = new Proxy({ a: '数据' }, {
+            get(target, key) {
+                if (!dataPackageTesting.m_ifSetMon) {
+                    return target[key];
+                } else {
+                    return 'get拦截：' + target[key];
+                }
+            }
+        });
+        //
+        console.log(this.data.a);
+        console.log(this.getData());
+        console.log(this.data.a);
+        console.log(JSON.stringify(this.data));
+    }
+
+    public getData() {
+        dataPackageTesting.m_ifSetMon = true;
+        let _data = this.data.a;
+        dataPackageTesting.m_ifSetMon = false;
+        return _data;
     }
 }
