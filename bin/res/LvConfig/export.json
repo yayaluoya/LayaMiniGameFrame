@@ -1,1 +1,62 @@
-{"root":[{"name":"camera","position":"0,40,0","euler":"-90,180,0"},{"name":"light","position":"0,100,0","euler":"-90,180,0"},{"name":"scene_debug","child":[{"name":"Camera","prefabName":"Camera","position":"0,15.9,-19.2"},{"name":"Cube","prefabName":"Cube","position":"0,0,-8"}]},{"name":"scene_prestrain","child":[{"name":"Sphere","prefabName":"Sphere"}]},{"name":"scene_1"},{"name":"scene_2"},{"name":"scene_3"},{"name":"scene_debug_"},{"name":"testScene","child":[{"name":"Cylinder","prefabName":"Cylinder"}]}]}
+{
+    "root": [{
+        "name": "Cube",
+        "prefabName": "Cube",
+        "position": "0,0,-8",
+        "differ": {
+            "index": 0,
+            "child": [{
+                "index": 0,
+                "position": "-1.84,0,0"
+            }, {
+                "index": 2,
+                "position": "2.18,0,0"
+            }, {
+                "index": 4,
+                "euler": "358.31,1.668252E-09,358.93",
+                "scale": "0,2.28,0",
+                "child": [{
+                    "index": 0,
+                    "position": "-0.9899998,0,6.56"
+                }, {
+                    "index": 1,
+                    "position": "-2.19,0,-6.16",
+                    "euler": "358.32,0,0"
+                }]
+            }]
+        }
+    }, {
+        "name": "Cube(1)",
+        "prefabName": "Cube",
+        "differ": {
+            "index": 0,
+            "child": []
+        }
+    }, {
+        "name": "Cube(2)",
+        "prefabName": "Cube",
+        "differ": {
+            "index": 0,
+            "child": []
+        }
+    }, {
+        "name": "Cube(3)",
+        "prefabName": "Cube",
+        "differ": {
+            "index": 0,
+            "child": [{
+                "index": 1,
+                "position": "9.4,0,-4.33"
+            }, {
+                "index": 2,
+                "position": "10.26,0,-3.67"
+            }, {
+                "index": 4,
+                "child": [{
+                    "index": 1,
+                    "position": "4.3,0,-6.08"
+                }]
+            }]
+        }
+    }]
+}
