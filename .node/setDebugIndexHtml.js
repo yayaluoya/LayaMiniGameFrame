@@ -2,7 +2,7 @@ var fs = require("fs");
 var path = require("path");
 
 /**
- * 开始服务
+ * 设置调试页面首页
  */
 function setDebugIndexHtml(f) {
     //获取上层目录
