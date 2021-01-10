@@ -40,7 +40,7 @@ export default class UIManagerProxy extends RootUIStateManagerProxy {
         //设置初始UI
         this.setUIState([
             { typeIndex: EUI.Main, },
-            { typeIndex: EUI.Start, },
+            // { typeIndex: EUI.Start, },
             { typeIndex: EUI.TestMain, },
         ]);
     }

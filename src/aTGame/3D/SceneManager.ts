@@ -3,7 +3,7 @@ import Scene from "./Scene";
 import SceneManagerProxy from "./SceneManagerProxy";
 import FrameLevelConfig, { IFrameLevelData } from '../../cFrameBridge/Config/FrameLevelConfig';
 import IRootManager from '../Manager/IRootManager';
-import { ISceneNode } from './SceneUtils';
+import { ISceneConfig, ISceneNode } from './SceneUtils';
 import ConsoleEx from '../Console/ConsoleEx';
 import { ELevelSceneName } from '../../cFrameBridge/Config/ELevelSceneName';
 import EssentialResUrls from '../Res/EssentialResUrls';
@@ -45,7 +45,7 @@ export default class SceneManager implements IRootManager {
      */
     public initConfig() {
         let url: string;
-        let config: any;
+        let config: ISceneConfig;
         for (let _i in ELevelSceneName) {
             url = ELevelSceneName[_i];
             if (!url) {
@@ -54,6 +54,18 @@ export default class SceneManager implements IRootManager {
             url = EssentialResUrls.levelConfigURL(url);
             //这里必须不使用克隆资源
             config = ResLoad.Get(url, true);
+            //判断有没有压缩
+            if (config.zip) {
+                //解压
+                let _time = Date.now();
+                config.root = JSON.parse(pako.inflate(config.root, { to: 'string' }));
+                _time = Date.now() - _time;
+                //判断解压时间差
+                if (_time > 500) {
+                    console.warn(...ConsoleEx.packWarn('配置表解压时间过长', url, _time));
+                }
+            }
+            // console.log(config.root);
             //
             if (config.root) {
                 this._levelConfig[ELevelSceneName[_i]] = {};
@@ -62,6 +74,8 @@ export default class SceneManager implements IRootManager {
                     let data: ISceneNode = config.root[i] as ISceneNode;
                     this._levelConfig[ELevelSceneName[_i]][data.name] = data;
                 }
+            } else {
+                console.error(...ConsoleEx.packError('找不到配置表root节点数据', url));
             }
             //清理资源缓存只使用一次
             ResLoad.Unload(url);

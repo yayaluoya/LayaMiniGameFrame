@@ -22,6 +22,8 @@ export default abstract class BaseDataProxy {
         //判断是否是对象属性
         if (_key && typeof _key == 'object') {
             _key = _key[SaticBaseDataProxy.$RootDataCruxKey];
+        } else {
+            console.error(...ConsoleEx.packError('监听没有注册的键', _key));
         }
         //添加到监听列表
         this._dataSetMonitor.push({

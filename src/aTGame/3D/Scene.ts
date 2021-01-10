@@ -99,6 +99,8 @@ export default class Scene {
             //同步加载资源
             this.loadRes(onProgress).then(() => {
                 //
+                let _time = Date.now();
+                //
                 this._scene = new Laya.Sprite3D();
                 GlobalUnitClassProxy.s3d.addChild(this._scene);
                 //构建场景
@@ -113,6 +115,12 @@ export default class Scene {
                 console.log('关卡->' + this._lvConfig.key, '\n场景->', this._scene, '\n预制体->', this.prefabs, '\n物体->', this.sprite3Ds);
                 //返回场景
                 r(this._scene);
+                //
+                _time = Date.now() - _time;
+                //判断构建时间差
+                if (_time > 1000) {
+                    console.warn(...ConsoleEx.packWarn('场景构建时间过长', this._lvConfig.key, _time));
+                }
             });
         });
     }
@@ -229,7 +237,7 @@ export default class Scene {
     // 获取预制体名字
     private _getPrefabName(spArr: string[], node: ISceneNode | IScenePrefab) {
         if (node) {
-            let prefabName = node['prefabName'];
+            let prefabName = (node as IScenePrefab).prefabName;
             if (prefabName) {
                 node = node as IScenePrefab;
                 if (spArr.indexOf(prefabName) < 0) {
@@ -250,7 +258,7 @@ export default class Scene {
     // 构建场景
     private _buildScene(node: ISceneNode | IScenePrefab, parent: Laya.Sprite3D) {
         //获取预制体名字
-        let prefabName = node["prefabName"];
+        let prefabName = (node as IScenePrefab).prefabName;
         if (prefabName) {
             node = node as IScenePrefab;
             let sprite: Laya.Sprite3D = ResLoad.Get(EssentialResUrls.prefab_url(prefabName));

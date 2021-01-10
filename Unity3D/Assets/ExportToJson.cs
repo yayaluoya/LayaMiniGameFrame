@@ -8,11 +8,11 @@ using System.Text;
 using LitJson;
 using System.Text.RegularExpressions;
 
+//json工具
 namespace JsonEditor
 {
     public class ExportToJson : Editor
     {
-
         //导出预制体名字到ts文件 
         [MenuItem("GameObject/ExportPrefabsNameToTs")]
         static void ExportPrefabsNameToTs()
@@ -40,14 +40,14 @@ namespace JsonEditor
                 if (!ExportToJson.IsPrefabAsset(obj, true))
                 {
                     //检测是不是分类
-                    if ((new Regex("^{")).IsMatch(name))
+                    if (new Regex("^{").IsMatch(name))
                     {
                         // 获取这个分类名字
                         classMatch = classReg.Match(name);
                         ifClass = true;
                     }
                     //分类结束
-                    else if ((new Regex("^}")).IsMatch(name))
+                    else if (new Regex("^}").IsMatch(name))
                     {
                         ifClass = false;
                         classText += "\n";
@@ -125,18 +125,18 @@ namespace JsonEditor
             string _AllPrefabsNameSceneText = "";
             List<string> AllPrefabsNames = new List<string>();
             //读取所有预制体名字
-            MatchCollection _allPrefabeMatch = (new Regex("@(?<scene>.*?):{(?<prefabs>.*?)}")).Matches(_AllPrefabsNameCacheText);
+            MatchCollection _allPrefabeMatch = new Regex("@(?<scene>.*?):{(?<prefabs>.*?)}").Matches(_AllPrefabsNameCacheText);
             for (int i = 0; i < _allPrefabeMatch.Count;i++ )
             {
                 _AllPrefabsNameSceneText = _AllPrefabsNameSceneText+ "    " + _allPrefabeMatch[i].Groups["scene"]+": string = '"+_allPrefabeMatch[i].Groups["prefabs"]+"';\n";
                 // 提取所有预制体名字
-                MatchCollection _prefabs = (new Regex("@(?<prefabs>.*?)@")).Matches(""+_allPrefabeMatch[i].Groups["prefabs"]);
+                MatchCollection _prefabs = new Regex("@(?<prefabs>.*?)@").Matches(""+_allPrefabeMatch[i].Groups["prefabs"]);
                 for(int _i =0; _i<_prefabs.Count; _i++){
                     AllPrefabsNames.Add("" + _prefabs[_i].Groups["prefabs"]);
                 }
             }
             //
-            AllPrefabsTxt = (new Regex("{{AllPrefab}}")).Replace(AllPrefabsTxt, _AllPrefabsNameSceneText);
+            AllPrefabsTxt = new Regex("{{AllPrefab}}").Replace(AllPrefabsTxt, _AllPrefabsNameSceneText);
             string _AllPrefabsNameSceneURL = @".\..\src\dMyGame\_prefabsName\_AllScenePrefabsNames.ts";
             string _AllPrefabsNameURL = @".\..\src\dMyGame\_prefabsName\_AllPrefabsNames.ts";
             //写入全部场景预制体名字
@@ -145,9 +145,9 @@ namespace JsonEditor
             TextAsset textAsset = (TextAsset)Resources.Load("template/PrefabsName");
             string template = textAsset.text;
             //正则替换模板内容
-            string text = (new Regex("{{PrefabNames}}")).Replace(template, prefabsNames);
-            text = (new Regex("{{sceneName}}")).Replace(text, sceneName);
-            text = (new Regex("{{className}}")).Replace(text, classText);
+            string text = new Regex("{{PrefabNames}}").Replace(template, prefabsNames);
+            text = new Regex("{{sceneName}}").Replace(text, sceneName);
+            text = new Regex("{{className}}").Replace(text, classText);
             //写入文件
             File.WriteAllText(filepath, text);
             //
@@ -159,7 +159,7 @@ namespace JsonEditor
             //读取模板
             TextAsset AllPrefabsNamesTextAsset = (TextAsset)Resources.Load("template/AllPrefabsName");
             string AllPrefabsNamesTemplate = AllPrefabsNamesTextAsset.text;
-            AllPrefabsNamesText = (new Regex("{{PrefabNames}}")).Replace(AllPrefabsNamesTemplate, AllPrefabsNamesText);
+            AllPrefabsNamesText = new Regex("{{PrefabNames}}").Replace(AllPrefabsNamesTemplate, AllPrefabsNamesText);
             //写入全部预制体名字
             File.WriteAllText(_AllPrefabsNameURL, AllPrefabsNamesText);
             //
@@ -201,13 +201,20 @@ namespace JsonEditor
             childDic.Add("root", child);
             string text = JsonMapper.ToJson(childDic);
             //去除空属性
-            text = (new Regex(",?\"position\":null")).Replace(text, "");
-            text = (new Regex(",?\"euler\":null")).Replace(text, "");
-            text = (new Regex(",?\"scale\":null")).Replace(text, "");
-            text = (new Regex(",?\"child\":null")).Replace(text, "");
-            text = (new Regex(",?\"prefabName\":null")).Replace(text, "");
-            //压缩
-            // text = Lis2013HISWSTest.ZipHelper.GetStringByDataset(text);
+            text = new Regex("\"position\":null").Replace(text, "");
+            text = new Regex("\"euler\":null").Replace(text, "");
+            text = new Regex("\"scale\":null").Replace(text, "");
+            text = new Regex("\"child\":null").Replace(text, "");
+            text = new Regex("\"prefabName\":null").Replace(text, "");
+            text = new Regex("\"differ\":null").Replace(text, "");
+            //整理逗号
+            text = new Regex("\",+?\"").Replace(text, "\",\"");
+            text = new Regex("([0-9]),+?\"").Replace(text, "$1,\"");
+            text = new Regex("},+?\"").Replace(text, "}\"");
+            text = new Regex("\",+?}").Replace(text, "\"}");
+            text = new Regex("],+?\"").Replace(text, "]\"");
+            text = new Regex("\",+?]").Replace(text, "\"]");
+            text = new Regex("],+?}").Replace(text, "]}");
             //
             File.WriteAllText(filepath, text);
             //
@@ -222,6 +229,12 @@ namespace JsonEditor
             return str.Substring(0, 1).ToUpper() + str.Substring(1);
         }
 
+        //修剪数值
+        public static string calcValue(float a){
+            return a.ToString("0.##");
+        }
+ 
+        // 设置子物体
         public static Child SetChild(Transform tmp, bool camera = false, bool light = false)
         {
             Vector3 pos = tmp.localPosition;
@@ -231,7 +244,7 @@ namespace JsonEditor
             child.SetNode(tmp);
             child.name = tmp.name;
             //去掉首尾空格
-            child.name = (new Regex(" *")).Replace(child.name, "");
+            child.name = new Regex(" *").Replace(child.name, "");
             child.SetPos(pos);
             child.SetEulerAngles(rot);
             child.SetScale(scale);
@@ -321,6 +334,9 @@ namespace JsonEditor
                             differ.child.Add(_differ);
                         }
                     }
+                    if(differ.child == null || differ.child.Count == 0){
+                        differ = null;
+                    }
                 }
                 return;
             }
@@ -344,7 +360,7 @@ namespace JsonEditor
             }
             else
             {
-                this.position = (-pos.x) + "," + pos.y + "," + pos.z;
+                this.position = ExportToJson.calcValue(-pos.x) + "," + ExportToJson.calcValue(pos.y) + "," + ExportToJson.calcValue(pos.z);
             }
         }
 
@@ -356,7 +372,7 @@ namespace JsonEditor
             }
             else
             {
-                this.euler = euler.x + "," + (-euler.y) + "," + (-euler.z);
+                this.euler = ExportToJson.calcValue(euler.x) + "," + ExportToJson.calcValue(-euler.y) + "," + ExportToJson.calcValue(-euler.z);
             }
         }
 
@@ -368,17 +384,18 @@ namespace JsonEditor
             }
             else
             {
-                this.scale = scale.x + "," + scale.y + "," + scale.z;
+                this.scale = ExportToJson.calcValue(scale.x) + "," + ExportToJson.calcValue(scale.y) + "," + ExportToJson.calcValue(scale.z);
             }
         }
 
         //设置相机和灯光的旋转
         public void SetCameraLightEulerAngles(Vector3 euler)
         {
-            this.euler = (-euler.x) + "," + (180 - euler.y) + "," + euler.z;
+            this.euler = ExportToJson.calcValue(-euler.x) + "," + ExportToJson.calcValue(180 - euler.y) + "," + ExportToJson.calcValue(euler.z);
         }
     }
 
+    // 差异数据类
     public class Differ
     {
         public int index;
@@ -423,17 +440,17 @@ namespace JsonEditor
             v3 = _node.localPosition - node.localPosition;
             if(v3.magnitude > 0){
                 ifNull = true;
-                _differ.position = v3.x+","+v3.y+","+v3.z;
+                _differ.position = ExportToJson.calcValue(-v3.x)+","+ExportToJson.calcValue(v3.y)+","+ExportToJson.calcValue(v3.z);
             }
             v3 = _node.localRotation.eulerAngles - node.localRotation.eulerAngles;
             if(v3.magnitude > 0){
                 ifNull = true;
-                _differ.euler = v3.x+","+v3.y+","+v3.z;
+                _differ.euler = ExportToJson.calcValue(v3.x)+","+ExportToJson.calcValue(-v3.y)+","+ExportToJson.calcValue(-v3.z);
             }
             v3 = _node.localScale - node.localScale;
             if(v3.magnitude > 0){
                 ifNull = true;
-                _differ.scale = v3.x+","+v3.y+","+v3.z;
+                _differ.scale = ExportToJson.calcValue(v3.x)+","+ExportToJson.calcValue(v3.y)+","+ExportToJson.calcValue(v3.z);
             }
             if(ifNull){
                 return _differ;

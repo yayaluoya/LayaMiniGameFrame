@@ -339,9 +339,6 @@
  <Reference Include="UnityEditor.WindowsStandalone.Extensions">
  <HintPath>F:/unity/unity/Editor/Data/PlaybackEngines/windowsstandalonesupport/UnityEditor.WindowsStandalone.Extensions.dll</HintPath>
  </Reference>
- <Reference Include="SyntaxTree.VisualStudio.Unity.Bridge">
- <HintPath>C:/Program Files (x86)/Microsoft Visual Studio Tools for Unity/15.0/Editor/SyntaxTree.VisualStudio.Unity.Bridge.dll</HintPath>
- </Reference>
  <Reference Include="LayaAirLibrary-cleaned">
  <HintPath>F:/word/LayaMiniGameFrame/Unity3D/Assets/LayaAir3D/LayaTool/LayaAirLibrary-cleaned.dll</HintPath>
  </Reference>

@@ -6,9 +6,9 @@ export default class V3Utils {
      * 通过一个字符串构建v3向量
      * @param str 
      */
-    public static parseVector3(str: string): Laya.Vector3 {
+    public static parseVector3(str: string, _outV3: Laya.Vector3) {
         var strs = str.split(',');
-        return new Laya.Vector3(Number(strs[0]), Number(strs[1]), Number(strs[2]));
+        _outV3.setValue(Number(strs[0]), Number(strs[1]), Number(strs[2]));
     }
 
     /**

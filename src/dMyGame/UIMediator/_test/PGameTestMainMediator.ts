@@ -47,7 +47,9 @@ export default class PGameTestMainMediator extends BaseUIMediator<FGUI_PGameTest
     private dataTest() {
         GameTestDataProxyShell.instance.data.testNumber++;
         GameTestDataProxyShell.instance.data.testBoolean = !GameTestDataProxyShell.instance.data.testBoolean;
-        GameTestDataProxyShell.instance.data.testArray.push('a');
+        for (let _i = 0; _i < 50; _i++) {
+            GameTestDataProxyShell.instance.data.testArray.push('a');
+        }
         GameTestDataProxyShell.instance.data.testObject['a']++;
     }
 

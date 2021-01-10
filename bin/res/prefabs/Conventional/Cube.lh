@@ -30,7 +30,7 @@
 			"castShadow":true,
 			"materials":[
 				{
-					"path":"Assets/Prefabs/m/cube.lmat"
+					"path":"Assets/Prefabs/NewLayaMaterial.lmat"
 				}
 			]
 		},
@@ -89,7 +89,8 @@
 					"castShadow":true,
 					"materials":[
 						{
-							"path":"Assets/Prefabs/m/cube.lmat"
+							"type":"Laya.BlinnPhongMaterial",
+							"path":"Resources/unity_builtin_extra.lmat"
 						}
 					]
 				},
@@ -149,7 +150,8 @@
 					"castShadow":true,
 					"materials":[
 						{
-							"path":"Assets/Prefabs/m/cube.lmat"
+							"type":"Laya.BlinnPhongMaterial",
+							"path":"Resources/unity_builtin_extra.lmat"
 						}
 					]
 				},
@@ -209,7 +211,8 @@
 					"castShadow":true,
 					"materials":[
 						{
-							"path":"Assets/Prefabs/m/cube.lmat"
+							"type":"Laya.BlinnPhongMaterial",
+							"path":"Resources/unity_builtin_extra.lmat"
 						}
 					]
 				},
@@ -269,7 +272,8 @@
 					"castShadow":true,
 					"materials":[
 						{
-							"path":"Assets/Prefabs/m/cube.lmat"
+							"type":"Laya.BlinnPhongMaterial",
+							"path":"Resources/unity_builtin_extra.lmat"
 						}
 					]
 				},
@@ -356,7 +360,8 @@
 							"castShadow":true,
 							"materials":[
 								{
-									"path":"Assets/Prefabs/m/cube.lmat"
+									"type":"Laya.BlinnPhongMaterial",
+									"path":"Resources/unity_builtin_extra.lmat"
 								}
 							]
 						},
@@ -416,7 +421,8 @@
 							"castShadow":true,
 							"materials":[
 								{
-									"path":"Assets/Prefabs/m/cube.lmat"
+									"type":"Laya.BlinnPhongMaterial",
+									"path":"Resources/unity_builtin_extra.lmat"
 								}
 							]
 						},

@@ -5,6 +5,7 @@ import Md5 from './Md5';
 import RootDataManger from './RootDataManger';
 import Base64 from './Base64';
 import DataDebug from '../Debug/DataDebug';
+import ConsoleEx from '../Console/ConsoleEx';
 /**
  * 本地数据代理基类，用以使用和保存数据
  * 泛型为数据类型
@@ -60,6 +61,7 @@ export default abstract class RootLocalStorageProxy<T extends RootLocalStorageDa
      * 初始化数据
      */
     public InitData() {
+        let _time = Date.now();
         this._saveData = this._ReadFromFile();
         //保存原始数据
         this._rootData = this._saveData;
@@ -72,6 +74,11 @@ export default abstract class RootLocalStorageProxy<T extends RootLocalStorageDa
         DataDebug.instance.addItem(this._saveName, this);
         //
         this._initData();
+        _time = Date.now() - _time;
+        //判断时间差
+        if (_time > 100) {
+            console.warn(...ConsoleEx.packWarn('初始化本地数据时间过长', this.saveName, _time));
+        }
     }
 
     /** 初始化完成，继承使用 */
@@ -84,12 +91,17 @@ export default abstract class RootLocalStorageProxy<T extends RootLocalStorageDa
 
     /** 保存执行队列 */
     private m_saveToDiskQueue: number = 0;
+    private m_saveToDiskTime: number = 0;
     /**
      * 保存数据到本地
      * @param _saveData 数据
      * @param _ifCl 是否限流
      */
     protected SaveToDisk(_saveData: T, _ifCl: boolean = true) {
+        //添加时间判断
+        if (this.m_saveToDiskTime == 0) {
+            this.m_saveToDiskTime = Date.now();
+        }
         //判断是否限流
         if (!_ifCl) {
             this._SaveToDisk(_saveData);
@@ -99,6 +111,7 @@ export default abstract class RootLocalStorageProxy<T extends RootLocalStorageDa
             //当前帧末尾执行
             setTimeout(() => {
                 this.m_saveToDiskQueue--;
+                // console.log('保存数据前');
                 if (this.m_saveToDiskQueue == 0) {
                     //限流，每一帧只保存一次数据
                     this._SaveToDisk(_saveData);
@@ -118,6 +131,13 @@ export default abstract class RootLocalStorageProxy<T extends RootLocalStorageDa
             let _differJson = this.getDifferData(json);
             //保存对比数据
             Laya.LocalStorage.setJSON(this.differName, _differJson);
+        }
+        //判断时间
+        let _time = Date.now() - this.m_saveToDiskTime;
+        this.m_saveToDiskTime = 0;
+        //判断时间差
+        if (_time > 1000) {
+            console.warn(...ConsoleEx.packWarn('场景保存时间过长', this.saveName, _time));
         }
     }
 

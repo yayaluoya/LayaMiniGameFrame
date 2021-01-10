@@ -2,7 +2,7 @@ const path = require('path');
 
 /** ts路径映射插件 */
 const TsconfigPathsPlugin = require('tsconfig-paths-webpack-plugin');
-const HelloWorldPlugin = require('./webpackPlugin');
+const HelloWorldPlugin = require('./.node/webpackPlugin');
 
 /** webpack参数 */
 const webpackConfig = {

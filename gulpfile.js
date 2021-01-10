@@ -3,10 +3,11 @@ const { exec } = require("child_process");
 const { server, reload } = require("gulp-connect");
 const rev = require("gulp-rev-append");
 const os = require('os');
-var rf = require("fs");
-var path = require("path");
 
-const gulpfileConst = require("./gulpfileConst");
+const gulpfileConst = require("./.node/gulpfileConst");
+const ZIPStart = require("./.node/ZIPSceneJson");
+const openServer = require("./.node/openServer");
+const setDebugIndexHtml = require("./.node/setDebugIndexHtml");
 
 //是否正在编译
 let _ifCompile = false;
@@ -169,27 +170,15 @@ function getLocalIP() {
 
 //创建一个名称为compile的gulp任务
 task("httpServer", function (f) {
-    f();
-    console.log('开启 HTTP 服务');
-    let process = exec("http-server -p 3000 --cors");
-    process.stdout.on("data", (data) => {
-        console.log(data);
-    });
+    openServer(f);
 });
 
 //创建一个获取本地调式首页内容的任务
-task("setDebugIndexHtml", function (b) {
-    rf.readFile(path.join(__dirname, '/src/aTGame/Debug/html/debugHTML_.ts'), 'utf8', function (err, debugHTML) {
-        rf.readFile(path.join(__dirname, '/DebugWindow/dist/index.html'), 'utf8', function (err, index) {
-            if (err) throw err;
-            debugHTML = debugHTML.replace('{html}', index);
-            // console.log(debugHTML);
-            rf.writeFile(path.join(__dirname, '/src/aTGame/Debug/html/debugHTML.ts'), debugHTML, 'utf8', (err) => {
-                if (err) throw err;
-                //
-                console.log('设置调试首页完成，请重新编译项目');
-                b();
-            });
-        });
-    });
+task("setDebugIndexHtml", function (f) {
+    setDebugIndexHtml(f);
+});
+
+//压缩场景配置表，当场景配置表过大时就压缩
+task("ZIPSceneJson", function (f) {
+    ZIPStart(f);
 });
