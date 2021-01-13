@@ -53,15 +53,17 @@ export class CameraUtils {
      * 世界坐标转屏幕坐标
      * @param {Laya.Camera} camera   参照相机
      * @param {Laya.Vector3} point   需要转换的点
+     * @param {Laya.Vector3} _outV3   需要转换的点
      */
-    static WorldToScreen2(camera, point) {
+    static WorldToScreen2(camera, point, _outV3) {
         var pointA = this.InverseTransformPoint(camera.transform, point);
         var distance = pointA.z;
 
         var out = new Laya.Vector3();
         camera.viewport.project(point, camera.projectionViewMatrix, out);
-        var value = new Laya.Vector3(out.x / Laya.stage.clientScaleX, out.y / Laya.stage.clientScaleY, distance);
-        return value;
+        _outV3.x = out.x / Laya.stage.clientScaleX;
+        _outV3.y = out.y / Laya.stage.clientScaleY;
+        _outV3.z = distance;
     }
 
     /**
