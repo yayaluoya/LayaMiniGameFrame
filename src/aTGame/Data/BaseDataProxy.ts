@@ -9,28 +9,53 @@ export default abstract class BaseDataProxy {
         _this: any,
         _f: IDataMonitorF,
         _rootData: any,
-        _key: string | number | boolean,//值类型
+        _key: string[],//键数组
     }[] = [];
 
     /**
      * 添加属性设置监听
      * @param _this 执行域
      * @param _dataSetMonitorF 数据设监听
-     * @param _key 受监听的属性
+     * @param _key 受监听的属性或者列表
      */
-    public addKeySetMonitor(_this: any, _dataSetMonitorF: IDataMonitorF, _key?: string | number | boolean) {
+    public addKeySetMonitor(_this: any, _dataSetMonitorF: IDataMonitorF, _key?: string | number | boolean | (string | number | boolean)[]) {
+        let __key: string[] = [];
         //判断是否是对象属性
-        if (_key && typeof _key == 'object') {
-            _key = _key[SaticBaseDataProxy.$RootDataCruxKey];
+        if (_key instanceof Array) {
+            __key.push(..._key as string[]);
         } else {
-            console.error(...ConsoleEx.packError('监听没有注册的键', _key));
+            __key.push(_key as string);
         }
-        //添加到监听列表
-        this._dataSetMonitor.push({
-            _this: _this,
-            _f: _dataSetMonitorF,
-            _rootData: _key[SaticBaseDataProxy.$RootParentDataKey],
-            _key: _key,
+        let __keys: {
+            rootData: any,
+            key: string[],
+        }[] = [];
+        let _index: number;
+        __key.forEach((item) => {
+            if (typeof item == 'object' && item) {
+                _index = __keys.findIndex((keys) => {
+                    return keys.rootData == item[SaticBaseDataProxy.$RootParentDataKey];
+                });
+                if (_index == -1) {
+                    __keys.push({
+                        rootData: item[SaticBaseDataProxy.$RootParentDataKey],
+                        key: [item[SaticBaseDataProxy.$RootDataCruxKey]],
+                    });
+                } else {
+                    __keys[_index].key.push(item[SaticBaseDataProxy.$RootDataCruxKey]);
+                }
+            }
+        });
+        //
+        if (__keys.length <= 0) { return; }
+        __keys.forEach((item) => {
+            //添加到监听列表
+            this._dataSetMonitor.push({
+                _this: _this,
+                _f: _dataSetMonitorF,
+                _rootData: item.rootData,
+                _key: item.key,
+            });
         });
     }
 
@@ -39,23 +64,40 @@ export default abstract class BaseDataProxy {
      * @param _this 执行域
      * @param _dataSetMonitorF 执行方法
      * @param _rootData 受监听的原始对象，不设置则监听全部内容，只能在this.rootData找属性进行监听
-     * @param _key 受监听的对象的属性，可以直接是个字符串
+     * @param _key 受监听的对象的属性，可以直接是个字符串，也可以是个列表
      */
-    public addObjectSetMonitor(_this: any, _dataSetMonitorF: IDataMonitorF, _rootData?: object, _key?: string | number | boolean) {
-        //判断是否是对象属性
-        if (_key && typeof _key == 'object') {
-            //判断对象和键值是否匹配
-            if (_key[SaticBaseDataProxy.$RootParentDataKey] != _rootData) {
-                console.error(...ConsoleEx.packError('监听的对象属性不存在该对象属性列表中！'));
+    public addObjectSetMonitor(_this: any, _dataSetMonitorF: IDataMonitorF, _rootData?: object, _key?: string | number | boolean | (string | number | boolean)[]) {
+        let __key: string[] = [];
+        if (typeof _key != "undefined") {
+            if (_key instanceof Array) {
+                __key.push(..._key as string[]);
+            } else {
+                __key.push(_key as string);
             }
-            _key = _key[SaticBaseDataProxy.$RootDataCruxKey];
         }
+        __key = __key.map((item) => {
+            //判断是否是对象属性，且不是数组
+            if (item) {
+                if (typeof item == 'object') {
+                    //判断对象和键值是否匹配
+                    if (item[SaticBaseDataProxy.$RootParentDataKey] != _rootData) {
+                        console.warn(...ConsoleEx.packWarn('监听的对象属性不存在该对象属性列表中！', _rootData, item));
+                    } else {
+                        return item[SaticBaseDataProxy.$RootDataCruxKey];
+                    }
+                } else {
+                    return item;
+                }
+            }
+        }).filter((item) => {
+            return typeof item != "undefined";
+        });
         //添加到监听列表
         this._dataSetMonitor.push({
             _this: _this,
             _f: _dataSetMonitorF,
             _rootData: _rootData,
-            _key: _key,
+            _key: __key,
         });
     }
 
@@ -153,16 +195,28 @@ export default abstract class BaseDataProxy {
             }
         }
         //执行数据监听
+        let _ifIncludes: boolean;
         for (let item of this._dataSetMonitor) {
             if (item._rootData && item._rootData != target[SaticBaseDataProxy.$RootObjectKey]) {
                 continue;
             }
-            if (typeof item._key != 'undefined') {
-                if (typeof item._key == 'symbol') {
-                    if (item._key != target[SaticBaseDataProxy.$RootObjectKey][key][SaticBaseDataProxy.$RootDataCruxKey]) {
-                        continue;
+            if (typeof item._key != 'undefined' && item._key.length > 0) {
+                _ifIncludes = false;
+                for (let _keyItem of item._key) {
+                    if (typeof _keyItem == 'symbol') {
+                        if (_keyItem == target[SaticBaseDataProxy.$RootObjectKey][key][SaticBaseDataProxy.$RootDataCruxKey]) {
+                            _ifIncludes = true;
+                            continue;
+                        }
                     }
-                } else if (item._key != key) {
+                    else {
+                        if (_keyItem == key) {
+                            _ifIncludes = true;
+                            continue;
+                        }
+                    }
+                }
+                if (!_ifIncludes) {
                     continue;
                 }
             }

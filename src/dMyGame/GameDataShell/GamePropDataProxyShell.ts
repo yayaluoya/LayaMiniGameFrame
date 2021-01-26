@@ -1,9 +1,9 @@
-import RootDataProxyShell from "../../../aTGame/Data/RootDataProxyShell";
-import NumberUtils from "../../../aTGame/Utils/NumberUtils";
-import { EEventUI } from "../../EventEnum/EEventUI";
-import GamePropData from "../../GameData/GamePropData";
-import GamePropDataProxy from "../../GameData/GamePropDataProxy";
-import MesManager from "../../Manager/MesManager";
+import RootDataProxyShell from "../../aTGame/Data/RootDataProxyShell";
+import NumberUtils from "../../aTGame/Utils/NumberUtils";
+import { EEventUI } from "../EventEnum/EEventUI";
+import GamePropData from "../GameData/GamePropData";
+import GamePropDataProxy from "../GameData/GamePropDataProxy";
+import MesManager from "../Manager/MesManager";
 
 /**
  * 游戏道具数据代理处理类，用这个类处理数据会有事件传递出去

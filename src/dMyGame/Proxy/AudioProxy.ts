@@ -1,7 +1,7 @@
 import AudioUtils from '../../aTGame/Audio/AudioUtils';
 import { EBGMs } from '../ResList/EBGMs';
 import { ESounds } from '../ResList/ESounds';
-import GameDataProxyShell from './data/GameDataProxyShell';
+import GameDataProxyShell from '../GameDataShell/GameDataProxyShell';
 /**
  * 音效代理类
  */

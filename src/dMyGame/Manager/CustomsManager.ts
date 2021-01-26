@@ -9,7 +9,7 @@ import { EEventScene } from '../EventEnum/EEventScene';
 import { EEventUI } from '../EventEnum/EEventUI';
 import LevelConfigProxy from '../ConfigProxy/LevelConfigProxy';
 import { EOtherLevelName } from '../Enum/EOtherLevelName';
-import GameDataProxyShell from '../Proxy/data/GameDataProxyShell';
+import GameDataProxyShell from '../GameDataShell/GameDataProxyShell';
 /**
  * 关卡管理器
  * 3D游戏实际从这里开始，沟通外界创建和销毁场景

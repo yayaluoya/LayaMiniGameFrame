@@ -1,9 +1,9 @@
-import { ECommonLeve } from '../../../aTGame/Commom/CommonLeveEnum';
-import RootDataProxyShell from '../../../aTGame/Data/RootDataProxyShell';
-import { EEventUI } from '../../EventEnum/EEventUI';
-import GameData from '../../GameData/GameData';
-import GameDataProxy from '../../GameData/GameDataProxy';
-import MesManager from '../../Manager/MesManager';
+import { ECommonLeve } from '../../aTGame/Commom/CommonLeveEnum';
+import RootDataProxyShell from '../../aTGame/Data/RootDataProxyShell';
+import { EEventUI } from '../EventEnum/EEventUI';
+import GameData from '../GameData/GameData';
+import GameDataProxy from '../GameData/GameDataProxy';
+import MesManager from '../Manager/MesManager';
 /**
  * 游戏数据代理处理类，用这个类处理数据会有事件传递出去
  */

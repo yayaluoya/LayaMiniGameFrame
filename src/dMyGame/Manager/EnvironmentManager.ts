@@ -11,7 +11,7 @@ import OtherEnvironmentConfigProxy from '../ConfigProxy/OtherEnvironmentProxy';
 import MainGameConfig from '../../bTGameConfig/MainGameConfig';
 import RootDebug from '../../aTGame/Debug/RootDebug';
 import { EDebugWindowEvent } from '../../aTGame/Debug/mes/EDebugWindowEvent';
-import GameDataProxyShell from '../Proxy/data/GameDataProxyShell';
+import GameDataProxyShell from '../GameDataShell/GameDataProxyShell';
 /**
  * 环境管理器，负责场景的环境管理
  */

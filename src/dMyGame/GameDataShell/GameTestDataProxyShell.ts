@@ -1,6 +1,6 @@
-import RootDataProxyShell from "../../../aTGame/Data/RootDataProxyShell";
-import GameTestData from "../../GameData/GameTestData";
-import GameTestDataProxy from "../../GameData/GameTestDataProxy";
+import RootDataProxyShell from "../../aTGame/Data/RootDataProxyShell";
+import GameTestData from "../GameData/GameTestData";
+import GameTestDataProxy from "../GameData/GameTestDataProxy";
 
 /**
  * 测试数据代理处理类，用这个类处理数据会有事件传递出去
@@ -31,10 +31,9 @@ export default class GameTestDataProxyShell extends RootDataProxyShell {
         //获取代理数据，并添加一个设置数据监听
         this.m_data = GameTestDataProxy.instance.saveData;
         GameTestDataProxy.instance.addKeySetMonitor(this, () => {
-            console.log('根属性testNumber改变，属性监听');
-            // new dataPackageTesting();
-            // new dataPackageTesting();
-        }, GameTestDataProxy.instance.rootData.testNumber);
+            console.log('根属性testNumber或者testBoolean改变，属性监听');
+        }, [GameTestDataProxy.instance.rootData.testNumber, GameTestDataProxy.instance.rootData.testBoolean]);
+        //
         GameTestDataProxy.instance.addObjectSetMonitor(this, () => {
             console.log('根属性testNumber改变，对象监听');
         }, GameTestDataProxy.instance.rootData, GameTestDataProxy.instance.rootData.testNumber);
@@ -46,6 +45,10 @@ export default class GameTestDataProxyShell extends RootDataProxyShell {
         GameTestDataProxy.instance.addObjectSetMonitor(this, () => {
             console.log('数组属性改变');
         }, GameTestDataProxy.instance.rootData.testArray);
+        //
+        GameTestDataProxy.instance.addObjectSetMonitor(this, () => {
+            console.log('对象属性a,或者b改变');
+        }, GameTestDataProxy.instance.rootData.testObject, ['a', 'b']);
     }
 }
 

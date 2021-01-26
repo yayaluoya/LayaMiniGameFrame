@@ -1,4 +1,4 @@
-import RootDataProxyShell from "../../../aTGame/Data/RootDataProxyShell";
+import RootDataProxyShell from "../../aTGame/Data/RootDataProxyShell";
 
 /**
  * 新手引导数据代理处理类，用这个类处理数据会有事件传递出去

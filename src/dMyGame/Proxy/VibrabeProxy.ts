@@ -1,5 +1,5 @@
 import PlatformManager from '../../aTGame/Platform/PlatformManager';
-import GameDataProxyShell from './data/GameDataProxyShell';
+import GameDataProxyShell from '../GameDataShell/GameDataProxyShell';
 /**
  * 振动代理
  */
