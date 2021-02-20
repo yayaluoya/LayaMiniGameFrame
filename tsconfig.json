@@ -3,13 +3,7 @@
     "module": "es6",
     "target": "es6",
     "sourceMap": true,
-    "baseUrl": ".",
-    "paths": {
-      "tslib": [
-        //! E:/LayaAirIDE/是LayaAirIDE的安装路径
-        "E:/LayaAirIDE/resources/app/node_modules/tslib/tslib.d.ts"
-      ]
-    }
+    "baseUrl": "."
   },
   "exclude": [
     "node_modules"

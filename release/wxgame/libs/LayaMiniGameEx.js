@@ -1,0 +1,1 @@
+class Main{constructor(){console.log("自定义脚本测试")}}class Test{constructor(){}}window.LayaMiniGameEx={Main:Main,Test:Test};

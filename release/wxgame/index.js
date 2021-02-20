@@ -1,1 +1,1 @@
-window.screenOrientation="sensor_landscape",loadLib("libs/laya.core.js"),loadLib("libs/laya.d3.js"),loadLib("libs/fairygui.js"),loadLib("libs/laya.physics3D.js"),loadLib("js/bundle.js");
+window.screenOrientation="sensor_landscape",loadLib("libs/LayaMiniGameEx.js"),loadLib("libs/min/pako_inflate.min.js"),loadLib("libs/laya.core.js"),loadLib("libs/laya.d3.js"),loadLib("libs/fairygui.js"),loadLib("libs/laya.physics3D.js"),loadLib("js/bundle.js");
